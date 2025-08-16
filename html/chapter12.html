@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
+    <title>第12章：容器与命名空间</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/highlight.css">
+    <script src="assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors', 'ams']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors', '[tex]/ams']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="sidebar-search-input" placeholder="搜索..." autocomplete="off">
+            </div>
+            <div id="tree-container">
+                <nav class="tree-nav" role="tree">
+                    <div class="tree-item " >
+                        <a href="index.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Linux 内核源代码深度解析</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter1.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第1章：Linux 内核概述与发展史</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter2.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第2章：进程管理与任务调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter3.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第3章：内存管理架构</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter4.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第4章：进程间通信机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter5.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第5章：虚拟文件系统（VFS）</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter6.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第6章：具体文件系统实现</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter7.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第7章：块设备层与I/O调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter8.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第8章：设备驱动模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter9.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第9章：网络协议栈</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter10.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第10章：内核同步机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter11.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第11章：并发编程模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item active" >
+                        <a href="chapter12.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第12章：容器与命名空间</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter13.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第13章：安全子系统</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter14.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第14章：实时Linux</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter15.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第15章：性能分析与调试</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter16.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第16章：引导过程与初始化</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="CLAUDE.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Untitled</span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="12">第12章：容器与命名空间</h1>
+<h2 id="_1">本章概要</h2>
+<p>容器技术已成为现代云原生应用的基石，而 Linux 内核的命名空间（namespace）和控制组（cgroups）机制是容器实现的核心基础。本章深入剖析这些内核机制的实现原理，从早期的 chroot 到现代容器运行时，探索进程隔离、资源限制和安全边界的内核级实现。通过学习本章，您将理解容器"轻量级虚拟化"背后的技术本质，掌握构建容器运行时所需的内核接口，以及如何在保证隔离性的同时优化性能。</p>
+<h2 id="121">12.1 命名空间的演进与设计哲学</h2>
+<h3 id="1211-chroot-namespace">12.1.1 从 chroot 到 namespace</h3>
+<p>Linux 命名空间的历史可以追溯到 1979 年的 chroot 系统调用。chroot 改变进程的根目录视图，是最早的进程隔离机制：</p>
+<div class="codehilite"><pre><span></span><code><span class="err">传统</span><span class="w"> </span><span class="n">Unix</span><span class="w"> </span><span class="err">进程视图：</span>
+<span class="w">    </span><span class="o">/</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">bin</span><span class="o">/</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">etc</span><span class="o">/</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">home</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">usr</span><span class="o">/</span>
+
+<span class="n">chroot</span><span class="w"> </span><span class="err">后的进程视图：</span>
+<span class="w">    </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="err">实际上是</span><span class="w"> </span><span class="o">/</span><span class="k">var</span><span class="o">/</span><span class="n">chroot</span><span class="p">)</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">bin</span><span class="o">/</span>
+<span class="w">    </span><span class="err">├──</span><span class="w"> </span><span class="n">etc</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">lib</span><span class="o">/</span>
+</code></pre></div>
+
+<p>然而，chroot 只隔离了文件系统视图，进程仍能看到系统的其他资源。2002 年，Eric W. Biederman 提出了命名空间的概念，将隔离扩展到系统的各个方面。命名空间的设计遵循几个关键原则：</p>
+<ol>
+<li><strong>透明性</strong>：命名空间内的进程无需修改即可运行</li>
+<li><strong>递归性</strong>：命名空间可以嵌套，形成层次结构</li>
+<li><strong>独立性</strong>：各类命名空间可以独立使用和组合</li>
+<li><strong>兼容性</strong>：保持 POSIX 语义和向后兼容</li>
+</ol>
+<h3 id="1212">12.1.2 命名空间的类型与用途</h3>
+<p>Linux 内核目前支持 8 种命名空间，每种负责隔离特定的系统资源：</p>
+<p>| 命名空间 | 隔离内容 | 引入版本 | 主要用途 |</p>
+<table>
+<thead>
+<tr>
+<th>命名空间</th>
+<th>隔离内容</th>
+<th>引入版本</th>
+<th>主要用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mount (mnt)</td>
+<td>挂载点</td>
+<td>2.4.19</td>
+<td>文件系统视图隔离</td>
+</tr>
+<tr>
+<td>UTS</td>
+<td>主机名和域名</td>
+<td>2.6.19</td>
+<td>主机标识隔离</td>
+</tr>
+<tr>
+<td>IPC</td>
+<td>System V IPC, POSIX 消息队列</td>
+<td>2.6.19</td>
+<td>进程间通信隔离</td>
+</tr>
+<tr>
+<td>PID</td>
+<td>进程 ID</td>
+<td>2.6.24</td>
+<td>进程树隔离</td>
+</tr>
+<tr>
+<td>Network (net)</td>
+<td>网络设备、协议栈、端口</td>
+<td>2.6.29</td>
+<td>网络栈隔离</td>
+</tr>
+<tr>
+<td>User</td>
+<td>用户和组 ID</td>
+<td>3.8</td>
+<td>用户权限隔离</td>
+</tr>
+<tr>
+<td>Cgroup</td>
+<td>Cgroup 根目录</td>
+<td>4.6</td>
+<td>资源限制视图隔离</td>
+</tr>
+<tr>
+<td>Time</td>
+<td>系统时间</td>
+<td>5.6</td>
+<td>时间视图隔离</td>
+</tr>
+</tbody>
+</table>
+<h3 id="1213">12.1.3 命名空间的内核数据结构</h3>
+<p>命名空间在内核中通过 <code>struct nsproxy</code> 结构管理，每个进程的 <code>task_struct</code> 包含一个指向 nsproxy 的指针：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// include/linux/nsproxy.h</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">nsproxy</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">count</span><span class="p">;</span><span class="w">                    </span><span class="c1">// 引用计数</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">uts_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">uts_ns</span><span class="p">;</span><span class="w">     </span><span class="c1">// UTS 命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">ipc_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">ipc_ns</span><span class="p">;</span><span class="w">     </span><span class="c1">// IPC 命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mnt_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">mnt_ns</span><span class="p">;</span><span class="w">     </span><span class="c1">// Mount 命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">pid_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">pid_ns_for_children</span><span class="p">;</span><span class="w"> </span><span class="c1">// PID 命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">net</span><span class="w"> </span><span class="o">*</span><span class="n">net_ns</span><span class="p">;</span><span class="w">                </span><span class="c1">// Network 命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">time_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">time_ns</span><span class="p">;</span><span class="w">    </span><span class="c1">// Time 命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">time_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">time_ns_for_children</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cgroup_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">cgroup_ns</span><span class="p">;</span><span class="w"> </span><span class="c1">// Cgroup 命名空间</span>
+<span class="p">};</span>
+
+<span class="c1">// include/linux/sched.h</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ... 其他字段</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">nsproxy</span><span class="w"> </span><span class="o">*</span><span class="n">nsproxy</span><span class="p">;</span><span class="w">  </span><span class="c1">// 命名空间代理</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>命名空间的创建和切换通过 clone、unshare 和 setns 系统调用实现：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 创建新命名空间的标志位</span>
+<span class="cp">#define CLONE_NEWNS     0x00020000  </span><span class="c1">// Mount namespace</span>
+<span class="cp">#define CLONE_NEWUTS    0x04000000  </span><span class="c1">// UTS namespace</span>
+<span class="cp">#define CLONE_NEWIPC    0x08000000  </span><span class="c1">// IPC namespace</span>
+<span class="cp">#define CLONE_NEWPID    0x20000000  </span><span class="c1">// PID namespace</span>
+<span class="cp">#define CLONE_NEWNET    0x40000000  </span><span class="c1">// Network namespace</span>
+<span class="cp">#define CLONE_NEWUSER   0x10000000  </span><span class="c1">// User namespace</span>
+<span class="cp">#define CLONE_NEWCGROUP 0x02000000  </span><span class="c1">// Cgroup namespace</span>
+<span class="cp">#define CLONE_NEWTIME   0x00000080  </span><span class="c1">// Time namespace</span>
+</code></pre></div>
+
+<h2 id="122">12.2 核心命名空间实现详解</h2>
+<h3 id="1221-pid">12.2.1 PID 命名空间</h3>
+<p>PID 命名空间是容器实现的核心，它为进程提供独立的进程 ID 空间。在 PID 命名空间内，进程可以拥有与外部相同的 PID，实现进程树的完全隔离。</p>
+<div class="codehilite"><pre><span></span><code>主机视角：
+<span class="w">    </span><span class="nf">systemd </span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="m">1</span><span class="p">)</span>
+<span class="w">    </span>├──<span class="w"> </span><span class="nf">sshd </span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="m">1234</span><span class="p">)</span>
+<span class="w">    </span>├──<span class="w"> </span><span class="n">container</span><span class="o">-</span><span class="nf">runtime </span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="m">5678</span><span class="p">)</span>
+<span class="w">    </span>│<span class="w">   </span>└──<span class="w"> </span><span class="n">container</span><span class="o">-</span><span class="nf">init </span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="m">5679</span><span class="p">)</span><span class="w">  </span><span class="o">&lt;-</span><span class="w"> </span>容器内的<span class="w"> </span><span class="n">PID</span><span class="w"> </span><span class="m">1</span>
+<span class="w">    </span>│<span class="w">       </span>├──<span class="w"> </span><span class="nf">app </span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="m">5680</span><span class="p">)</span><span class="w">         </span><span class="o">&lt;-</span><span class="w"> </span>容器内的<span class="w"> </span><span class="n">PID</span><span class="w"> </span><span class="m">2</span>
+<span class="w">    </span>│<span class="w">       </span>└──<span class="w"> </span><span class="nf">worker </span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="m">5681</span><span class="p">)</span><span class="w">      </span><span class="o">&lt;-</span><span class="w"> </span>容器内的<span class="w"> </span><span class="n">PID</span><span class="w"> </span><span class="m">3</span>
+
+容器内视角：
+<span class="w">    </span><span class="nf">init </span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="m">1</span><span class="p">)</span>
+<span class="w">    </span>├──<span class="w"> </span><span class="nf">app </span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="m">2</span><span class="p">)</span>
+<span class="w">    </span>└──<span class="w"> </span><span class="nf">worker </span><span class="p">(</span><span class="n">PID</span><span class="w"> </span><span class="m">3</span><span class="p">)</span>
+</code></pre></div>
+
+<p>PID 命名空间的关键实现细节：</p>
+<ol>
+<li><strong>层次结构</strong>：PID 命名空间形成树状层次，子命名空间中的进程在父命名空间中可见</li>
+<li><strong>PID 映射</strong>：每个进程在其所在的命名空间及所有祖先命名空间中都有 PID</li>
+<li><strong>init 进程</strong>：每个 PID 命名空间都有自己的 init 进程（PID 1），负责回收孤儿进程</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// kernel/pid.c - PID 分配的核心结构</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">pid</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">level</span><span class="p">;</span><span class="w">           </span><span class="c1">// PID 命名空间的层级</span>
+<span class="w">    </span><span class="cm">/* 每个命名空间层级的 PID 号 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">upid</span><span class="w"> </span><span class="n">numbers</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">upid</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">nr</span><span class="p">;</span><span class="w">                       </span><span class="c1">// 在该命名空间中的 PID</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">pid_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">ns</span><span class="p">;</span><span class="w">    </span><span class="c1">// 所属的命名空间</span>
+<span class="p">};</span>
+
+<span class="c1">// PID 命名空间结构</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">pid_namespace</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kref</span><span class="w"> </span><span class="n">kref</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">pidmap</span><span class="w"> </span><span class="n">pidmap</span><span class="p">[</span><span class="n">PIDMAP_ENTRIES</span><span class="p">];</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">child_reaper</span><span class="p">;</span><span class="w">  </span><span class="c1">// init 进程</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">level</span><span class="p">;</span><span class="w">                </span><span class="c1">// 层级深度</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">pid_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">parent</span><span class="p">;</span><span class="w">      </span><span class="c1">// 父命名空间</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="1222-network">12.2.2 Network 命名空间</h3>
+<p>网络命名空间提供完全独立的网络栈，包括网络设备、IP 地址、路由表、防火墙规则等：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// include/net/net_namespace.h</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">net</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">count</span><span class="p">;</span><span class="w">               </span><span class="c1">// 引用计数</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">        </span><span class="c1">// 命名空间链表</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">net_device</span><span class="w"> </span><span class="o">*</span><span class="n">loopback_dev</span><span class="p">;</span><span class="w">  </span><span class="c1">// 环回设备</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">dev_base_head</span><span class="p">;</span><span class="w">   </span><span class="c1">// 网络设备链表</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">rtnl</span><span class="p">;</span><span class="w">            </span><span class="c1">// rtnetlink 套接字</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">genl_sock</span><span class="p">;</span><span class="w">       </span><span class="c1">// generic netlink</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">netns_ipv4</span><span class="w"> </span><span class="n">ipv4</span><span class="p">;</span><span class="w">      </span><span class="c1">// IPv4 相关</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">netns_ipv6</span><span class="w"> </span><span class="n">ipv6</span><span class="p">;</span><span class="w">      </span><span class="c1">// IPv6 相关</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">netns_packet</span><span class="w"> </span><span class="n">packet</span><span class="p">;</span><span class="w">   </span><span class="c1">// packet 套接字</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">netns_unix</span><span class="w"> </span><span class="n">unx</span><span class="p">;</span><span class="w">        </span><span class="c1">// Unix 域套接字</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">net_generic</span><span class="w"> </span><span class="o">*</span><span class="n">gen</span><span class="p">;</span><span class="w">      </span><span class="c1">// 通用存储</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>网络命名空间的典型使用模式：</p>
+<div class="codehilite"><pre><span></span><code>主机网络命名空间
+    eth0 (10.0.0.1)
+    docker0 (172.17.0.1) ──┐
+                           │
+                      veth pair
+                           │
+容器网络命名空间          │
+    eth0 (172.17.0.2) ────┘
+    lo (127.0.0.1)
+</code></pre></div>
+
+<h3 id="1223-mount">12.2.3 Mount 命名空间</h3>
+<p>Mount 命名空间隔离文件系统挂载点，使每个容器拥有独立的文件系统视图：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// fs/mount.h</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">mnt_namespace</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mount</span><span class="w"> </span><span class="o">*</span><span class="n">root</span><span class="p">;</span><span class="w">           </span><span class="c1">// 根挂载点</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">        </span><span class="c1">// 挂载点链表</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">user_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">user_ns</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">seq</span><span class="p">;</span><span class="w">                      </span><span class="c1">// 序列号</span>
+<span class="w">    </span><span class="n">wait_queue_head_t</span><span class="w"> </span><span class="n">poll</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">event</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">mount</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">hlist_node</span><span class="w"> </span><span class="n">mnt_hash</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mount</span><span class="w"> </span><span class="o">*</span><span class="n">mnt_parent</span><span class="p">;</span><span class="w">     </span><span class="c1">// 父挂载点</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dentry</span><span class="w"> </span><span class="o">*</span><span class="n">mnt_mountpoint</span><span class="p">;</span><span class="w"> </span><span class="c1">// 挂载位置</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">vfsmount</span><span class="w"> </span><span class="n">mnt</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>挂载传播机制：</p>
+<ul>
+<li><strong>private</strong>：挂载事件不传播</li>
+<li><strong>shared</strong>：挂载事件双向传播</li>
+<li><strong>slave</strong>：单向接收传播</li>
+<li><strong>unbindable</strong>：不可绑定挂载</li>
+</ul>
+<h3 id="1224-user">12.2.4 User 命名空间</h3>
+<p>User 命名空间是安全容器的关键，它允许将容器内的 root 用户映射为主机上的普通用户：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// kernel/user_namespace.c</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">user_namespace</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">uid_gid_map</span><span class="w"> </span><span class="n">uid_map</span><span class="p">;</span><span class="w">   </span><span class="c1">// UID 映射</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">uid_gid_map</span><span class="w"> </span><span class="n">gid_map</span><span class="p">;</span><span class="w">   </span><span class="c1">// GID 映射</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">uid_gid_map</span><span class="w"> </span><span class="n">projid_map</span><span class="p">;</span><span class="w"> </span><span class="c1">// 项目 ID 映射</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">user_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">parent</span><span class="p">;</span>
+<span class="w">    </span><span class="n">kuid_t</span><span class="w"> </span><span class="n">owner</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 创建者的 UID</span>
+<span class="w">    </span><span class="n">kgid_t</span><span class="w"> </span><span class="n">group</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 创建者的 GID</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">proc_inum</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">uid_gid_extent</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">first</span><span class="p">;</span><span class="w">      </span><span class="c1">// 映射的起始 ID</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">lower_first</span><span class="p">;</span><span class="w"> </span><span class="c1">// 父命名空间中的起始 ID</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">count</span><span class="p">;</span><span class="w">      </span><span class="c1">// 映射数量</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>UID/GID 映射示例：</p>
+<div class="codehilite"><pre><span></span><code><span class="err">容器内</span><span class="w"> </span><span class="n">UID</span><span class="w">    </span><span class="err">主机</span><span class="w"> </span><span class="n">UID</span>
+<span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="n">root</span><span class="p">)</span><span class="w">  </span><span class="o">-&gt;</span><span class="w">  </span><span class="mi">100000</span>
+<span class="mi">1</span><span class="w">         </span><span class="o">-&gt;</span><span class="w">  </span><span class="mi">100001</span>
+<span class="mi">999</span><span class="w">       </span><span class="o">-&gt;</span><span class="w">  </span><span class="mi">100999</span>
+</code></pre></div>
+
+<h2 id="123-cgroups">12.3 Cgroups：资源控制与限制</h2>
+<h3 id="1231-cgroups-v1">12.3.1 Cgroups v1 架构</h3>
+<p>Cgroups（Control Groups）提供了对进程组的资源使用进行限制、统计和隔离的机制。v1 采用多层次的目录结构，每个子系统独立挂载：</p>
+<div class="codehilite"><pre><span></span><code>/sys/fs/cgroup/
+├── cpu/           # CPU 使用限制
+│   ├── docker/
+│   │   └── &lt;container-id&gt;/
+│   │       ├── cpu.shares
+│   │       └── cpu.cfs_quota_us
+├── memory/        # 内存限制
+│   ├── docker/
+│   │   └── &lt;container-id&gt;/
+│   │       ├── memory.limit_in_bytes
+│   │       └── memory.usage_in_bytes
+└── blkio/         # 块设备 I/O 限制
+</code></pre></div>
+
+<p>核心子系统功能：</p>
+<p>| 子系统 | 功能 | 关键参数 |</p>
+<table>
+<thead>
+<tr>
+<th>子系统</th>
+<th>功能</th>
+<th>关键参数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cpu</td>
+<td>CPU 时间分配</td>
+<td>cpu.shares, cpu.cfs_period_us, cpu.cfs_quota_us</td>
+</tr>
+<tr>
+<td>cpuset</td>
+<td>CPU 和内存节点绑定</td>
+<td>cpuset.cpus, cpuset.mems</td>
+</tr>
+<tr>
+<td>memory</td>
+<td>内存使用限制</td>
+<td>memory.limit_in_bytes, memory.soft_limit_in_bytes</td>
+</tr>
+<tr>
+<td>blkio</td>
+<td>块设备 I/O 控制</td>
+<td>blkio.weight, blkio.throttle.read_bps_device</td>
+</tr>
+<tr>
+<td>devices</td>
+<td>设备访问控制</td>
+<td>devices.allow, devices.deny</td>
+</tr>
+<tr>
+<td>freezer</td>
+<td>暂停/恢复进程组</td>
+<td>freezer.state</td>
+</tr>
+<tr>
+<td>net_cls</td>
+<td>网络分类标记</td>
+<td>net_cls.classid</td>
+</tr>
+<tr>
+<td>pids</td>
+<td>进程数量限制</td>
+<td>pids.max</td>
+</tr>
+</tbody>
+</table>
+<h3 id="1232-cgroups-v2">12.3.2 Cgroups v2 统一层次</h3>
+<p>Cgroups v2 采用统一的层次结构，解决了 v1 的设计缺陷：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// kernel/cgroup/cgroup.c</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">cgroup</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cgroup_subsys_state</span><span class="w"> </span><span class="n">self</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">level</span><span class="p">;</span><span class="w">                    </span><span class="c1">// 层级深度</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cgroup</span><span class="w"> </span><span class="o">*</span><span class="n">parent</span><span class="p">;</span><span class="w">        </span><span class="c1">// 父 cgroup</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kernfs_node</span><span class="w"> </span><span class="o">*</span><span class="n">kn</span><span class="p">;</span><span class="w">       </span><span class="c1">// kernfs 节点</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cgroup_file</span><span class="w"> </span><span class="n">procs_file</span><span class="p">;</span><span class="w"> </span><span class="c1">// cgroup.procs 文件</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cgroup_file</span><span class="w"> </span><span class="n">events_file</span><span class="p">;</span><span class="w"> </span><span class="c1">// cgroup.events 文件</span>
+
+<span class="w">    </span><span class="n">u16</span><span class="w"> </span><span class="n">subtree_control</span><span class="p">;</span><span class="w">          </span><span class="c1">// 子树控制掩码</span>
+<span class="w">    </span><span class="n">u16</span><span class="w"> </span><span class="n">subtree_ss_mask</span><span class="p">;</span><span class="w">          </span><span class="c1">// 子树子系统掩码</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">pidlists</span><span class="p">;</span><span class="w">    </span><span class="c1">// PID 列表</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cgroup_rstat_cpu</span><span class="w"> </span><span class="n">__percpu</span><span class="w"> </span><span class="o">*</span><span class="n">rstat_cpu</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>v2 的改进特性：</p>
+<ol>
+<li><strong>统一层次</strong>：所有控制器共享同一层次结构</li>
+<li><strong>更好的资源模型</strong>：基于权重的资源分配</li>
+<li><strong>压力指标（PSI）</strong>：memory.pressure, cpu.pressure, io.pressure</li>
+<li><strong>eBPF 集成</strong>：支持 BPF 程序进行细粒度控制</li>
+</ol>
+<div class="codehilite"><pre><span></span><code>/sys/fs/cgroup/unified/
+├── cgroup.controllers      # 可用控制器
+├── cgroup.subtree_control  # 子树启用的控制器
+├── user.slice/
+│   └── user-1000.slice/
+│       ├── memory.max
+│       ├── memory.current
+│       ├── cpu.max
+│       └── io.max
+└── system.slice/
+    └── docker.service/
+</code></pre></div>
+
+<h3 id="1233">12.3.3 资源限制的内核实现</h3>
+<p>内存限制实现（以 memory cgroup 为例）：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// mm/memcontrol.c</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">mem_cgroup</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cgroup_subsys_state</span><span class="w"> </span><span class="n">css</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mem_cgroup_id</span><span class="w"> </span><span class="n">id</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 内存计数器 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page_counter</span><span class="w"> </span><span class="n">memory</span><span class="p">;</span><span class="w">    </span><span class="c1">// 内存使用</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page_counter</span><span class="w"> </span><span class="n">swap</span><span class="p">;</span><span class="w">      </span><span class="c1">// 交换使用</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page_counter</span><span class="w"> </span><span class="n">memsw</span><span class="p">;</span><span class="w">     </span><span class="c1">// 内存+交换</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page_counter</span><span class="w"> </span><span class="n">kmem</span><span class="p">;</span><span class="w">      </span><span class="c1">// 内核内存</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page_counter</span><span class="w"> </span><span class="n">tcpmem</span><span class="p">;</span><span class="w">    </span><span class="c1">// TCP 缓冲区</span>
+
+<span class="w">    </span><span class="cm">/* 软限制 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">soft_limit</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 统计信息 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mem_cgroup_stat_cpu</span><span class="w"> </span><span class="n">__percpu</span><span class="w"> </span><span class="o">*</span><span class="n">stat_cpu</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* OOM 控制 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mem_cgroup_oom_info</span><span class="w"> </span><span class="n">oom_info</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">oom_kill_disable</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 内存回收 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">work_struct</span><span class="w"> </span><span class="n">high_work</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">memory_pressure</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>CPU 限制实现（CFS 带宽控制）：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// kernel/sched/fair.c</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">cfs_bandwidth</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">raw_spinlock_t</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span>
+<span class="w">    </span><span class="n">ktime_t</span><span class="w"> </span><span class="n">period</span><span class="p">;</span><span class="w">               </span><span class="c1">// 周期（默认 100ms）</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">quota</span><span class="p">;</span><span class="w">                    </span><span class="c1">// 配额</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">runtime</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 剩余运行时间</span>
+<span class="w">    </span><span class="n">s64</span><span class="w"> </span><span class="n">hierarchical_quota</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">hrtimer</span><span class="w"> </span><span class="n">period_timer</span><span class="p">;</span><span class="w">  </span><span class="c1">// 周期定时器</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">hrtimer</span><span class="w"> </span><span class="n">slack_timer</span><span class="p">;</span><span class="w">   </span><span class="c1">// 松弛定时器</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">throttled_cfs_rq</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">nr_periods</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">nr_throttled</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">throttled_time</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h2 id="124">12.4 容器运行时原理</h2>
+<h3 id="1241">12.4.1 容器创建的系统调用序列</h3>
+<p>容器的创建涉及一系列精心编排的系统调用，从进程克隆到资源限制设置。以下是典型的容器启动流程：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 简化的容器创建流程</span>
+<span class="kt">pid_t</span><span class="w"> </span><span class="nf">create_container</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 1. 创建新的命名空间</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CLONE_NEWNS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">CLONE_NEWPID</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">CLONE_NEWNET</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
+<span class="w">                </span><span class="n">CLONE_NEWIPC</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">CLONE_NEWUTS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">CLONE_NEWUSER</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 2. 克隆进程并创建命名空间</span>
+<span class="w">    </span><span class="kt">pid_t</span><span class="w"> </span><span class="n">pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">clone</span><span class="p">(</span><span class="n">container_init</span><span class="p">,</span><span class="w"> </span><span class="n">stack_top</span><span class="p">,</span><span class="w"> </span><span class="n">flags</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">SIGCHLD</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pid</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">  </span><span class="c1">// 父进程</span>
+<span class="w">        </span><span class="c1">// 3. 配置 user namespace 映射</span>
+<span class="w">        </span><span class="n">write_uid_map</span><span class="p">(</span><span class="n">pid</span><span class="p">);</span>
+<span class="w">        </span><span class="n">write_gid_map</span><span class="p">(</span><span class="n">pid</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// 4. 设置 cgroups</span>
+<span class="w">        </span><span class="n">setup_cgroups</span><span class="p">(</span><span class="n">pid</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// 5. 配置网络</span>
+<span class="w">        </span><span class="n">setup_network</span><span class="p">(</span><span class="n">pid</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">pid</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">container_init</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">arg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 容器内的 init 进程</span>
+<span class="w">    </span><span class="c1">// 1. 设置主机名</span>
+<span class="w">    </span><span class="n">sethostname</span><span class="p">(</span><span class="s">&quot;container&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">9</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 2. 挂载必要的文件系统</span>
+<span class="w">    </span><span class="n">mount</span><span class="p">(</span><span class="s">&quot;proc&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/proc&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;proc&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="w">    </span><span class="n">mount</span><span class="p">(</span><span class="s">&quot;sys&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/sys&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;sysfs&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 3. pivot_root 切换根文件系统</span>
+<span class="w">    </span><span class="n">pivot_root</span><span class="p">(</span><span class="s">&quot;/new_root&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/new_root/.old_root&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 4. 卸载旧根</span>
+<span class="w">    </span><span class="n">umount2</span><span class="p">(</span><span class="s">&quot;/.old_root&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">MNT_DETACH</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 5. 执行容器应用</span>
+<span class="w">    </span><span class="n">execve</span><span class="p">(</span><span class="s">&quot;/bin/sh&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="n">envp</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1242-oci">12.4.2 OCI 运行时规范</h3>
+<p>Open Container Initiative (OCI) 定义了容器运行时的标准规范，包括运行时规范（runtime-spec）和镜像规范（image-spec）：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// config.json - OCI 运行时配置示例</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;ociVersion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0.2&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;process&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;terminal&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;uid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;gid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/bin/sh&quot;</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;TERM=xterm&quot;</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;cwd&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;capabilities&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;bounding&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;CAP_NET_BIND_SERVICE&quot;</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;effective&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;CAP_NET_BIND_SERVICE&quot;</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;permitted&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;CAP_NET_BIND_SERVICE&quot;</span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;rlimits&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RLIMIT_NOFILE&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;hard&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1024</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;soft&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1024</span>
+<span class="w">        </span><span class="p">}]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;root&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rootfs&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;readonly&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;mounts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">        </span><span class="nt">&quot;destination&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/proc&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;proc&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;proc&quot;</span>
+<span class="w">    </span><span class="p">}],</span>
+<span class="w">    </span><span class="nt">&quot;linux&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;namespaces&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pid&quot;</span><span class="p">},</span>
+<span class="w">            </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;network&quot;</span><span class="p">},</span>
+<span class="w">            </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ipc&quot;</span><span class="p">},</span>
+<span class="w">            </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uts&quot;</span><span class="p">},</span>
+<span class="w">            </span><span class="p">{</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mount&quot;</span><span class="p">}</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;resources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;memory&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;limit&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">536870912</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="nt">&quot;cpu&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;shares&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1024</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;quota&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100000</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;period&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100000</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1243-runc">12.4.3 runc 实现分析</h3>
+<p>runc 是 OCI 运行时规范的参考实现，其核心流程：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// libcontainer/process_linux.go 简化版</span>
+<span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">p</span><span class="w"> </span><span class="o">*</span><span class="nx">initProcess</span><span class="p">)</span><span class="w"> </span><span class="nx">start</span><span class="p">()</span><span class="w"> </span><span class="kt">error</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 1. 创建管道用于父子进程通信</span>
+<span class="w">    </span><span class="nx">parentPipe</span><span class="p">,</span><span class="w"> </span><span class="nx">childPipe</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">newPipe</span><span class="p">()</span>
+
+<span class="w">    </span><span class="c1">// 2. 启动进程</span>
+<span class="w">    </span><span class="nx">cmd</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">p</span><span class="p">.</span><span class="nx">cmd</span>
+<span class="w">    </span><span class="nx">cmd</span><span class="p">.</span><span class="nx">ExtraFiles</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[]</span><span class="o">*</span><span class="nx">os</span><span class="p">.</span><span class="nx">File</span><span class="p">{</span><span class="nx">childPipe</span><span class="p">}</span>
+<span class="w">    </span><span class="nx">cmd</span><span class="p">.</span><span class="nx">Env</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">append</span><span class="p">(</span><span class="nx">cmd</span><span class="p">.</span><span class="nx">Env</span><span class="p">,</span><span class="w"> </span>
+<span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nx">Sprintf</span><span class="p">(</span><span class="s">&quot;_LIBCONTAINER_INITPIPE=%d&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">))</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">cmd</span><span class="p">.</span><span class="nx">Start</span><span class="p">();</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">err</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 3. 发送配置到子进程</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">p</span><span class="p">.</span><span class="nx">sendConfig</span><span class="p">();</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">err</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 4. 等待子进程准备就绪</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">p</span><span class="p">.</span><span class="nx">waitForChildExit</span><span class="p">();</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">err</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 5. 配置 cgroups</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">p</span><span class="p">.</span><span class="nx">manager</span><span class="p">.</span><span class="nx">Apply</span><span class="p">(</span><span class="nx">p</span><span class="p">.</span><span class="nx">pid</span><span class="p">());</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">err</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 6. 设置网络</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">p</span><span class="p">.</span><span class="nx">createNetworkInterfaces</span><span class="p">();</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">err</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 7. 通知子进程继续</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">p</span><span class="p">.</span><span class="nx">sendContinue</span><span class="p">();</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">err</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kc">nil</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1244">12.4.4 容器网络模型</h3>
+<p>容器网络通常采用 veth pair（虚拟以太网对）连接容器和主机网络：</p>
+<div class="codehilite"><pre><span></span><code>   主机网络命名空间                    容器网络命名空间
+   ┌──────────────┐                  ┌──────────────┐
+   │              │                  │              │
+   │  docker0     │                  │    eth0      │
+   │  (bridge)    │◄────veth pair───►│  172.17.0.2  │
+   │  172.17.0.1  │                  │              │
+   │              │                  │              │
+   │     eth0     │                  │              │
+   │  10.0.0.100  │                  │              │
+   └──────────────┘                  └──────────────┘
+          │
+          ▼
+    外部网络 (NAT)
+</code></pre></div>
+
+<p>veth 设备创建和配置：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 创建 veth pair</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">create_veth_pair</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">veth1</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">veth2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">nl_sock</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nl_socket_alloc</span><span class="p">();</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rtnl_link</span><span class="w"> </span><span class="o">*</span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rtnl_link_alloc</span><span class="p">();</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rtnl_link</span><span class="w"> </span><span class="o">*</span><span class="n">peer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rtnl_link_alloc</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 设置 veth 类型</span>
+<span class="w">    </span><span class="n">rtnl_link_set_type</span><span class="p">(</span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;veth&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">rtnl_link_set_name</span><span class="p">(</span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">veth1</span><span class="p">);</span>
+<span class="w">    </span><span class="n">rtnl_link_set_name</span><span class="p">(</span><span class="n">peer</span><span class="p">,</span><span class="w"> </span><span class="n">veth2</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 创建 veth pair</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">rtnl_link_add</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">NLM_F_CREATE</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// 将 veth 一端移到容器命名空间</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">move_veth_to_netns</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">veth</span><span class="p">,</span><span class="w"> </span><span class="kt">pid_t</span><span class="w"> </span><span class="n">pid</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">path</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span>
+<span class="w">    </span><span class="n">snprintf</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">path</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;/proc/%d/ns/net&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">netns_fd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="n">O_RDONLY</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">nl_sock</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nl_socket_alloc</span><span class="p">();</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rtnl_link</span><span class="w"> </span><span class="o">*</span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rtnl_link_get_by_name</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="n">veth</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">rtnl_link_set_ns_fd</span><span class="p">(</span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">netns_fd</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">rtnl_link_change</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="n">link</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="125">12.5 安全容器技术</h2>
+<h3 id="1251">12.5.1 容器安全挑战</h3>
+<p>传统容器共享主机内核，存在固有的安全风险：</p>
+<ol>
+<li><strong>内核漏洞</strong>：容器逃逸可能获得主机权限</li>
+<li><strong>资源耗尽</strong>：恶意容器可能耗尽系统资源</li>
+<li><strong>侧信道攻击</strong>：共享 CPU 缓存可能泄露信息</li>
+<li><strong>权限提升</strong>：不当的权能配置可能导致提权</li>
+</ol>
+<h3 id="1252-gvisor">12.5.2 gVisor：用户态内核</h3>
+<p>gVisor 通过在用户态实现兼容的系统调用接口，提供额外的隔离层：</p>
+<div class="codehilite"><pre><span></span><code>应用程序
+    │
+    ▼ 系统调用
+Sentry (用户态内核)
+    │
+    ▼ 有限的系统调用
+主机内核
+</code></pre></div>
+
+<p>gVisor 的关键组件：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Sentry 系统调用拦截</span>
+<span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">k</span><span class="w"> </span><span class="o">*</span><span class="nx">Kernel</span><span class="p">)</span><span class="w"> </span><span class="nx">SyscallEnter</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><span class="nx">Task</span><span class="p">,</span><span class="w"> </span><span class="nx">sysno</span><span class="w"> </span><span class="kt">uintptr</span><span class="p">,</span><span class="w"> </span><span class="nx">args</span><span class="w"> </span><span class="nx">arch</span><span class="p">.</span><span class="nx">SyscallArguments</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 检查系统调用是否允许</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">!</span><span class="nx">k</span><span class="p">.</span><span class="nx">featureSet</span><span class="p">.</span><span class="nx">HasFeature</span><span class="p">(</span><span class="nx">sysno</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">syserror</span><span class="p">.</span><span class="nx">ENOSYS</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 执行系统调用模拟</span>
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="nx">sysno</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="nx">syscall</span><span class="p">.</span><span class="nx">SYS_OPEN</span><span class="p">:</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">k</span><span class="p">.</span><span class="nx">sysOpen</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span><span class="w"> </span><span class="nx">args</span><span class="p">)</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="nx">syscall</span><span class="p">.</span><span class="nx">SYS_READ</span><span class="p">:</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">k</span><span class="p">.</span><span class="nx">sysRead</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span><span class="w"> </span><span class="nx">args</span><span class="p">)</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="nx">syscall</span><span class="p">.</span><span class="nx">SYS_WRITE</span><span class="p">:</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">k</span><span class="p">.</span><span class="nx">sysWrite</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span><span class="w"> </span><span class="nx">args</span><span class="p">)</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1253-kata-containers">12.5.3 Kata Containers：轻量级虚拟机</h3>
+<p>Kata Containers 为每个容器创建独立的轻量级虚拟机，提供硬件级隔离：</p>
+<div class="codehilite"><pre><span></span><code>容器运行时 (containerd/CRI-O)
+         │
+         ▼
+    kata-runtime
+         │
+    ┌────┴────┐
+    ▼         ▼
+kata-proxy  kata-shim
+    │         │
+    └────┬────┘
+         ▼
+    kata-agent (VM内)
+         │
+         ▼
+    Guest Kernel
+         │
+         ▼
+    Container App
+</code></pre></div>
+
+<p>Kata 的内存优化技术：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// DAX (Direct Access) 内存映射</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">dax_device</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inode</span><span class="w"> </span><span class="o">*</span><span class="n">inode</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cdev</span><span class="w"> </span><span class="n">cdev</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">private</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">dax_operations</span><span class="w"> </span><span class="o">*</span><span class="n">ops</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// 内存去重 (KSM - Kernel Same-page Merging)</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">ksm_scan</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mm_struct</span><span class="w"> </span><span class="o">*</span><span class="n">mm_slot</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">address</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rmap_item</span><span class="w"> </span><span class="o">**</span><span class="n">rmap_list</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">seqnr</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="1254">12.5.4 安全增强机制</h3>
+<h4 id="seccomp-bpf">Seccomp-BPF：系统调用过滤</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 定义 seccomp 过滤规则</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sock_filter</span><span class="w"> </span><span class="n">filter</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 加载系统调用号</span>
+<span class="w">    </span><span class="n">BPF_STMT</span><span class="p">(</span><span class="n">BPF_LD</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_W</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_ABS</span><span class="p">,</span><span class="w"> </span>
+<span class="w">             </span><span class="n">offsetof</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">seccomp_data</span><span class="p">,</span><span class="w"> </span><span class="n">nr</span><span class="p">)),</span>
+
+<span class="w">    </span><span class="c1">// 允许的系统调用</span>
+<span class="w">    </span><span class="n">BPF_JUMP</span><span class="p">(</span><span class="n">BPF_JMP</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_JEQ</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">__NR_read</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span>
+<span class="w">    </span><span class="n">BPF_STMT</span><span class="p">(</span><span class="n">BPF_RET</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">SECCOMP_RET_ALLOW</span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">BPF_JUMP</span><span class="p">(</span><span class="n">BPF_JMP</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_JEQ</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">__NR_write</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span>
+<span class="w">    </span><span class="n">BPF_STMT</span><span class="p">(</span><span class="n">BPF_RET</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">SECCOMP_RET_ALLOW</span><span class="p">),</span>
+
+<span class="w">    </span><span class="c1">// 默认拒绝</span>
+<span class="w">    </span><span class="n">BPF_STMT</span><span class="p">(</span><span class="n">BPF_RET</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">SECCOMP_RET_KILL</span><span class="p">),</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">sock_fprog</span><span class="w"> </span><span class="n">prog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">.</span><span class="n">len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">filter</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">filter</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+<span class="w">    </span><span class="p">.</span><span class="n">filter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="c1">// 应用过滤规则</span>
+<span class="n">prctl</span><span class="p">(</span><span class="n">PR_SET_NO_NEW_PRIVS</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="n">prctl</span><span class="p">(</span><span class="n">PR_SET_SECCOMP</span><span class="p">,</span><span class="w"> </span><span class="n">SECCOMP_MODE_FILTER</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">prog</span><span class="p">);</span>
+</code></pre></div>
+
+<h4 id="apparmorselinux">AppArmor/SELinux 强制访问控制</h4>
+<div class="codehilite"><pre><span></span><code><span class="gh">#</span> AppArmor 容器配置文件示例
+profile docker-container flags=(attach_disconnected,mediate_deleted) {
+  # 网络访问
+  network inet,
+  network inet6,
+
+  # 文件访问
+  deny @{PROC}/* w,
+  deny @{PROC}/.* w,
+  deny /sys/[^f]*/** w,
+  deny /sys/f[^s]*/** w,
+
+  # 挂载权限
+  mount,
+  umount,
+  pivot_root,
+
+  # 权能限制
+  capability net_bind_service,
+  capability setuid,
+  capability setgid,
+  deny capability sys_admin,
+}
+</code></pre></div>
+
+<h4 id="capabilities">Capabilities 细粒度权限控制</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 权能集合管理</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">cred</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ... 其他字段</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w"> </span><span class="n">cap_inheritable</span><span class="p">;</span><span class="w">  </span><span class="c1">// 可继承权能</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w"> </span><span class="n">cap_permitted</span><span class="p">;</span><span class="w">    </span><span class="c1">// 允许的权能</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w"> </span><span class="n">cap_effective</span><span class="p">;</span><span class="w">    </span><span class="c1">// 生效的权能</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w"> </span><span class="n">cap_bset</span><span class="p">;</span><span class="w">        </span><span class="c1">// 边界集</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w"> </span><span class="n">cap_ambient</span><span class="p">;</span><span class="w">     </span><span class="c1">// 环境权能</span>
+<span class="w">    </span><span class="c1">// ...</span>
+<span class="p">};</span>
+
+<span class="c1">// 常用容器权能配置</span>
+<span class="cp">#define CONTAINER_CAPS ( \</span>
+<span class="cp">    CAP_TO_MASK(CAP_CHOWN) | \</span>
+<span class="cp">    CAP_TO_MASK(CAP_DAC_OVERRIDE) | \</span>
+<span class="cp">    CAP_TO_MASK(CAP_FSETID) | \</span>
+<span class="cp">    CAP_TO_MASK(CAP_FOWNER) | \</span>
+<span class="cp">    CAP_TO_MASK(CAP_SETGID) | \</span>
+<span class="cp">    CAP_TO_MASK(CAP_SETUID) | \</span>
+<span class="cp">    CAP_TO_MASK(CAP_SETPCAP) | \</span>
+<span class="cp">    CAP_TO_MASK(CAP_NET_BIND_SERVICE) | \</span>
+<span class="cp">    CAP_TO_MASK(CAP_KILL) \</span>
+<span class="cp">)</span>
+</code></pre></div>
+
+<h2 id="126">12.6 容器编排与集群管理</h2>
+<h3 id="1261">12.6.1 容器编排的内核支持</h3>
+<p>Kubernetes 等容器编排系统依赖多项内核特性实现集群管理：</p>
+<ol>
+<li><strong>CRI（Container Runtime Interface）</strong>：标准化容器运行时接口</li>
+<li><strong>CNI（Container Network Interface）</strong>：标准化网络插件接口</li>
+<li><strong>CSI（Container Storage Interface）</strong>：标准化存储插件接口</li>
+</ol>
+<h3 id="1262-pod">12.6.2 Pod 的内核实现</h3>
+<p>Kubernetes Pod 中的容器共享某些命名空间：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Pod 内容器的命名空间配置</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">pod_namespace_config</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 共享的命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">net</span><span class="w"> </span><span class="o">*</span><span class="n">net_ns</span><span class="p">;</span><span class="w">        </span><span class="c1">// 共享网络命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">ipc_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">ipc_ns</span><span class="p">;</span><span class="w"> </span><span class="c1">// 共享 IPC 命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">uts_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">uts_ns</span><span class="p">;</span><span class="w"> </span><span class="c1">// 共享 UTS 命名空间</span>
+
+<span class="w">    </span><span class="c1">// 独立的命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">pid_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">pid_ns</span><span class="p">;</span><span class="w"> </span><span class="c1">// 各自的 PID 命名空间</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mnt_namespace</span><span class="w"> </span><span class="o">*</span><span class="n">mnt_ns</span><span class="p">;</span><span class="w"> </span><span class="c1">// 各自的挂载命名空间</span>
+<span class="p">};</span>
+
+<span class="c1">// Pause 容器（基础设施容器）</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">create_pause_container</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 创建共享的命名空间</span>
+<span class="w">    </span><span class="n">unshare</span><span class="p">(</span><span class="n">CLONE_NEWNET</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">CLONE_NEWIPC</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">CLONE_NEWUTS</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Pause 容器只是持有命名空间</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pause</span><span class="p">();</span><span class="w">  </span><span class="c1">// 永久休眠</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1263">12.6.3 容器间通信优化</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 共享内存 IPC</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">shm_container_ipc</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">shmid</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">addr</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// Unix 域套接字</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">unix_socket_ipc</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">sock_fd</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr_un</span><span class="w"> </span><span class="n">addr</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// 内存映射文件</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">mmap_ipc</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">fd</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">addr</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">length</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h2 id="127">12.7 性能优化与调优</h2>
+<h3 id="1271">12.7.1 命名空间性能开销</h3>
+<p>不同命名空间的性能影响：</p>
+<p>| 命名空间 | 性能开销 | 主要影响 |</p>
+<table>
+<thead>
+<tr>
+<th>命名空间</th>
+<th>性能开销</th>
+<th>主要影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PID</td>
+<td>低 (~1%)</td>
+<td>进程创建时的 PID 分配</td>
+</tr>
+<tr>
+<td>Network</td>
+<td>中 (~5%)</td>
+<td>网络栈遍历、veth 开销</td>
+</tr>
+<tr>
+<td>Mount</td>
+<td>低 (~2%)</td>
+<td>路径解析、挂载点查找</td>
+</tr>
+<tr>
+<td>IPC</td>
+<td>极低 (&lt;1%)</td>
+<td>IPC 对象查找</td>
+</tr>
+<tr>
+<td>UTS</td>
+<td>极低 (&lt;1%)</td>
+<td>几乎无开销</td>
+</tr>
+<tr>
+<td>User</td>
+<td>中 (~3%)</td>
+<td>权限检查、ID 映射</td>
+</tr>
+</tbody>
+</table>
+<h3 id="1272-cgroups">12.7.2 Cgroups 性能优化</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 使用 cgroup v2 的压力指标进行动态调整</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">psi_group</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mutex</span><span class="w"> </span><span class="n">trigger_lock</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">psi_trigger</span><span class="w"> </span><span class="o">*</span><span class="n">triggers</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">total</span><span class="p">[</span><span class="n">NR_PSI_TASK_COUNTS</span><span class="p">][</span><span class="n">NR_PSI_STATES</span><span class="p">];</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">avg</span><span class="p">[</span><span class="n">NR_PSI_STATES</span><span class="p">][</span><span class="mi">3</span><span class="p">];</span><span class="w">  </span><span class="c1">// 10s, 60s, 300s</span>
+<span class="p">};</span>
+
+<span class="c1">// 内存压力监控</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">monitor_memory_pressure</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">cgroup</span><span class="w"> </span><span class="o">*</span><span class="n">cgrp</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">psi_group</span><span class="w"> </span><span class="o">*</span><span class="n">psi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cgrp</span><span class="o">-&gt;</span><span class="n">psi</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">pressure</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">psi</span><span class="o">-&gt;</span><span class="n">avg</span><span class="p">[</span><span class="n">PSI_MEM_SOME</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span><span class="w">  </span><span class="c1">// 10s average</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pressure</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">THRESHOLD_HIGH</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 触发内存回收</span>
+<span class="w">        </span><span class="n">reclaim_memory</span><span class="p">(</span><span class="n">cgrp</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pressure</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">THRESHOLD_LOW</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 可以增加内存限制</span>
+<span class="w">        </span><span class="n">increase_memory_limit</span><span class="p">(</span><span class="n">cgrp</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1273">12.7.3 容器启动优化</h3>
+<ol>
+<li><strong>镜像层缓存</strong>：利用 overlayfs 的层次结构</li>
+<li><strong>延迟挂载</strong>：按需挂载文件系统</li>
+<li><strong>预创建容器池</strong>：提前创建待用容器</li>
+<li><strong>checkpoint/restore</strong>：使用 CRIU 快速恢复</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1"># CRIU 容器检查点</span>
+criu<span class="w"> </span>dump<span class="w"> </span>-t<span class="w"> </span><span class="nv">$PID</span><span class="w"> </span>-D<span class="w"> </span>/checkpoint<span class="w"> </span>--shell-job
+
+<span class="c1"># 快速恢复</span>
+criu<span class="w"> </span>restore<span class="w"> </span>-D<span class="w"> </span>/checkpoint<span class="w"> </span>--shell-job
+</code></pre></div>
+
+<h2 id="_2">本章小结</h2>
+<p>本章深入探讨了 Linux 容器技术的内核实现机制。我们从命名空间的设计哲学出发，详细分析了 8 种命名空间的实现原理和相互关系。通过对 cgroups v1 和 v2 的对比，理解了资源控制的演进过程。容器运行时部分涵盖了从系统调用到 OCI 规范的完整实现链路。安全容器技术展示了 gVisor 和 Kata Containers 如何通过不同方式增强隔离性。</p>
+<p>关键要点：</p>
+<ol>
+<li><strong>命名空间</strong>：提供进程视图隔离，是容器的基础</li>
+<li><strong>Cgroups</strong>：实现资源限制和统计，保证公平性</li>
+<li><strong>运行时规范</strong>：OCI 标准化了容器生态系统</li>
+<li><strong>安全机制</strong>：多层防护确保容器隔离性</li>
+<li><strong>性能权衡</strong>：隔离性与性能的平衡设计</li>
+</ol>
+<p>公式总结：</p>
+<ul>
+<li>容器开销 = $\sum_{ns \in namespaces} overhead(ns) + cgroup_overhead + network_overhead$</li>
+<li>内存限制 = $min(cgroup_limit, system_available, oom_threshold)$</li>
+<li>CPU 配额 = $\frac{quota}{period} \times available_cpus$</li>
+</ul>
+<h2 id="_3">练习题</h2>
+<h3 id="_4">基础题</h3>
+<ol>
+<li>
+<p><strong>命名空间理解</strong>
+   - 解释 PID 命名空间的层次结构，为什么容器内的进程在主机上有不同的 PID？
+   - <strong>Hint</strong>: 考虑 struct pid 的 level 字段和 upid 数组
+   <details markdown="block">
+   <summary markdown="off">答案</summary>
+   PID 命名空间形成树状层次结构。每个进程在其所在命名空间及所有祖先命名空间中都有 PID。struct pid 包含多个 upid 结构，每个对应一个命名空间层级。容器内 PID 1 的进程在主机命名空间可能是 PID 5679，通过 pid-&gt;numbers[] 数组维护多个 PID 映射。
+   </details></p>
+</li>
+<li>
+<p><strong>Cgroups 版本对比</strong>
+   - 比较 cgroups v1 和 v2 的主要区别，说明 v2 解决了 v1 的哪些问题？
+   - <strong>Hint</strong>: 考虑层次结构、控制器管理和资源模型
+   <details markdown="block">
+   <summary markdown="off">答案</summary>
+   v1 问题：多个层次结构导致管理复杂、控制器间缺乏协调、无统一的资源压力指标。v2 改进：统一层次结构、所有控制器共享同一树、引入 PSI 压力指标、更好的资源模型（基于权重而非限制）、支持 eBPF 程序进行细粒度控制。
+   </details></p>
+</li>
+<li>
+<p><strong>容器网络基础</strong>
+   - 描述 veth pair 的工作原理，以及容器如何通过 docker0 网桥访问外网
+   - <strong>Hint</strong>: 考虑数据包在命名空间间的流动路径
+   <details markdown="block">
+   <summary markdown="off">答案</summary>
+   veth pair 是成对的虚拟网卡，数据从一端进入会从另一端出来。容器 eth0 连接到 veth 一端，另一端连接到 docker0 网桥。出站流量：容器 eth0 → veth → docker0 → iptables NAT → 主机 eth0。入站流量反向，通过 iptables DNAT 规则转发到容器。
+   </details></p>
+</li>
+<li>
+<p><strong>系统调用序列</strong>
+   - 列出创建一个最小容器需要的系统调用序列，并说明每个调用的作用
+   - <strong>Hint</strong>: clone、unshare、setns、mount、pivot_root
+   <details markdown="block">
+   <summary markdown="off">答案</summary>
+
+   1. clone(CLONE_NEW*): 创建新进程和命名空间
+   2. setns(): 加入已有命名空间
+   3. unshare(): 创建新命名空间
+   4. mount(): 挂载 proc、sys 等伪文件系统
+   5. pivot_root(): 切换根文件系统
+   6. prctl(PR_SET_NO_NEW_PRIVS): 设置安全属性
+   7. setrlimit(): 设置资源限制
+   8. execve(): 执行容器进程
+   </details></p>
+</li>
+</ol>
+<h3 id="_5">挑战题</h3>
+<ol start="5">
+<li>
+<p><strong>实现简单容器</strong>
+   - 设计并实现一个最小容器运行时，支持进程隔离和简单的资源限制
+   - <strong>Hint</strong>: 使用 clone() 创建命名空间，通过 /sys/fs/cgroup 设置限制
+   <details markdown="block">
+   <summary markdown="off">答案</summary>
+   核心步骤：
+
+   1. 使用 clone(CLONE_NEWPID|CLONE_NEWNS|CLONE_NEWNET) 创建隔离环境
+   2. 在子进程中 mount proc、创建设备节点
+   3. 使用 pivot_root 切换根目录
+   4. 写入 cgroup 文件设置内存和 CPU 限制
+   5. drop capabilities 降低权限
+   6. execve 运行用户程序
+   关键点：处理好父子进程通信、正确设置挂载传播属性、清理环境变量
+   </details></p>
+</li>
+<li>
+<p><strong>性能分析题</strong>
+   - 分析为什么 Kubernetes Pod 中的容器共享网络命名空间而不共享 PID 命名空间？这种设计的权衡是什么？
+   - <strong>Hint</strong>: 考虑容器间通信、进程隔离、故障域
+   <details markdown="block">
+   <summary markdown="off">答案</summary>
+   共享网络命名空间优势：1) localhost 通信无需经过网络栈 2) 共享端口空间便于服务发现 3) 减少网络配置复杂度。
+   不共享 PID 命名空间原因：1) 进程隔离防止相互干扰 2) 独立的 PID 1 处理信号和孤儿进程 3) 故障隔离，一个容器崩溃不影响其他。
+   权衡：网络性能 vs 进程隔离，通过 pause 容器持有共享命名空间实现最佳平衡。
+   </details></p>
+</li>
+<li>
+<p><strong>安全设计题</strong>
+   - 设计一个容器安全方案，要求：防止容器逃逸、限制系统调用、实现细粒度权限控制
+   - <strong>Hint</strong>: 组合使用 user namespace、seccomp、capabilities、LSM
+   <details markdown="block">
+   <summary markdown="off">答案</summary>
+   多层防御方案：
+
+   1. User namespace: 容器 root 映射为主机普通用户(uid 100000)
+   2. Seccomp-BPF: 白名单过滤危险系统调用(禁止 mount、ptrace 等)
+   3. Capabilities: 仅保留必要权能，drop CAP_SYS_ADMIN 等
+   4. AppArmor/SELinux: 强制访问控制策略
+   5. 只读根文件系统 + tmpfs
+   6. 资源限制: cgroups 防止 DoS
+   7. 网络隔离: 独立网络命名空间 + 防火墙规则
+   实施顺序：先宽后严，逐步收紧权限
+   </details></p>
+</li>
+<li>
+<p><strong>优化实践题</strong>
+   - 某容器化应用启动时间过长（&gt;10秒），请分析可能的原因并提出优化方案
+   - <strong>Hint</strong>: 镜像层、文件系统、网络配置、进程初始化
+   <details markdown="block">
+   <summary markdown="off">答案</summary>
+   瓶颈分析：
+
+   1. 镜像拉取：使用本地镜像缓存、镜像预热
+   2. 层解压：优化层数量、使用 lazy pulling
+   3. 文件系统：overlayfs 优化、减少层数
+   4. 网络初始化：预创建网络命名空间池
+   5. 进程启动：应用预热、JIT 预编译
+   优化方案：
+
+   - 使用 CRIU checkpoint/restore
+   - 实现容器池预创建
+   - 镜像分层优化，基础层共享
+   - 延迟加载非关键资源
+   - 并行化初始化步骤
+   预期效果：启动时间降至 1-2 秒
+   </details></p>
+</li>
+</ol>
+<h2 id="_6">常见陷阱与错误</h2>
+<h3 id="_7">命名空间相关</h3>
+<ol>
+<li>
+<p><strong>PID 命名空间的 init 进程</strong>
+   - 错误：忘记处理容器内的 PID 1 信号
+   - 后果：子进程变成僵尸进程
+   - 解决：PID 1 必须正确处理 SIGCHLD，回收子进程</p>
+</li>
+<li>
+<p><strong>User namespace UID 映射</strong>
+   - 错误：先写 gid_map 再写 uid_map
+   - 后果：权限错误，映射失败
+   - 解决：必须先写 uid_map，且需要 CAP_SETUID 权能</p>
+</li>
+<li>
+<p><strong>Mount 命名空间传播</strong>
+   - 错误：未设置正确的挂载传播类型
+   - 后果：容器内挂载影响主机
+   - 解决：使用 MS_PRIVATE 或 MS_SLAVE 防止传播</p>
+</li>
+</ol>
+<h3 id="cgroups">Cgroups 相关</h3>
+<ol start="4">
+<li>
+<p><strong>Cgroups v1/v2 混用</strong>
+   - 错误：同时使用 v1 和 v2 控制器
+   - 后果：行为不可预测，某些控制器失效
+   - 解决：选择一个版本，避免混用</p>
+</li>
+<li>
+<p><strong>内存限制与 OOM</strong>
+   - 错误：设置过低的内存限制
+   - 后果：频繁 OOM，容器被杀
+   - 解决：监控内存使用，设置合理的限制和 swap</p>
+</li>
+</ol>
+<h3 id="_8">网络相关</h3>
+<ol start="6">
+<li><strong>veth 设备清理</strong>
+   - 错误：容器退出后 veth 设备残留
+   - 后果：设备名冲突，资源泄露
+   - 解决：确保容器退出时清理网络资源</li>
+</ol>
+<h3 id="_9">安全相关</h3>
+<ol start="7">
+<li>
+<p><strong>Capabilities 过度授权</strong>
+   - 错误：保留 CAP_SYS_ADMIN
+   - 后果：容器可以执行特权操作
+   - 解决：最小权限原则，只保留必需权能</p>
+</li>
+<li>
+<p><strong>Seccomp 规则顺序</strong>
+   - 错误：默认允许，再禁用特定调用
+   - 后果：新的危险调用未被过滤
+   - 解决：默认拒绝，白名单允许</p>
+</li>
+</ol>
+<h2 id="_10">最佳实践检查清单</h2>
+<h3 id="_11">容器设计审查</h3>
+<ul>
+<li>[ ] <strong>资源限制</strong>：设置了内存、CPU、PID 数量限制</li>
+<li>[ ] <strong>安全配置</strong>：启用 user namespace，正确配置 UID 映射</li>
+<li>[ ] <strong>系统调用过滤</strong>：应用了 seccomp 规则</li>
+<li>[ ] <strong>权能最小化</strong>：仅保留必要的 capabilities</li>
+<li>[ ] <strong>文件系统</strong>：根文件系统只读，敏感路径使用 tmpfs</li>
+<li>[ ] <strong>网络隔离</strong>：独立网络命名空间，合理的防火墙规则</li>
+</ul>
+<h3 id="_12">性能优化审查</h3>
+<ul>
+<li>[ ] <strong>启动优化</strong>：镜像层优化，使用缓存</li>
+<li>[ ] <strong>网络性能</strong>：合理配置 veth 队列和缓冲区</li>
+<li>[ ] <strong>存储优化</strong>：选择合适的存储驱动（overlay2）</li>
+<li>[ ] <strong>CPU 亲和性</strong>：关键容器绑定 CPU</li>
+<li>[ ] <strong>内存局部性</strong>：NUMA 感知的容器调度</li>
+</ul>
+<h3 id="_13">运维实践审查</h3>
+<ul>
+<li>[ ] <strong>日志管理</strong>：日志轮转，避免填满磁盘</li>
+<li>[ ] <strong>监控告警</strong>：资源使用、错误率监控</li>
+<li>[ ] <strong>备份恢复</strong>：数据持久化策略</li>
+<li>[ ] <strong>更新策略</strong>：滚动更新，回滚机制</li>
+<li>[ ] <strong>故障处理</strong>：健康检查，自动重启</li>
+<li>[ ] <strong>安全更新</strong>：及时更新基础镜像和运行时</li>
+</ul>
+            </article>
+            
+            <nav class="page-nav"><a href="chapter11.html" class="nav-link prev">← 第11章：并发编程模型</a><a href="chapter13.html" class="nav-link next">第13章：安全子系统 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

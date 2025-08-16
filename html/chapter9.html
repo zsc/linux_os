@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
+    <title>第9章：网络协议栈</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/highlight.css">
+    <script src="assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors', 'ams']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors', '[tex]/ams']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="sidebar-search-input" placeholder="搜索..." autocomplete="off">
+            </div>
+            <div id="tree-container">
+                <nav class="tree-nav" role="tree">
+                    <div class="tree-item " >
+                        <a href="index.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Linux 内核源代码深度解析</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter1.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第1章：Linux 内核概述与发展史</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter2.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第2章：进程管理与任务调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter3.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第3章：内存管理架构</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter4.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第4章：进程间通信机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter5.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第5章：虚拟文件系统（VFS）</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter6.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第6章：具体文件系统实现</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter7.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第7章：块设备层与I/O调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter8.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第8章：设备驱动模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item active" >
+                        <a href="chapter9.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第9章：网络协议栈</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter10.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第10章：内核同步机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter11.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第11章：并发编程模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter12.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第12章：容器与命名空间</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter13.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第13章：安全子系统</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter14.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第14章：实时Linux</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter15.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第15章：性能分析与调试</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter16.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第16章：引导过程与初始化</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="CLAUDE.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Untitled</span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="9">第9章：网络协议栈</h1>
+<h2 id="_1">章节大纲</h2>
+<h3 id="91">9.1 引言</h3>
+<ul>
+<li>Linux 网络栈架构概述</li>
+<li>从网卡到应用程序的数据流</li>
+<li>内核网络子系统的演进</li>
+</ul>
+<h3 id="92-sk_buff">9.2 sk_buff 与网络数据流</h3>
+<ul>
+<li>9.2.1 sk_buff 结构体详解</li>
+<li>9.2.2 sk_buff 的生命周期管理</li>
+<li>9.2.3 数据包在各层的处理流程</li>
+<li>9.2.4 零拷贝与 scatter-gather I/O</li>
+</ul>
+<h3 id="93-tcpip">9.3 TCP/IP 协议栈实现</h3>
+<ul>
+<li>9.3.1 网络层：IP 协议处理</li>
+<li>9.3.2 传输层：TCP 状态机与拥塞控制</li>
+<li>9.3.3 套接字层：socket API 实现</li>
+<li>9.3.4 连接管理与 TIME_WAIT 优化</li>
+</ul>
+<h3 id="94-netfilter-iptables">9.4 Netfilter 框架与 iptables</h3>
+<ul>
+<li>9.4.1 Netfilter 钩子机制</li>
+<li>9.4.2 连接跟踪（conntrack）</li>
+<li>9.4.3 NAT 实现原理</li>
+<li>9.4.4 iptables 规则匹配引擎</li>
+</ul>
+<h3 id="95">9.5 高性能网络技术</h3>
+<ul>
+<li>9.5.1 NAPI：中断缓解机制</li>
+<li>9.5.2 XDP：内核快速数据路径</li>
+<li>9.5.3 io_uring 网络编程</li>
+<li>9.5.4 eBPF 网络应用</li>
+</ul>
+<h3 id="96">9.6 本章小结</h3>
+<h3 id="97">9.7 练习题</h3>
+<h3 id="98">9.8 常见陷阱与错误</h3>
+<h3 id="99">9.9 最佳实践检查清单</h3>
+<hr />
+<h2 id="91_1">9.1 引言</h2>
+<p>Linux 网络协议栈是内核中最复杂、最精妙的子系统之一。从早期的简单 TCP/IP 实现，到今天支持每秒处理千万级数据包的高性能架构，Linux 网络栈经历了翻天覆地的变化。本章将深入剖析网络栈的核心数据结构、关键算法和性能优化技术，帮助读者理解从网卡硬件中断到应用程序 socket 调用的完整数据流。</p>
+<h3 id="_2">学习目标</h3>
+<p>完成本章学习后，您将能够：</p>
+<ol>
+<li><strong>理解 sk_buff 核心数据结构</strong>：掌握网络数据包在内核中的表示和管理方式</li>
+<li><strong>分析 TCP/IP 协议栈实现</strong>：深入理解各层协议的处理流程和状态机制</li>
+<li><strong>掌握 Netfilter 框架</strong>：理解防火墙规则匹配、NAT 转换和连接跟踪原理</li>
+<li><strong>应用高性能网络技术</strong>：使用 NAPI、XDP、eBPF 等技术优化网络性能</li>
+<li><strong>诊断网络性能问题</strong>：定位和解决常见的网络瓶颈和延迟问题</li>
+</ol>
+<h3 id="_3">架构概览</h3>
+<p>Linux 网络栈采用分层架构，每层都有明确的职责：</p>
+<div class="codehilite"><pre><span></span><code>应用层     ┌─────────────────────────────────────┐
+          │     用户空间应用程序（socket API）      │
+          └─────────────────────────────────────┘
+                           ↑↓
+═══════════════════ 系统调用界面 ═══════════════════
+                           ↑↓
+套接字层   ┌─────────────────────────────────────┐
+          │    BSD Socket 层（struct socket）     │
+          │         协议无关的接口抽象             │
+          └─────────────────────────────────────┘
+                           ↑↓
+传输层     ┌─────────────────────────────────────┐
+          │    TCP / UDP / SCTP / DCCP          │
+          │    拥塞控制、流量控制、可靠传输         │
+          └─────────────────────────────────────┘
+                           ↑↓
+网络层     ┌─────────────────────────────────────┐
+          │         IPv4 / IPv6 / ICMP           │
+          │      路由选择、分片重组、转发           │
+          └─────────────────────────────────────┘
+                           ↑↓
+Netfilter ┌─────────────────────────────────────┐
+          │   防火墙钩子、NAT、连接跟踪            │
+          └─────────────────────────────────────┘
+                           ↑↓
+链路层     ┌─────────────────────────────────────┐
+          │    ARP / Neighbor Discovery          │
+          │      网络设备抽象（net_device）        │
+          └─────────────────────────────────────┘
+                           ↑↓
+驱动层     ┌─────────────────────────────────────┐
+          │      网卡驱动（e1000、ixgbe等）       │
+          │         DMA、中断处理、队列管理        │
+          └─────────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="_4">关键创新</h3>
+<p>Linux 网络栈的几个重要创新点：</p>
+<ol>
+<li><strong>sk_buff 设计</strong>：高效的零拷贝数据结构，支持数据包在各层间传递而无需复制</li>
+<li><strong>NAPI 机制</strong>：自适应的中断缓解技术，在高负载时切换到轮询模式</li>
+<li><strong>RCU 在网络栈的应用</strong>：无锁的路由表和连接表查找</li>
+<li><strong>XDP 框架</strong>：在驱动层提供可编程的快速数据路径</li>
+<li><strong>eBPF 网络程序</strong>：安全的内核态可编程网络处理</li>
+</ol>
+<h3 id="_5">性能演进</h3>
+<p>网络栈性能的几个里程碑：</p>
+<ul>
+<li><strong>2.4 内核时代</strong>：基本的 TCP/IP 实现，单核性能约 100Mbps</li>
+<li><strong>2.6 内核引入 NAPI</strong>：中断缓解技术，千兆网卡成为可能</li>
+<li><strong>3.x 内核多队列支持</strong>：利用多核并行处理，达到 10Gbps</li>
+<li><strong>4.x 内核 XDP 出现</strong>：内核旁路技术，单核 14Mpps</li>
+<li><strong>5.x 内核 io_uring</strong>：异步 I/O 革命，接近硬件极限性能</li>
+</ul>
+<h2 id="93-tcpip_1">9.3 TCP/IP 协议栈实现</h2>
+<p>Linux 的 TCP/IP 协议栈是一个完整的、符合标准的实现，支持 IPv4、IPv6、TCP、UDP 以及众多扩展协议。本节深入分析协议栈的核心实现，包括网络层的路由机制、传输层的状态机管理、套接字层的 API 实现，以及连接管理的优化策略。</p>
+<h3 id="931-ip">9.3.1 网络层：IP 协议处理</h3>
+<h4 id="ip">IP 协议架构</h4>
+<p>Linux 的 IP 层负责数据包的路由、转发、分片和重组。其核心数据结构和处理流程经过精心设计，支持高效的查找和转发：</p>
+<div class="codehilite"><pre><span></span><code>接收处理流程：
+netif_receive_skb() → ip_rcv() → ip_rcv_finish() → ip_local_deliver() / ip_forward()
+                                        ↓
+                                  路由查找（FIB）
+                                        ↓
+                            本地接收 / 转发 / 丢弃
+
+发送处理流程：
+ip_queue_xmit() → ip_output() → ip_finish_output() → ip_finish_output2()
+        ↓              ↓                ↓                    ↓
+    路由查找      Netfilter钩子     分片处理            邻居子系统
+</code></pre></div>
+
+<h4 id="_6">路由子系统</h4>
+<p>Linux 使用 FIB（Forwarding Information Base）和路由缓存实现高效的路由查找：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 路由表项 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">fib_info</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">hlist_node</span><span class="w">    </span><span class="n">fib_hash</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 哈希链表 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w">     </span><span class="n">fib_lhash</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 链表头 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">net</span><span class="w">          </span><span class="o">*</span><span class="n">fib_net</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 网络命名空间 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w">                  </span><span class="n">fib_treeref</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 引用计数 */</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w">             </span><span class="n">fib_clntref</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 客户端引用 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">         </span><span class="n">fib_flags</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 标志位 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w">        </span><span class="n">fib_dead</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 删除标记 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w">        </span><span class="n">fib_protocol</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 路由协议 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w">        </span><span class="n">fib_scope</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 路由范围 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w">        </span><span class="n">fib_type</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 路由类型 */</span>
+<span class="w">    </span><span class="n">__be32</span><span class="w">               </span><span class="n">fib_prefsrc</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 首选源地址 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">                  </span><span class="n">fib_priority</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 路由优先级 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dst_metrics</span><span class="w">  </span><span class="o">*</span><span class="n">fib_metrics</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 路由度量 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w">                  </span><span class="n">fib_nhs</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 下一跳数量 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">fib_nh</span><span class="w">        </span><span class="n">fib_nh</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span><span class="w">     </span><span class="cm">/* 下一跳数组 */</span>
+<span class="p">};</span>
+
+<span class="cm">/* 路由查找核心函数 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">ip_route_input_slow</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">__be32</span><span class="w"> </span><span class="n">daddr</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                                </span><span class="n">__be32</span><span class="w"> </span><span class="n">saddr</span><span class="p">,</span><span class="w"> </span><span class="n">u8</span><span class="w"> </span><span class="n">tos</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">net_device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">fib_result</span><span class="w"> </span><span class="n">res</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">flowi4</span><span class="w"> </span><span class="n">fl4</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 构造查找键 */</span>
+<span class="w">    </span><span class="n">fl4</span><span class="p">.</span><span class="n">daddr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">daddr</span><span class="p">;</span>
+<span class="w">    </span><span class="n">fl4</span><span class="p">.</span><span class="n">saddr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">saddr</span><span class="p">;</span>
+<span class="w">    </span><span class="n">fl4</span><span class="p">.</span><span class="n">flowi4_tos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tos</span><span class="p">;</span>
+<span class="w">    </span><span class="n">fl4</span><span class="p">.</span><span class="n">flowi4_scope</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RT_SCOPE_UNIVERSE</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* FIB 查找 */</span>
+<span class="w">    </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fib_lookup</span><span class="p">(</span><span class="n">net</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">fl4</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 创建路由缓存项 */</span>
+<span class="w">    </span><span class="n">rth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt_dst_alloc</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+<span class="w">    </span><span class="n">rth</span><span class="o">-&gt;</span><span class="n">dst</span><span class="p">.</span><span class="n">input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ip_local_deliver</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rth</span><span class="o">-&gt;</span><span class="n">dst</span><span class="p">.</span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ip_output</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="_7">路由缓存优化</h4>
+<p>Linux 使用多级缓存加速路由查找：</p>
+<ol>
+<li><strong>DST 缓存</strong>：每个 sk_buff 携带 dst_entry 指针</li>
+<li><strong>FIB Trie</strong>：基于 LC-Trie 的路由表查找，O(W) 复杂度</li>
+<li><strong>路由异常缓存</strong>：处理 PMTU、重定向等异常</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* LC-Trie 节点 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">tnode</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_vector</span><span class="w"> </span><span class="n">kv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<span class="w">    </span><span class="cm">/* LC-Trie 使用路径压缩和级别压缩优化 */</span>
+<span class="p">};</span>
+
+<span class="cm">/* 查找算法 */</span>
+<span class="k">static</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_vector</span><span class="w"> </span><span class="o">*</span><span class="n">fib_find_node</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">trie</span><span class="w"> </span><span class="o">*</span><span class="n">t</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                                         </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_vector</span><span class="w"> </span><span class="o">**</span><span class="n">tp</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">key</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">key_vector</span><span class="w"> </span><span class="o">*</span><span class="n">pn</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t</span><span class="o">-&gt;</span><span class="n">kv</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">index</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">do</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">;</span>
+<span class="w">        </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_index</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">pn</span><span class="p">);</span>
+<span class="w">        </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_child_rcu</span><span class="p">(</span><span class="n">pn</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">n</span><span class="p">)</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">        </span><span class="cm">/* 路径压缩：跳过只有一个子节点的内部节点 */</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">IS_TNODE</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">bits</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">KEYLENGTH</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tkey_sub_equals</span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">bits</span><span class="p">,</span><span class="w"> </span><span class="n">key</span><span class="p">))</span>
+<span class="w">                </span><span class="k">continue</span><span class="p">;</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">IS_TNODE</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">n</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="ip_1">IP 分片与重组</h4>
+<p>当数据包大小超过 MTU 时，IP 层负责分片和重组：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* IP 分片 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">ip_fragment</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">net</span><span class="w"> </span><span class="o">*</span><span class="n">net</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                       </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="p">,</span>
+<span class="w">                       </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">mtu</span><span class="p">,</span>
+<span class="w">                       </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">output</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">net</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                                     </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="p">))</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">iphdr</span><span class="w"> </span><span class="o">*</span><span class="n">iph</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ip_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">hlen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">ihl</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">ll_rs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LL_RESERVED_SPACE</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">mtu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dst_mtu</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rt</span><span class="o">-&gt;</span><span class="n">dst</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 计算每个分片的大小 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">frag_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mtu</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">hlen</span><span class="p">;</span>
+<span class="w">    </span><span class="n">frag_size</span><span class="w"> </span><span class="o">&amp;=</span><span class="w"> </span><span class="o">~</span><span class="mi">7</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 8 字节对齐 */</span>
+
+<span class="w">    </span><span class="cm">/* 创建分片 */</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">left</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb2</span><span class="p">;</span>
+
+<span class="w">        </span><span class="cm">/* 分配新的 sk_buff */</span>
+<span class="w">        </span><span class="n">skb2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_skb</span><span class="p">(</span><span class="n">len</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">hlen</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">ll_rs</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_ATOMIC</span><span class="p">);</span>
+
+<span class="w">        </span><span class="cm">/* 复制 IP 头部 */</span>
+<span class="w">        </span><span class="n">ip_copy_metadata</span><span class="p">(</span><span class="n">skb2</span><span class="p">,</span><span class="w"> </span><span class="n">skb</span><span class="p">);</span>
+
+<span class="w">        </span><span class="cm">/* 设置分片标志和偏移 */</span>
+<span class="w">        </span><span class="n">iph2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ip_hdr</span><span class="p">(</span><span class="n">skb2</span><span class="p">);</span>
+<span class="w">        </span><span class="n">iph2</span><span class="o">-&gt;</span><span class="n">frag_off</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">htons</span><span class="p">((</span><span class="n">offset</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">3</span><span class="p">));</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">left</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="n">iph2</span><span class="o">-&gt;</span><span class="n">frag_off</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">htons</span><span class="p">(</span><span class="n">IP_MF</span><span class="p">);</span>
+
+<span class="w">        </span><span class="cm">/* 发送分片 */</span>
+<span class="w">        </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">output</span><span class="p">(</span><span class="n">net</span><span class="p">,</span><span class="w"> </span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">skb2</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* IP 重组 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">ipq</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_frag_queue</span><span class="w"> </span><span class="n">q</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u8</span><span class="w">         </span><span class="n">ecn</span><span class="p">;</span><span class="w">        </span><span class="cm">/* ECN 标记 */</span>
+<span class="w">    </span><span class="n">u16</span><span class="w">        </span><span class="n">max_df_size</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 最大不分片大小 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w">        </span><span class="n">iif</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 输入接口 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">rid</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 路由 ID */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_peer</span><span class="w"> </span><span class="o">*</span><span class="n">peer</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">ip_frag_reasm</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">ipq</span><span class="w"> </span><span class="o">*</span><span class="n">qp</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="p">,</span>
+<span class="w">                         </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">prev_tail</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">net_device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">net</span><span class="w"> </span><span class="o">*</span><span class="n">net</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">qp</span><span class="o">-&gt;</span><span class="n">q</span><span class="p">.</span><span class="n">fqdir</span><span class="o">-&gt;</span><span class="n">net</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">iphdr</span><span class="w"> </span><span class="o">*</span><span class="n">iph</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">reasm_data</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="n">err</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 检查所有分片是否到齐 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">qp</span><span class="o">-&gt;</span><span class="n">q</span><span class="p">.</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">INET_FRAG_COMPLETE</span><span class="p">))</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">out_fail</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 重组分片 */</span>
+<span class="w">    </span><span class="n">reasm_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inet_frag_reasm_prepare</span><span class="p">(</span><span class="o">&amp;</span><span class="n">qp</span><span class="o">-&gt;</span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">prev_tail</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 合并所有分片 */</span>
+<span class="w">    </span><span class="n">inet_frag_reasm_finish</span><span class="p">(</span><span class="o">&amp;</span><span class="n">qp</span><span class="o">-&gt;</span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">reasm_data</span><span class="p">,</span>
+<span class="w">                           </span><span class="n">ip_frag_ecn_table</span><span class="p">[</span><span class="n">qp</span><span class="o">-&gt;</span><span class="n">ecn</span><span class="p">]);</span>
+
+<span class="w">    </span><span class="cm">/* 更新 IP 头部 */</span>
+<span class="w">    </span><span class="n">iph</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ip_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+<span class="w">    </span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">tot_len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">htons</span><span class="p">(</span><span class="n">len</span><span class="p">);</span>
+<span class="w">    </span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">frag_off</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="932-tcp">9.3.2 传输层：TCP 状态机与拥塞控制</h3>
+<h4 id="tcp">TCP 连接管理</h4>
+<p>TCP 使用有限状态机管理连接生命周期：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* TCP 状态枚举 */</span>
+<span class="k">enum</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">TCP_ESTABLISHED</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_SYN_SENT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_SYN_RECV</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_FIN_WAIT1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_FIN_WAIT2</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_TIME_WAIT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_CLOSE</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_CLOSE_WAIT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_LAST_ACK</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_LISTEN</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_CLOSING</span><span class="p">,</span>
+<span class="w">    </span><span class="n">TCP_NEW_SYN_RECV</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="cm">/* TCP 控制块 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">tcp_sock</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_connection_sock</span><span class="w"> </span><span class="n">inet_conn</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 序列号管理 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">rcv_nxt</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 期望接收的下一个序列号 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">snd_nxt</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 下一个要发送的序列号 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">snd_una</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 最早未确认的序列号 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">snd_wnd</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 发送窗口大小 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">rcv_wnd</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 接收窗口大小 */</span>
+
+<span class="w">    </span><span class="cm">/* 拥塞控制 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">snd_cwnd</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 拥塞窗口 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">snd_ssthresh</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 慢启动阈值 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">prior_cwnd</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 之前的拥塞窗口 */</span>
+
+<span class="w">    </span><span class="cm">/* RTT 估算 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">minmax</span><span class="w"> </span><span class="n">rtt_min</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 最小 RTT */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">srtt_us</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 平滑 RTT (微秒) */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">mdev_us</span><span class="p">;</span><span class="w">      </span><span class="cm">/* RTT 平均偏差 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">rttvar_us</span><span class="p">;</span><span class="w">    </span><span class="cm">/* RTT 方差 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">rto</span><span class="p">;</span><span class="w">          </span><span class="cm">/* 重传超时 */</span>
+
+<span class="w">    </span><span class="cm">/* 拥塞控制算法 */</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_congestion_ops</span><span class="w"> </span><span class="o">*</span><span class="n">icsk_ca_ops</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 重传队列 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff_head</span><span class="w"> </span><span class="n">out_of_order_queue</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_sack_block</span><span class="w"> </span><span class="n">selective_acks</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+
+<span class="w">    </span><span class="cm">/* 时间戳 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">tsoffset</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 时间戳偏移 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">ts_recent</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 最近接收的时间戳 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">    </span><span class="n">ts_recent_stamp</span><span class="p">;</span><span class="w"> </span><span class="cm">/* ts_recent 的时间 */</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h4 id="_8">三次握手实现</h4>
+<p>TCP 三次握手的内核实现涉及 SYN cookie、Fast Open 等优化：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 服务器端：处理 SYN */</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">tcp_v4_conn_request</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_options_received</span><span class="w"> </span><span class="n">tmp_opt</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_sock</span><span class="w"> </span><span class="o">*</span><span class="n">tp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_sk</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request_sock</span><span class="w"> </span><span class="o">*</span><span class="n">req</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* SYN flood 防护：SYN cookie */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sk_acceptq_is_full</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">want_cookie</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_syn_flood_action</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;TCP&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">want_cookie</span><span class="p">)</span>
+<span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">drop</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 分配请求套接字 */</span>
+<span class="w">    </span><span class="n">req</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inet_reqsk_alloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tcp_request_sock_ops</span><span class="p">,</span><span class="w"> </span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="o">!</span><span class="n">want_cookie</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 解析 TCP 选项 */</span>
+<span class="w">    </span><span class="n">tcp_parse_options</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tmp_opt</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 初始化序列号 */</span>
+<span class="w">    </span><span class="n">tcp_openreq_init</span><span class="p">(</span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tmp_opt</span><span class="p">,</span><span class="w"> </span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">sk</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 生成 SYN cookie（如果需要） */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">want_cookie</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">isn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cookie_init_sequence</span><span class="p">(</span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">req</span><span class="o">-&gt;</span><span class="n">mss</span><span class="p">);</span>
+<span class="w">        </span><span class="n">req</span><span class="o">-&gt;</span><span class="n">cookie_ts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tmp_opt</span><span class="p">.</span><span class="n">tstamp_ok</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* 正常的 ISN 生成 */</span>
+<span class="w">        </span><span class="n">isn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_v4_init_seq</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 发送 SYN+ACK */</span>
+<span class="w">    </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_v4_send_synack</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">dst</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">fl4</span><span class="p">,</span><span class="w"> </span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="n">skb</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 加入半连接队列 */</span>
+<span class="w">    </span><span class="n">inet_csk_reqsk_queue_hash_add</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="n">TCP_TIMEOUT_INIT</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* 客户端：发送 SYN */</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">tcp_connect</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_sock</span><span class="w"> </span><span class="o">*</span><span class="n">tp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_sk</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">buff</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 分配 SYN 包 */</span>
+<span class="w">    </span><span class="n">buff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sk_stream_alloc_skb</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_allocation</span><span class="p">,</span><span class="w"> </span><span class="nb">true</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 初始化 TCP 头部 */</span>
+<span class="w">    </span><span class="n">tcp_init_nondata_skb</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">write_seq</span><span class="o">++</span><span class="p">,</span><span class="w"> </span><span class="n">TCPHDR_SYN</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* TCP Fast Open */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fastopen</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">tcp_fastopen_init_key_once</span><span class="p">();</span>
+<span class="w">        </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">fastopen_req</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kzalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">fastopen_req</span><span class="p">),</span><span class="w"> </span>
+<span class="w">                                    </span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_allocation</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 设置初始拥塞窗口 */</span>
+<span class="w">    </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">snd_cwnd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TCP_INIT_CWND</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 启动重传定时器 */</span>
+<span class="w">    </span><span class="n">inet_csk_reset_xmit_timer</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">ICSK_TIME_RETRANS</span><span class="p">,</span>
+<span class="w">                              </span><span class="n">inet_csk</span><span class="p">(</span><span class="n">sk</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">icsk_rto</span><span class="p">,</span><span class="w"> </span><span class="n">TCP_RTO_MAX</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 发送 SYN */</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">tcp_transmit_skb</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">buff</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_allocation</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="_9">拥塞控制算法</h4>
+<p>Linux 支持可插拔的拥塞控制算法，默认使用 CUBIC：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 拥塞控制操作接口 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">tcp_congestion_ops</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w">    </span><span class="n">list</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">key</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 必需的回调函数 */</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">init</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">release</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 拥塞窗口调整 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">ssthresh</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">cong_avoid</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">ack</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">acked</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 状态变化 */</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">set_state</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">u8</span><span class="w"> </span><span class="n">new_state</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">cwnd_event</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="n">tcp_ca_event</span><span class="w"> </span><span class="n">ev</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 丢包处理 */</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">in_ack_event</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">undo_cwnd</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">pkts_acked</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ack_sample</span><span class="w"> </span><span class="o">*</span><span class="n">sample</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* BBR 使用的回调 */</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">min_tso_segs</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">cong_control</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">rate_sample</span><span class="w"> </span><span class="o">*</span><span class="n">rs</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">name</span><span class="p">[</span><span class="n">TCP_CA_NAME_MAX</span><span class="p">];</span>
+<span class="p">};</span>
+
+<span class="cm">/* CUBIC 算法核心 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">bictcp_cong_avoid</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">ack</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">acked</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_sock</span><span class="w"> </span><span class="o">*</span><span class="n">tp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_sk</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bictcp</span><span class="w"> </span><span class="o">*</span><span class="n">ca</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inet_csk_ca</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">tcp_is_cwnd_limited</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tcp_in_slow_start</span><span class="p">(</span><span class="n">tp</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* 慢启动：指数增长 */</span>
+<span class="w">        </span><span class="n">acked</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_slow_start</span><span class="p">(</span><span class="n">tp</span><span class="p">,</span><span class="w"> </span><span class="n">acked</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">acked</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 拥塞避免：CUBIC 函数 */</span>
+<span class="w">    </span><span class="n">bictcp_update</span><span class="p">(</span><span class="n">ca</span><span class="p">,</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">snd_cwnd</span><span class="p">,</span><span class="w"> </span><span class="n">acked</span><span class="p">);</span>
+<span class="w">    </span><span class="n">tcp_cong_avoid_ai</span><span class="p">(</span><span class="n">tp</span><span class="p">,</span><span class="w"> </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">cnt</span><span class="p">,</span><span class="w"> </span><span class="n">acked</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* CUBIC 更新函数 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">bictcp_update</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">bictcp</span><span class="w"> </span><span class="o">*</span><span class="n">ca</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">cwnd</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">acked</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">delta</span><span class="p">,</span><span class="w"> </span><span class="n">bic_target</span><span class="p">,</span><span class="w"> </span><span class="n">max_cnt</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">offs</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">ack_cnt</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">acked</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">last_cwnd</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">cwnd</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">        </span><span class="p">(</span><span class="n">s32</span><span class="p">)(</span><span class="n">tcp_jiffies32</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">last_time</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">HZ</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">32</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* CUBIC 函数：W(t) = C * (t - K)^3 + Wmax */</span>
+<span class="w">    </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">s32</span><span class="p">)(</span><span class="n">tcp_jiffies32</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">epoch_start</span><span class="p">);</span>
+<span class="w">    </span><span class="n">t</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">delay_min</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 计算 K = cubic_root(Wmax * beta / C) */</span>
+<span class="w">    </span><span class="n">K</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">K</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">offs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">ack_cnt</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">delta</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">K</span><span class="p">)</span>
+<span class="w">        </span><span class="n">bic_target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">origin_point</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">delta</span><span class="p">;</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">        </span><span class="n">bic_target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">origin_point</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">delta</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 更新拥塞窗口 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">bic_target</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">cwnd</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">cnt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cwnd</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">bic_target</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">cwnd</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ca</span><span class="o">-&gt;</span><span class="n">cnt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cwnd</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="_10">快速重传与恢复</h4>
+<p>TCP 使用 SACK（Selective Acknowledgment）实现高效的丢包恢复：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 快速重传判定 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">tcp_time_to_recover</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flag</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_sock</span><span class="w"> </span><span class="o">*</span><span class="n">tp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_sk</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 条件1：收到3个重复 ACK */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">fackets_out</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">reordering</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 条件2：SACK 检测到丢包 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tcp_is_sack</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">lost_out</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 条件3：FACK 检测 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tcp_is_fack</span><span class="p">(</span><span class="n">tp</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">fackets_out</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">reordering</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* 进入快速恢复 */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">tcp_enter_recovery</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">ece_ack</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_sock</span><span class="w"> </span><span class="o">*</span><span class="n">tp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_sk</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">mib_idx</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 保存当前状态 */</span>
+<span class="w">    </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">prior_ssthresh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tcp_init_undo</span><span class="p">(</span><span class="n">tp</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 调整拥塞窗口 */</span>
+<span class="w">    </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">snd_ssthresh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_current_ssthresh</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">snd_cwnd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">snd_ssthresh</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">snd_cwnd_cnt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">prior_cwnd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">snd_cwnd</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">prr_delivered</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">prr_out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 设置恢复点 */</span>
+<span class="w">    </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">recovery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">snd_nxt</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 进入恢复状态 */</span>
+<span class="w">    </span><span class="n">tcp_set_ca_state</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">TCP_CA_Recovery</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="933-socket-api">9.3.3 套接字层：socket API 实现</h3>
+<h4 id="socket">socket 结构体系</h4>
+<p>Linux 套接字层提供统一的编程接口，屏蔽底层协议差异：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 通用套接字结构 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">socket_state</span><span class="w">        </span><span class="n">state</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 套接字状态 */</span>
+<span class="w">    </span><span class="kt">short</span><span class="w">               </span><span class="n">type</span><span class="p">;</span><span class="w">       </span><span class="cm">/* SOCK_STREAM, SOCK_DGRAM 等 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w">       </span><span class="n">flags</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 套接字标志 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w">        </span><span class="o">*</span><span class="n">file</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 关联的文件对象 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w">        </span><span class="o">*</span><span class="n">sk</span><span class="p">;</span><span class="w">         </span><span class="cm">/* 网络层套接字 */</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">proto_ops</span><span class="w"> </span><span class="o">*</span><span class="n">ops</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 协议操作函数表 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">socket_wq</span><span class="w">    </span><span class="n">wq</span><span class="p">;</span><span class="w">         </span><span class="cm">/* 等待队列 */</span>
+<span class="p">};</span>
+
+<span class="cm">/* 网络层套接字 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock_common</span><span class="w">  </span><span class="n">__sk_common</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 接收队列 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff_head</span><span class="w"> </span><span class="n">sk_receive_queue</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff_head</span><span class="w"> </span><span class="n">sk_write_queue</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 内存管理 */</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w">            </span><span class="n">sk_rmem_alloc</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 接收缓冲区大小 */</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w">            </span><span class="n">sk_wmem_alloc</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 发送缓冲区大小 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w">                 </span><span class="n">sk_sndbuf</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 发送缓冲区限制 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w">                 </span><span class="n">sk_rcvbuf</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 接收缓冲区限制 */</span>
+
+<span class="w">    </span><span class="cm">/* 回调函数 */</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">sk_state_change</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">sk_data_ready</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">sk_write_space</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">sk_error_report</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 协议相关 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">proto</span><span class="w">       </span><span class="o">*</span><span class="n">sk_prot</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">proto_ops</span><span class="w"> </span><span class="o">*</span><span class="n">sk_prot_creator</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* 协议操作函数表 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">proto_ops</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">bind</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr</span><span class="w"> </span><span class="o">*</span><span class="n">addr</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">connect</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr</span><span class="w"> </span><span class="o">*</span><span class="n">addr</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">accept</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">newsock</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">listen</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">sendmsg</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">msghdr</span><span class="w"> </span><span class="o">*</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">recvmsg</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">msghdr</span><span class="w"> </span><span class="o">*</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+<span class="w">    </span><span class="cm">/* ... */</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h4 id="_11">系统调用实现</h4>
+<p>套接字系统调用的内核实现：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* socket() 系统调用 */</span>
+<span class="n">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">socket</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">protocol</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">retval</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 创建套接字 */</span>
+<span class="w">    </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sock_create</span><span class="p">(</span><span class="n">family</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">protocol</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">sock</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">retval</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">retval</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 分配文件描述符 */</span>
+<span class="w">    </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sock_map_fd</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">O_CLOEXEC</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">O_NONBLOCK</span><span class="p">));</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">retval</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">out_release</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">retval</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* bind() 实现 */</span>
+<span class="n">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">bind</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">umyaddr</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">addrlen</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr_storage</span><span class="w"> </span><span class="n">address</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">err</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 获取套接字 */</span>
+<span class="w">    </span><span class="n">sock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sockfd_lookup_light</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">err</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">fput_needed</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">sock</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">err</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 复制地址 */</span>
+<span class="w">    </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">move_addr_to_kernel</span><span class="p">(</span><span class="n">umyaddr</span><span class="p">,</span><span class="w"> </span><span class="n">addrlen</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">address</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">err</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sock</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="n">bind</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="n">addrlen</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">fput_light</span><span class="p">(</span><span class="n">sock</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="n">fput_needed</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">err</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* send() 数据发送路径 */</span>
+<span class="n">SYSCALL_DEFINE6</span><span class="p">(</span><span class="n">sendto</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">buff</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">,</span>
+<span class="w">                </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">addr</span><span class="p">,</span>
+<span class="w">                </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">addr_len</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">msghdr</span><span class="w"> </span><span class="n">msg</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">iovec</span><span class="w"> </span><span class="n">iov</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 构造消息结构 */</span>
+<span class="w">    </span><span class="n">iov</span><span class="p">.</span><span class="n">iov_base</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">buff</span><span class="p">;</span>
+<span class="w">    </span><span class="n">iov</span><span class="p">.</span><span class="n">iov_len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">len</span><span class="p">;</span>
+<span class="w">    </span><span class="n">msg</span><span class="p">.</span><span class="n">msg_iov</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">iov</span><span class="p">;</span>
+<span class="w">    </span><span class="n">msg</span><span class="p">.</span><span class="n">msg_iovlen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="n">msg</span><span class="p">.</span><span class="n">msg_flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 设置目标地址 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">addr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">move_addr_to_kernel</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span><span class="w"> </span><span class="n">addr_len</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">address</span><span class="p">);</span>
+<span class="w">        </span><span class="n">msg</span><span class="p">.</span><span class="n">msg_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">address</span><span class="p">;</span>
+<span class="w">        </span><span class="n">msg</span><span class="p">.</span><span class="n">msg_namelen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">addr_len</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 调用协议层发送 */</span>
+<span class="w">    </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sock</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="n">sendmsg</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">msg</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">err</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="io">异步 I/O 支持</h4>
+<p>Linux 5.1 引入的 io_uring 为网络编程带来革命性改进：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* io_uring 网络操作 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">io_send</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">io_kiocb</span><span class="w"> </span><span class="o">*</span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">issue_flags</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">io_sr_msg</span><span class="w"> </span><span class="o">*</span><span class="n">sr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">req</span><span class="o">-&gt;</span><span class="n">sr_msg</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">msghdr</span><span class="w"> </span><span class="n">msg</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">sock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sock_from_file</span><span class="p">(</span><span class="n">req</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">sock</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">ENOTSOCK</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 构造消息 */</span>
+<span class="w">    </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">io_setup_async_msg</span><span class="p">(</span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">msg</span><span class="p">,</span><span class="w"> </span><span class="n">issue_flags</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 非阻塞发送 */</span>
+<span class="w">    </span><span class="n">msg</span><span class="p">.</span><span class="n">msg_flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sr</span><span class="o">-&gt;</span><span class="n">msg_flags</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">MSG_NOSIGNAL</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">issue_flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">IO_URING_F_NONBLOCK</span><span class="p">)</span>
+<span class="w">        </span><span class="n">msg</span><span class="p">.</span><span class="n">msg_flags</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="n">MSG_DONTWAIT</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sock_sendmsg</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">msg</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 处理 EAGAIN */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">-</span><span class="n">EAGAIN</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">issue_flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">IO_URING_F_NONBLOCK</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">EAGAIN</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 完成请求 */</span>
+<span class="w">    </span><span class="n">io_req_complete</span><span class="p">(</span><span class="n">req</span><span class="p">,</span><span class="w"> </span><span class="n">ret</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="934-time_wait">9.3.4 连接管理与 TIME_WAIT 优化</h3>
+<h4 id="time_wait">TIME_WAIT 状态管理</h4>
+<p>TIME_WAIT 状态确保延迟数据包不会干扰新连接，但大量 TIME_WAIT 会消耗资源：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* TIME_WAIT 套接字结构（精简版） */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">inet_timewait_sock</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock_common</span><span class="w">  </span><span class="n">__tw_common</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w">                 </span><span class="n">tw_timeout</span><span class="p">;</span><span class="w">     </span><span class="cm">/* TIME_WAIT 超时时间 */</span>
+<span class="w">    </span><span class="k">volatile</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">tw_substate</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 子状态 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w">       </span><span class="n">tw_rcv_wscale</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 接收窗口缩放 */</span>
+
+<span class="w">    </span><span class="cm">/* 这些字段从 struct tcp_sock 复制 */</span>
+<span class="w">    </span><span class="n">__be16</span><span class="w">              </span><span class="n">tw_sport</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 源端口 */</span>
+<span class="w">    </span><span class="n">__be16</span><span class="w">              </span><span class="n">tw_dport</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 目的端口 */</span>
+<span class="w">    </span><span class="n">__u32</span><span class="w">               </span><span class="n">tw_rcv_nxt</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 期望接收序列号 */</span>
+<span class="w">    </span><span class="n">__u32</span><span class="w">               </span><span class="n">tw_snd_nxt</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 下一个发送序列号 */</span>
+<span class="w">    </span><span class="n">__u32</span><span class="w">               </span><span class="n">tw_rcv_wnd</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 接收窗口 */</span>
+<span class="w">    </span><span class="n">__u32</span><span class="w">               </span><span class="n">tw_ts_recent</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 时间戳 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">timer_list</span><span class="w">   </span><span class="n">tw_timer</span><span class="p">;</span><span class="w">       </span><span class="cm">/* TIME_WAIT 定时器 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_bind_bucket</span><span class="w"> </span><span class="o">*</span><span class="n">tw_tb</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 绑定哈希桶 */</span>
+<span class="p">};</span>
+
+<span class="cm">/* 进入 TIME_WAIT 状态 */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">tcp_time_wait</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">state</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">timeo</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_timewait_sock</span><span class="w"> </span><span class="o">*</span><span class="n">tw</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_sock</span><span class="w"> </span><span class="o">*</span><span class="n">tp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_sk</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 分配 timewait 套接字 */</span>
+<span class="w">    </span><span class="n">tw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inet_twsk_alloc</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">state</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tw</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* 复制必要字段 */</span>
+<span class="w">        </span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_rcv_wscale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">rx_opt</span><span class="p">.</span><span class="n">rcv_wscale</span><span class="p">;</span>
+<span class="w">        </span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_rcv_nxt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">rcv_nxt</span><span class="p">;</span>
+<span class="w">        </span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_snd_nxt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">snd_nxt</span><span class="p">;</span>
+<span class="w">        </span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_rcv_wnd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_receive_window</span><span class="p">(</span><span class="n">tp</span><span class="p">);</span>
+<span class="w">        </span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_ts_recent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">rx_opt</span><span class="p">.</span><span class="n">ts_recent</span><span class="p">;</span>
+<span class="w">        </span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_ts_recent_stamp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">rx_opt</span><span class="p">.</span><span class="n">ts_recent_stamp</span><span class="p">;</span>
+
+<span class="w">        </span><span class="cm">/* 设置 TIME_WAIT 定时器 */</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">timeo</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="n">timeo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TCP_TIMEWAIT_LEN</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 默认 60 秒 */</span>
+
+<span class="w">        </span><span class="n">inet_twsk_schedule</span><span class="p">(</span><span class="n">tw</span><span class="p">,</span><span class="w"> </span><span class="n">timeo</span><span class="p">);</span>
+
+<span class="w">        </span><span class="cm">/* 将原始套接字转换为 timewait */</span>
+<span class="w">        </span><span class="n">inet_twsk_hashdance</span><span class="p">(</span><span class="n">tw</span><span class="p">,</span><span class="w"> </span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tcp_hashinfo</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 销毁原始套接字 */</span>
+<span class="w">    </span><span class="n">tcp_done</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="time_wait_1">TIME_WAIT 优化策略</h4>
+<p>Linux 提供多种机制优化 TIME_WAIT：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 1. TIME_WAIT 重用（tw_reuse） */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">tcp_tw_reuse_check</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_timewait_sock</span><span class="w"> </span><span class="o">*</span><span class="n">tw</span><span class="p">,</span>
+<span class="w">                               </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcp_options_received</span><span class="w"> </span><span class="o">*</span><span class="n">rx_opt</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="cm">/* 检查时间戳，确保不会接收旧数据包 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rx_opt</span><span class="o">-&gt;</span><span class="n">ts_recent</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">        </span><span class="n">get_seconds</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_ts_recent_stamp</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* 2. TIME_WAIT 回收（tw_recycle）- 已废弃 */</span>
+<span class="cm">/* 由于 NAT 环境问题，4.12 内核已移除 */</span>
+
+<span class="cm">/* 3. TIME_WAIT 暗杀（tw_kill） */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">inet_twsk_kill</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_timewait_sock</span><span class="w"> </span><span class="o">*</span><span class="n">tw</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_hashinfo</span><span class="w"> </span><span class="o">*</span><span class="n">hashinfo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_dr</span><span class="o">-&gt;</span><span class="n">hashinfo</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="o">*</span><span class="n">lock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inet_ehash_lockp</span><span class="p">(</span><span class="n">hashinfo</span><span class="p">,</span><span class="w"> </span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_hash</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">spin_lock</span><span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hlist_nulls_unhashed</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_node</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">spin_unlock</span><span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 从哈希表移除 */</span>
+<span class="w">    </span><span class="n">hlist_nulls_del_rcu</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_node</span><span class="p">);</span>
+<span class="w">    </span><span class="n">sk_nulls_node_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tw</span><span class="o">-&gt;</span><span class="n">tw_node</span><span class="p">);</span>
+<span class="w">    </span><span class="n">spin_unlock</span><span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 释放端口 */</span>
+<span class="w">    </span><span class="n">inet_twsk_bind_unhash</span><span class="p">(</span><span class="n">tw</span><span class="p">,</span><span class="w"> </span><span class="n">hashinfo</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 释放内存 */</span>
+<span class="w">    </span><span class="n">inet_twsk_put</span><span class="p">(</span><span class="n">tw</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* 4. SO_LINGER 选项 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">linger</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">l_onoff</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 0 = off, 非0 = on */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">l_linger</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 延迟时间（秒） */</span>
+<span class="p">};</span>
+
+<span class="cm">/* 设置 SO_LINGER 跳过 TIME_WAIT */</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_linger</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_lingertime</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* l_onoff = 1, l_linger = 0: 立即关闭，发送 RST */</span>
+<span class="w">    </span><span class="n">tcp_send_active_reset</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">gfp_any</span><span class="p">());</span>
+<span class="w">    </span><span class="n">tcp_done</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+<span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* 正常关闭流程 */</span>
+<span class="w">    </span><span class="n">tcp_close_state</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="_12">连接表管理</h4>
+<p>Linux 使用哈希表管理大量并发连接：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* TCP 连接哈希表 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">inet_hashinfo</span><span class="w"> </span><span class="n">tcp_hashinfo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">.</span><span class="n">ehash</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w">          </span><span class="cm">/* established 哈希表 */</span>
+<span class="w">    </span><span class="p">.</span><span class="n">ehash_locks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w">    </span><span class="cm">/* 哈希锁数组 */</span>
+<span class="w">    </span><span class="p">.</span><span class="n">ehash_mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">        </span><span class="cm">/* 哈希掩码 */</span>
+<span class="w">    </span><span class="p">.</span><span class="n">ehash_locks_mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+
+<span class="w">    </span><span class="p">.</span><span class="n">bhash</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w">          </span><span class="cm">/* bind 哈希表 */</span>
+<span class="w">    </span><span class="p">.</span><span class="n">bhash_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+
+<span class="w">    </span><span class="p">.</span><span class="n">lhash2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w">         </span><span class="cm">/* listen 哈希表 */</span>
+<span class="w">    </span><span class="p">.</span><span class="n">lhash2_mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="cm">/* 连接查找 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">__inet_lookup_established</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">net</span><span class="w"> </span><span class="o">*</span><span class="n">net</span><span class="p">,</span>
+<span class="w">                                        </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_hashinfo</span><span class="w"> </span><span class="o">*</span><span class="n">hashinfo</span><span class="p">,</span>
+<span class="w">                                        </span><span class="k">const</span><span class="w"> </span><span class="n">__be32</span><span class="w"> </span><span class="n">saddr</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">__be16</span><span class="w"> </span><span class="n">sport</span><span class="p">,</span>
+<span class="w">                                        </span><span class="k">const</span><span class="w"> </span><span class="n">__be32</span><span class="w"> </span><span class="n">daddr</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">u16</span><span class="w"> </span><span class="n">hnum</span><span class="p">,</span>
+<span class="w">                                        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">dif</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">INET_ADDR_COOKIE</span><span class="p">(</span><span class="n">acookie</span><span class="p">,</span><span class="w"> </span><span class="n">saddr</span><span class="p">,</span><span class="w"> </span><span class="n">daddr</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">__portpair</span><span class="w"> </span><span class="n">ports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">INET_COMBINED_PORTS</span><span class="p">(</span><span class="n">sport</span><span class="p">,</span><span class="w"> </span><span class="n">hnum</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">hlist_nulls_node</span><span class="w"> </span><span class="o">*</span><span class="n">node</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 计算哈希值 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">hash</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inet_ehashfn</span><span class="p">(</span><span class="n">net</span><span class="p">,</span><span class="w"> </span><span class="n">daddr</span><span class="p">,</span><span class="w"> </span><span class="n">hnum</span><span class="p">,</span><span class="w"> </span><span class="n">saddr</span><span class="p">,</span><span class="w"> </span><span class="n">sport</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">slot</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hash</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">hashinfo</span><span class="o">-&gt;</span><span class="n">ehash_mask</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_ehash_bucket</span><span class="w"> </span><span class="o">*</span><span class="n">head</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">hashinfo</span><span class="o">-&gt;</span><span class="n">ehash</span><span class="p">[</span><span class="n">slot</span><span class="p">];</span>
+
+<span class="w">    </span><span class="cm">/* RCU 读锁保护 */</span>
+<span class="w">    </span><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="nl">begin</span><span class="p">:</span>
+<span class="w">    </span><span class="n">sk_nulls_for_each_rcu</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">chain</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_hash</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">hash</span><span class="p">)</span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">        </span><span class="cm">/* 快速路径：cookie 匹配 */</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">likely</span><span class="p">(</span><span class="n">INET_MATCH</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">net</span><span class="p">,</span><span class="w"> </span><span class="n">acookie</span><span class="p">,</span><span class="w"> </span><span class="n">saddr</span><span class="p">,</span><span class="w"> </span><span class="n">daddr</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                              </span><span class="n">ports</span><span class="p">,</span><span class="w"> </span><span class="n">dif</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">refcount_inc_not_zero</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_refcnt</span><span class="p">)))</span>
+<span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+
+<span class="w">            </span><span class="cm">/* 再次检查（防止并发删除） */</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">INET_MATCH</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">net</span><span class="p">,</span><span class="w"> </span><span class="n">acookie</span><span class="p">,</span><span class="w"> </span><span class="n">saddr</span><span class="p">,</span><span class="w"> </span><span class="n">daddr</span><span class="p">,</span>
+<span class="w">                                     </span><span class="n">ports</span><span class="p">,</span><span class="w"> </span><span class="n">dif</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">sock_gen_put</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+<span class="w">                </span><span class="k">goto</span><span class="w"> </span><span class="n">begin</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">found</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 检查是否需要重试（NULLS 保护） */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">get_nulls_value</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">slot</span><span class="p">)</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">begin</span><span class="p">;</span>
+
+<span class="nl">out</span><span class="p">:</span>
+<span class="w">    </span><span class="n">sk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="nl">found</span><span class="p">:</span>
+<span class="w">    </span><span class="n">rcu_read_unlock</span><span class="p">();</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">sk</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="_13">端口管理与复用</h4>
+<p>Linux 支持 SO_REUSEADDR 和 SO_REUSEPORT 实现端口复用：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* SO_REUSEPORT 实现负载均衡 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">inet_lookup_listener</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">net</span><span class="w"> </span><span class="o">*</span><span class="n">net</span><span class="p">,</span>
+<span class="w">                                   </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_hashinfo</span><span class="w"> </span><span class="o">*</span><span class="n">hashinfo</span><span class="p">,</span>
+<span class="w">                                   </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">doff</span><span class="p">,</span>
+<span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="n">__be32</span><span class="w"> </span><span class="n">saddr</span><span class="p">,</span><span class="w"> </span><span class="n">__be16</span><span class="w"> </span><span class="n">sport</span><span class="p">,</span>
+<span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="n">__be32</span><span class="w"> </span><span class="n">daddr</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w"> </span><span class="n">hnum</span><span class="p">,</span>
+<span class="w">                                   </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">dif</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">sdif</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inet_listen_hashbucket</span><span class="w"> </span><span class="o">*</span><span class="n">ilb</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">hash</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inet_lhashfn</span><span class="p">(</span><span class="n">net</span><span class="p">,</span><span class="w"> </span><span class="n">hnum</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">ilb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">hashinfo</span><span class="o">-&gt;</span><span class="n">listening_hash</span><span class="p">[</span><span class="n">hash</span><span class="p">];</span>
+
+<span class="w">    </span><span class="cm">/* 查找监听套接字 */</span>
+<span class="w">    </span><span class="n">sk_for_each_rcu</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">ilb</span><span class="o">-&gt;</span><span class="n">head</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">score</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compute_score</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">net</span><span class="p">,</span><span class="w"> </span><span class="n">hnum</span><span class="p">,</span><span class="w"> </span><span class="n">daddr</span><span class="p">,</span><span class="w"> </span><span class="n">dif</span><span class="p">,</span><span class="w"> </span><span class="n">sdif</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">score</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">hiscore</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">hiscore</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">score</span><span class="p">;</span>
+<span class="w">            </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sk</span><span class="p">;</span>
+
+<span class="w">            </span><span class="cm">/* SO_REUSEPORT 负载均衡 */</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_reuseport</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">phash</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">inet_ehashfn</span><span class="p">(</span><span class="n">net</span><span class="p">,</span><span class="w"> </span><span class="n">daddr</span><span class="p">,</span><span class="w"> </span><span class="n">hnum</span><span class="p">,</span><span class="w"> </span><span class="n">saddr</span><span class="p">,</span><span class="w"> </span><span class="n">sport</span><span class="p">);</span>
+
+<span class="w">                </span><span class="cm">/* 使用包哈希选择套接字 */</span>
+<span class="w">                </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reuseport_select_sock</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">phash</span><span class="p">,</span><span class="w"> </span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">doff</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* REUSEPORT 组管理 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sock_reuseport</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rcu_head</span><span class="w">     </span><span class="n">rcu</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">u16</span><span class="w">                 </span><span class="n">max_socks</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 数组大小 */</span>
+<span class="w">    </span><span class="n">u16</span><span class="w">                 </span><span class="n">num_socks</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 当前套接字数 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">synq_overflow_ts</span><span class="p">;</span><span class="w"> </span><span class="cm">/* SYN 队列溢出时间戳 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">reuseport_id</span><span class="p">;</span><span class="w">   </span><span class="cm">/* ID */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">bind_inany</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 绑定任意地址 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">has_conns</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 有已建立连接 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bpf_prog</span><span class="w"> </span><span class="n">__rcu</span><span class="w"> </span><span class="o">*</span><span class="n">prog</span><span class="p">;</span><span class="w">        </span><span class="cm">/* eBPF 程序 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w">        </span><span class="o">*</span><span class="n">socks</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span><span class="w">       </span><span class="cm">/* 套接字数组 */</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<hr />
+<h2 id="92-sk_buff_1">9.2 sk_buff 与网络数据流</h2>
+<p>sk_buff（socket buffer）是 Linux 网络栈的核心数据结构，每个网络数据包在内核中都由一个 sk_buff 结构表示。这个精心设计的数据结构支持高效的零拷贝操作、协议头部的动态添加删除，以及数据包的分片与重组。</p>
+<h3 id="921-sk_buff">9.2.1 sk_buff 结构体详解</h3>
+<p>sk_buff 结构体包含了数据包的所有元信息和指向实际数据的指针：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* 链表管理 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w">    </span><span class="o">*</span><span class="n">next</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w">    </span><span class="o">*</span><span class="n">prev</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 时间戳 */</span>
+<span class="w">    </span><span class="n">ktime_t</span><span class="w">           </span><span class="n">tstamp</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 关联的网络设备 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">net_device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 关联的 socket */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w">       </span><span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 数据指针 </span>
+
+<span class="cm">     * head: 缓冲区起始地址</span>
+<span class="cm">     * data: 有效数据起始地址  </span>
+<span class="cm">     * tail: 有效数据结束地址</span>
+<span class="cm">     * end:  缓冲区结束地址</span>
+<span class="cm">     */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w">     </span><span class="o">*</span><span class="n">head</span><span class="p">,</span>
+<span class="w">                      </span><span class="o">*</span><span class="n">data</span><span class="p">,</span>
+<span class="w">                      </span><span class="o">*</span><span class="n">tail</span><span class="p">,</span>
+<span class="w">                      </span><span class="o">*</span><span class="n">end</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 传输层头部指针 */</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">tcphdr</span><span class="w">  </span><span class="o">*</span><span class="n">th</span><span class="p">;</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">udphdr</span><span class="w">  </span><span class="o">*</span><span class="n">uh</span><span class="p">;</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">icmphdr</span><span class="w"> </span><span class="o">*</span><span class="n">icmph</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w">  </span><span class="o">*</span><span class="n">raw</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">h</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 网络层头部指针 */</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">iphdr</span><span class="w">   </span><span class="o">*</span><span class="n">iph</span><span class="p">;</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">ipv6hdr</span><span class="w"> </span><span class="o">*</span><span class="n">ipv6h</span><span class="p">;</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">arphdr</span><span class="w">  </span><span class="o">*</span><span class="n">arph</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w">  </span><span class="o">*</span><span class="n">raw</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">nh</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 链路层头部指针 */</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">ethhdr</span><span class="w">  </span><span class="o">*</span><span class="n">ethernet</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w">  </span><span class="o">*</span><span class="n">raw</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">mac</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 路由信息 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dst_entry</span><span class="w"> </span><span class="o">*</span><span class="n">dst</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 控制信息 */</span>
+<span class="w">    </span><span class="n">__u32</span><span class="w">             </span><span class="n">priority</span><span class="p">;</span>
+<span class="w">    </span><span class="n">__u16</span><span class="w">             </span><span class="n">protocol</span><span class="p">;</span>
+<span class="w">    </span><span class="n">__u8</span><span class="w">              </span><span class="n">pkt_type</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 引用计数 */</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w">          </span><span class="n">users</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 分片信息 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">skb_shared_info</span><span class="w"> </span><span class="o">*</span><span class="n">shinfo</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="_14">关键指针关系</h3>
+<p>sk_buff 中最重要的是四个数据指针的关系：</p>
+<div class="codehilite"><pre><span></span><code><span class="w">        </span><span class="n">head</span><span class="w">                </span><span class="kt">data</span><span class="w">               </span><span class="n">tail</span><span class="w">                </span><span class="kd">end</span>
+<span class="w">         </span><span class="err">↓</span><span class="w">                   </span><span class="err">↓</span><span class="w">                   </span><span class="err">↓</span><span class="w">                   </span><span class="err">↓</span>
+<span class="w">    </span><span class="err">┌────┬──────────────┬────────────────────┬─────────────────┬────┐</span>
+<span class="w">    </span><span class="err">│</span><span class="w">    </span><span class="err">│</span><span class="w">   </span><span class="n">headroom</span><span class="w">    </span><span class="err">│</span><span class="w">    </span><span class="n">packet</span><span class="w"> </span><span class="kt">data</span><span class="w">    </span><span class="err">│</span><span class="w">    </span><span class="n">tailroom</span><span class="w">     </span><span class="err">│</span><span class="w">    </span><span class="err">│</span>
+<span class="w">    </span><span class="err">└────┴──────────────┴────────────────────┴─────────────────┴────┘</span>
+<span class="w">         </span><span class="err">←─────────────────</span><span class="w"> </span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">len</span><span class="w"> </span><span class="err">──────────→</span>
+<span class="w">         </span><span class="err">←────────────────────</span><span class="w"> </span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">data_len</span><span class="w"> </span><span class="err">────────────────────→</span>
+<span class="w">         </span><span class="err">←──────────────────────</span><span class="w"> </span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">truesize</span><span class="w"> </span><span class="err">──────────────────────→</span>
+</code></pre></div>
+
+<p>这种设计允许在数据包前后高效地添加或删除协议头部：</p>
+<ul>
+<li><strong>skb_push()</strong>：在数据前添加头部（data 指针前移）</li>
+<li><strong>skb_pull()</strong>：移除数据前的头部（data 指针后移）</li>
+<li><strong>skb_put()</strong>：在数据后添加内容（tail 指针后移）</li>
+<li><strong>skb_trim()</strong>：截断数据末尾（tail 指针前移）</li>
+</ul>
+<h3 id="922-sk_buff">9.2.2 sk_buff 的生命周期管理</h3>
+<h4 id="_15">分配与初始化</h4>
+<p>网络数据包的 sk_buff 通常在以下场景分配：</p>
+<ol>
+<li><strong>接收路径</strong>：网卡驱动在 DMA 缓冲区准备时预分配</li>
+<li><strong>发送路径</strong>：应用程序发送数据时动态分配</li>
+<li><strong>转发路径</strong>：可能复用原 sk_buff 或克隆</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 分配 sk_buff */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_skb</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_ATOMIC</span><span class="p">);</span>
+
+<span class="cm">/* 为网络设备分配（包含 NET_SKB_PAD 对齐） */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">netdev_alloc_skb</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
+
+<span class="cm">/* 分配并预留头部空间 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_skb</span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">headroom</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+<span class="n">skb_reserve</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">headroom</span><span class="p">);</span>
+</code></pre></div>
+
+<h4 id="_16">引用计数管理</h4>
+<p>sk_buff 使用引用计数管理生命周期：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 增加引用 */</span>
+<span class="n">skb_get</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span><span class="w">  </span><span class="c1">// atomic_inc(&amp;skb-&gt;users)</span>
+
+<span class="cm">/* 减少引用，到 0 时释放 */</span>
+<span class="n">kfree_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span><span class="w">  </span><span class="c1">// 错误路径释放</span>
+<span class="n">consume_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span><span class="w"> </span><span class="c1">// 正常路径释放</span>
+</code></pre></div>
+
+<h4 id="_17">克隆与复制</h4>
+<p>为了避免数据复制，sk_buff 支持高效的克隆：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 克隆：共享数据，复制元数据 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">clone</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">skb_clone</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_ATOMIC</span><span class="p">);</span>
+
+<span class="cm">/* 完整复制：数据和元数据都复制 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">copy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">skb_copy</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_ATOMIC</span><span class="p">);</span>
+
+<span class="cm">/* COW 复制：必要时才复制数据 */</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">skb_shared</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span>
+<span class="w">    </span><span class="n">skb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">skb_unshare</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_ATOMIC</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="923">9.2.3 数据包在各层的处理流程</h3>
+<h4 id="bottom-up">接收路径（Bottom-up）</h4>
+<div class="codehilite"><pre><span></span><code><span class="nx">网卡</span><span class="w"> </span><span class="nx">DMA</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="nx">驱动</span><span class="w"> </span><span class="nx">RX</span><span class="w"> </span><span class="nx">中断</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="nx">NAPI</span><span class="w"> </span><span class="nx">poll</span><span class="w"> </span><span class="err">→</span><span class="w"> </span><span class="nx">netif_receive_skb</span>
+<span class="w">    </span><span class="err">↓</span>
+<span class="nx">链路层处理</span><span class="err">（</span><span class="nx">eth_type_trans</span><span class="err">）</span>
+<span class="w">    </span><span class="err">↓</span>
+<span class="nx">网络层处理</span><span class="err">（</span><span class="nx">ip_rcv</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nx">ipv6_rcv</span><span class="err">）</span>
+<span class="w">    </span><span class="err">↓</span>
+<span class="nx">Netfilter</span><span class="w"> </span><span class="nx">PREROUTING</span><span class="w"> </span><span class="nx">钩子</span>
+<span class="w">    </span><span class="err">↓</span>
+<span class="nx">路由决策</span><span class="err">（</span><span class="nx">本地</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nx">转发</span><span class="err">）</span>
+<span class="w">    </span><span class="err">↓</span>
+<span class="nx">本地</span><span class="err">：</span><span class="nx">传输层处理</span><span class="err">（</span><span class="nx">tcp_v4_rcv</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nx">udp_rcv</span><span class="err">）</span>
+<span class="w">    </span><span class="err">↓</span>
+<span class="nx">套接字队列</span><span class="err">（</span><span class="nx">sk</span><span class="o">-&gt;</span><span class="nx">sk_receive_queue</span><span class="err">）</span>
+<span class="w">    </span><span class="err">↓</span>
+<span class="nx">应用程序</span><span class="w"> </span><span class="nx">recv</span><span class="p">()</span>
+</code></pre></div>
+
+<p>每层处理的典型操作：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 链路层：解析以太网头部 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">eth_type_trans</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">net_device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">ethhdr</span><span class="w"> </span><span class="o">*</span><span class="n">eth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eth_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+<span class="w">    </span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">protocol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eth</span><span class="o">-&gt;</span><span class="n">h_proto</span><span class="p">;</span>
+<span class="w">    </span><span class="n">skb_pull</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">ETH_HLEN</span><span class="p">);</span><span class="w">  </span><span class="c1">// 移除以太网头部</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* 网络层：IP 头部校验 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">ip_rcv</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">net_device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                  </span><span class="k">struct</span><span class="w"> </span><span class="nc">packet_type</span><span class="w"> </span><span class="o">*</span><span class="n">pt</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">net_device</span><span class="w"> </span><span class="o">*</span><span class="n">orig_dev</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">iphdr</span><span class="w"> </span><span class="o">*</span><span class="n">iph</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ip_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 校验 IP 头部 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">ihl</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">5</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">version</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">drop</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">pskb_may_pull</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">ihl</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">4</span><span class="p">))</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">drop</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 更新 skb 指针 */</span>
+<span class="w">    </span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">transport_header</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">network_header</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">ihl</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">NF_HOOK</span><span class="p">(</span><span class="n">NFPROTO_IPV4</span><span class="p">,</span><span class="w"> </span><span class="n">NF_INET_PRE_ROUTING</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                   </span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">ip_rcv_finish</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="top-down">发送路径（Top-down）</h4>
+<div class="codehilite"><pre><span></span><code>应用程序 send() → socket 层
+    ↓
+传输层构造（tcp_transmit_skb）
+    ↓
+网络层处理（ip_output）
+    ↓
+Netfilter POSTROUTING 钩子
+    ↓
+邻居子系统（ARP 解析）
+    ↓
+设备队列（dev_queue_xmit）
+    ↓
+流量控制（qdisc）
+    ↓
+驱动 TX → DMA → 网卡发送
+</code></pre></div>
+
+<h3 id="924-scatter-gather-io">9.2.4 零拷贝与 scatter-gather I/O</h3>
+<h4 id="io_1">分散聚集 I/O</h4>
+<p>sk_buff 支持将数据分散在多个内存页中，避免大块连续内存分配：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">skb_shared_info</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">  </span><span class="n">nr_frags</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">skb_frag_struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">page</span><span class="p">;</span>
+<span class="w">        </span><span class="n">__u32</span><span class="w">       </span><span class="n">page_offset</span><span class="p">;</span>
+<span class="w">        </span><span class="n">__u32</span><span class="w">       </span><span class="n">size</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">frags</span><span class="p">[</span><span class="n">MAX_SKB_FRAGS</span><span class="p">];</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>这种设计支持：</p>
+<ul>
+<li><strong>零拷贝发送</strong>：直接映射用户空间页面</li>
+<li><strong>TSO/GSO</strong>：硬件分段卸载</li>
+<li><strong>GRO</strong>：接收端数据包聚合</li>
+</ul>
+<h4 id="page-flipping">页面翻转（Page Flipping）</h4>
+<p>高性能网卡驱动使用页面翻转技术避免数据复制：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 接收时直接将 DMA 页面赋给 sk_buff */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">rx_page_flip</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">page</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">skb_fill_page_desc</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+<span class="w">    </span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">data_len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">len</span><span class="p">;</span>
+<span class="w">    </span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">len</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">len</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="msg_zerocopy">MSG_ZEROCOPY 发送</h4>
+<p>Linux 4.14 引入的 MSG_ZEROCOPY 允许应用程序零拷贝发送：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 用户空间 */</span>
+<span class="n">send</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="n">MSG_ZEROCOPY</span><span class="p">);</span>
+
+<span class="cm">/* 内核空间：直接引用用户页面 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">tcp_zerocopy_send</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sock</span><span class="w"> </span><span class="o">*</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">msghdr</span><span class="w"> </span><span class="o">*</span><span class="n">msg</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sk_buff</span><span class="w"> </span><span class="o">*</span><span class="n">skb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tcp_write_queue_tail</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 将用户页面添加到 skb frags */</span>
+<span class="w">    </span><span class="n">err</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">skb_zerocopy_add_frags_iter</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span><span class="w"> </span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">msg</span><span class="o">-&gt;</span><span class="n">msg_iter</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                                       </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">uarg</span><span class="p">,</span><span class="w"> </span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_allocation</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 设置回调通知 */</span>
+<span class="w">    </span><span class="n">skb_zcopy_set</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span><span class="w"> </span><span class="n">uarg</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="_18">内存管理优化</h3>
+<h4 id="skb">skb 缓存池</h4>
+<p>为了减少分配开销，内核维护了 per-CPU 的 sk_buff 缓存：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">netdev_alloc_cache</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page_frag</span><span class="w">    </span><span class="n">frag</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">pagecnt_bias</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">static</span><span class="w"> </span><span class="n">DEFINE_PER_CPU</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">netdev_alloc_cache</span><span class="p">,</span><span class="w"> </span><span class="n">netdev_alloc_cache</span><span class="p">);</span>
+</code></pre></div>
+
+<h4 id="_19">内存预分配策略</h4>
+<p>网卡驱动通常预分配接收缓冲区：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* Intel ixgbe 驱动的接收缓冲区管理 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">ixgbe_alloc_rx_buffers</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">ixgbe_ring</span><span class="w"> </span><span class="o">*</span><span class="n">rx_ring</span><span class="p">,</span><span class="w"> </span><span class="n">u16</span><span class="w"> </span><span class="n">cleaned</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="nc">ixgbe_adv_rx_desc</span><span class="w"> </span><span class="o">*</span><span class="n">rx_desc</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">ixgbe_rx_buffer</span><span class="w"> </span><span class="o">*</span><span class="n">bi</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 批量分配，减少内存分配开销 */</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">cleaned</span><span class="o">--</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">bi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">rx_ring</span><span class="o">-&gt;</span><span class="n">rx_buffer_info</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">        </span><span class="n">bi</span><span class="o">-&gt;</span><span class="n">skb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">netdev_alloc_skb_ip_align</span><span class="p">(</span><span class="n">rx_ring</span><span class="o">-&gt;</span><span class="n">netdev</span><span class="p">,</span>
+<span class="w">                                             </span><span class="n">rx_ring</span><span class="o">-&gt;</span><span class="n">rx_buf_len</span><span class="p">);</span>
+
+<span class="w">        </span><span class="cm">/* 设置 DMA 映射 */</span>
+<span class="w">        </span><span class="n">bi</span><span class="o">-&gt;</span><span class="n">dma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dma_map_single</span><span class="p">(</span><span class="n">rx_ring</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="n">bi</span><span class="o">-&gt;</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span>
+<span class="w">                                  </span><span class="n">rx_ring</span><span class="o">-&gt;</span><span class="n">rx_buf_len</span><span class="p">,</span><span class="w"> </span><span class="n">DMA_FROM_DEVICE</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+            </article>
+            
+            <nav class="page-nav"><a href="chapter8.html" class="nav-link prev">← 第8章：设备驱动模型</a><a href="chapter10.html" class="nav-link next">第10章：内核同步机制 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

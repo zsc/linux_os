@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
+    <title>第13章：安全子系统</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/highlight.css">
+    <script src="assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors', 'ams']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors', '[tex]/ams']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="sidebar-search-input" placeholder="搜索..." autocomplete="off">
+            </div>
+            <div id="tree-container">
+                <nav class="tree-nav" role="tree">
+                    <div class="tree-item " >
+                        <a href="index.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Linux 内核源代码深度解析</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter1.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第1章：Linux 内核概述与发展史</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter2.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第2章：进程管理与任务调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter3.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第3章：内存管理架构</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter4.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第4章：进程间通信机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter5.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第5章：虚拟文件系统（VFS）</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter6.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第6章：具体文件系统实现</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter7.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第7章：块设备层与I/O调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter8.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第8章：设备驱动模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter9.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第9章：网络协议栈</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter10.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第10章：内核同步机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter11.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第11章：并发编程模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter12.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第12章：容器与命名空间</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item active" >
+                        <a href="chapter13.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第13章：安全子系统</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter14.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第14章：实时Linux</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter15.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第15章：性能分析与调试</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter16.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第16章：引导过程与初始化</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="CLAUDE.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Untitled</span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="13">第13章：安全子系统</h1>
+<h2 id="_1">本章导读</h2>
+<p>Linux内核安全子系统是保护系统免受恶意攻击和误用的关键防线。从早期简单的Unix权限模型，到现代复杂的强制访问控制（MAC）和细粒度权能系统，Linux安全架构经历了深刻的演变。本章将深入剖析Linux安全模块（LSM）框架的设计与实现，探讨主流安全模块如SELinux、AppArmor的工作原理，分析权能系统的细粒度权限控制机制，以及eBPF在安全策略实施中的革命性应用。通过学习本章，读者将掌握内核安全机制的核心原理，理解不同安全模型的权衡，并能够设计和实现自定义的安全策略。</p>
+<h2 id="_2">学习目标</h2>
+<p>完成本章学习后，您将能够：</p>
+<ol>
+<li><strong>理解LSM框架架构</strong>：掌握安全钩子的设计原理和实现机制</li>
+<li><strong>分析主流安全模块</strong>：对比SELinux、AppArmor、SMACK的设计哲学</li>
+<li><strong>掌握权能系统</strong>：理解细粒度权限控制和最小权限原则</li>
+<li><strong>应用eBPF安全</strong>：使用eBPF实现动态安全策略</li>
+<li><strong>识别威胁模型</strong>：分析内核安全威胁和防护机制</li>
+<li><strong>实践安全加固</strong>：配置和调试安全模块，实现纵深防御</li>
+</ol>
+<h2 id="131-linuxlsm">13.1 Linux安全模块（LSM）框架</h2>
+<h3 id="1311-lsm">13.1.1 LSM的诞生背景</h3>
+<p>Linux安全模块框架诞生于2001年，源于Linux内核安全峰会的共识：内核需要支持多种安全模型，但不应该强制使用任何特定的安全策略。这一设计理念体现了Linux的开放性和灵活性。</p>
+<div class="codehilite"><pre><span></span><code>传统DAC模型的局限性：
+┌─────────────────────────────────────┐
+│     自主访问控制（DAC）             │
+├─────────────────────────────────────┤
+│  • 基于文件所有者和权限位           │
+│  • 用户可以修改自己文件的权限       │
+│  • root用户拥有无限权限             │
+│  • 无法防止信息泄露和提权攻击       │
+└─────────────────────────────────────┘
+           ↓
+┌─────────────────────────────────────┐
+│     强制访问控制（MAC）需求         │
+├─────────────────────────────────────┤
+│  • 系统强制执行安全策略             │
+│  • 用户无法修改安全标签             │
+│  • 细粒度的访问控制                 │
+│  • 最小权限原则                     │
+└─────────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="1312-lsm">13.1.2 LSM框架架构</h3>
+<p>LSM框架通过在内核关键操作点插入安全钩子（security hooks），允许安全模块实施额外的访问控制检查：</p>
+<div class="codehilite"><pre><span></span><code>内核操作流程与LSM钩子：
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  系统调用    │────▶│   DAC检查    │────▶│   LSM钩子    │
+└──────────────┘     └──────────────┘     └──────────────┘
+                            │                      │
+                            ▼                      ▼
+                     ┌──────────────┐     ┌──────────────┐
+                     │  权限拒绝    │     │  安全模块    │
+                     └──────────────┘     │    检查      │
+                                          └──────────────┘
+                                                   │
+                                          ┌────────┴────────┐
+                                          ▼                 ▼
+                                   ┌──────────────┐ ┌──────────────┐
+                                   │   允许操作   │ │   拒绝操作   │
+                                   └──────────────┘ └──────────────┘
+</code></pre></div>
+
+<h3 id="1313-lsm">13.1.3 LSM钩子实现机制</h3>
+<p>LSM框架在内核中定义了大量的安全钩子，覆盖文件系统、进程管理、网络、IPC等所有关键子系统：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// include/linux/lsm_hooks.h 中的钩子定义</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">security_hook_list</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">hlist_node</span><span class="w">       </span><span class="n">list</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">hlist_head</span><span class="w">       </span><span class="o">*</span><span class="n">head</span><span class="p">;</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="nc">security_list_options</span><span class="w"> </span><span class="n">hook</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w">              </span><span class="o">*</span><span class="n">lsm</span><span class="p">;</span><span class="w">  </span><span class="c1">// 安全模块名称</span>
+<span class="p">};</span>
+
+<span class="c1">// 文件操作相关的钩子示例</span>
+<span class="k">union</span><span class="w"> </span><span class="nc">security_list_options</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 文件打开钩子</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">file_open</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">file</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 文件权限检查钩子</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">file_permission</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">mask</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 进程执行钩子</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">bprm_check_security</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">linux_binprm</span><span class="w"> </span><span class="o">*</span><span class="n">bprm</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 任务创建钩子</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">task_create</span><span class="p">)(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">clone_flags</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 网络套接字创建钩子</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">socket_create</span><span class="p">)(</span><span class="kt">int</span><span class="w"> </span><span class="n">family</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">protocol</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">kern</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// ... 数百个钩子函数指针</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>钩子的调用流程采用链式结构，允许多个安全模块串联（stacking）：</p>
+<div class="codehilite"><pre><span></span><code>钩子调用链：
+┌─────────────┐
+│  内核函数   │
+└──────┬──────┘
+       │
+       ▼
+security_file_open()
+       │
+       ▼
+┌─────────────────────────────┐
+│  遍历 security_hook_heads   │
+└─────────────┬───────────────┘
+              │
+    ┌─────────┴─────────┬─────────┬─────────┐
+    ▼                   ▼         ▼         ▼
+┌────────┐        ┌────────┐ ┌────────┐ ┌────────┐
+│SELinux │        │AppArmor│ │ SMACK  │ │Capability│
+│ hook   │        │  hook  │ │  hook  │ │   hook   │
+└────────┘        └────────┘ └────────┘ └────────┘
+    │                   │         │         │
+    └─────────┬─────────┴─────────┴─────────┘
+              ▼
+        返回访问决策
+</code></pre></div>
+
+<h3 id="1314-lsm">13.1.4 LSM的关键数据结构</h3>
+<p>每个安全模块需要维护自己的安全上下文，LSM框架提供了灵活的安全blob机制：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 任务安全信息</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">task_security_struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">osid</span><span class="p">;</span><span class="w">           </span><span class="c1">// 对象安全标识符</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">sid</span><span class="p">;</span><span class="w">            </span><span class="c1">// 主体安全标识符</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">exec_sid</span><span class="p">;</span><span class="w">       </span><span class="c1">// 执行域SID</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">create_sid</span><span class="p">;</span><span class="w">     </span><span class="c1">// 创建文件的SID</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">keycreate_sid</span><span class="p">;</span><span class="w">  </span><span class="c1">// 创建密钥的SID</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">sockcreate_sid</span><span class="p">;</span><span class="w"> </span><span class="c1">// 创建套接字的SID</span>
+<span class="p">};</span>
+
+<span class="c1">// inode安全信息</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">inode_security_struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">inode</span><span class="w"> </span><span class="o">*</span><span class="n">inode</span><span class="p">;</span><span class="w">    </span><span class="c1">// 反向指针</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">  </span><span class="c1">// 用于延迟初始化</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">task_sid</span><span class="p">;</span><span class="w">          </span><span class="c1">// 创建任务的SID</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">sid</span><span class="p">;</span><span class="w">               </span><span class="c1">// inode的SID</span>
+<span class="w">    </span><span class="n">u16</span><span class="w"> </span><span class="n">sclass</span><span class="p">;</span><span class="w">            </span><span class="c1">// 安全类别</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">initialized</span><span class="p">;</span><span class="w">  </span><span class="c1">// 初始化状态</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h2 id="132">13.2 主流安全模块详解</h2>
+<h3 id="1321-selinuxsecurity-enhanced-linux">13.2.1 SELinux（Security-Enhanced Linux）</h3>
+<p>SELinux是最复杂也是最强大的Linux安全模块，由美国国家安全局（NSA）开发，实现了类型强制（Type Enforcement）和多级安全（MLS）模型。</p>
+<h4 id="te">类型强制（TE）模型</h4>
+<p>SELinux的核心是基于类型的访问控制，每个进程和对象都被赋予一个安全上下文：</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">SELinux安全上下文格式</span><span class="err">：</span>
+<span class="nx">user</span><span class="p">:</span><span class="nx">role</span><span class="p">:</span><span class="k">type</span><span class="p">:</span><span class="nx">level</span>
+
+<span class="nx">示例</span><span class="err">：</span>
+<span class="nx">system_u</span><span class="p">:</span><span class="nx">system_r</span><span class="p">:</span><span class="nx">httpd_t</span><span class="p">:</span><span class="nx">s0</span><span class="w">       </span><span class="err">#</span><span class="w"> </span><span class="nx">Apache进程</span>
+<span class="nx">unconfined_u</span><span class="p">:</span><span class="nx">object_r</span><span class="p">:</span><span class="nx">user_home_t</span><span class="p">:</span><span class="nx">s0</span><span class="w">  </span><span class="err">#</span><span class="w"> </span><span class="nx">用户主目录文件</span>
+
+<span class="nx">访问控制决策</span><span class="err">：</span>
+<span class="err">┌────────────────┐</span><span class="w">        </span><span class="err">┌────────────────┐</span>
+<span class="err">│</span><span class="w">   </span><span class="nx">主体</span><span class="p">(</span><span class="nx">Subject</span><span class="p">)</span><span class="w"> </span><span class="err">│</span><span class="w">        </span><span class="err">│</span><span class="w">   </span><span class="nx">客体</span><span class="p">(</span><span class="nx">Object</span><span class="p">)</span><span class="w">  </span><span class="err">│</span>
+<span class="err">│</span><span class="w">   </span><span class="nx">httpd_t</span><span class="w">      </span><span class="err">│───────▶│</span><span class="w">   </span><span class="nx">httpd_config_t</span><span class="err">│</span>
+<span class="err">└────────────────┘</span><span class="w">        </span><span class="err">└────────────────┘</span>
+<span class="w">         </span><span class="err">│</span><span class="w">                         </span><span class="err">│</span>
+<span class="w">         </span><span class="err">└────────┬────────────────┘</span>
+<span class="w">                  </span><span class="err">▼</span>
+<span class="w">          </span><span class="err">┌──────────────┐</span>
+<span class="w">          </span><span class="err">│</span><span class="w">  </span><span class="nx">策略规则</span><span class="w">    </span><span class="err">│</span>
+<span class="w">          </span><span class="err">│</span><span class="w"> </span><span class="nx">allow</span><span class="w"> </span><span class="nx">httpd_t</span><span class="err">│</span>
+<span class="w">          </span><span class="err">│</span><span class="w"> </span><span class="nx">httpd_config_t</span><span class="err">│</span>
+<span class="w">          </span><span class="err">│</span><span class="w"> </span><span class="p">:</span><span class="nx">file</span><span class="w"> </span><span class="nx">read</span><span class="p">;</span><span class="w">  </span><span class="err">│</span>
+<span class="w">          </span><span class="err">└──────────────┘</span>
+</code></pre></div>
+
+<h4 id="_3">策略语言与编译</h4>
+<p>SELinux策略使用特定的策略语言编写，然后编译成二进制格式加载到内核：</p>
+<div class="codehilite"><pre><span></span><code><span class="err">#</span><span class="w"> </span><span class="nx">类型声明</span>
+<span class="k">type</span><span class="w"> </span><span class="nx">httpd_t</span><span class="p">;</span>
+<span class="k">type</span><span class="w"> </span><span class="nx">httpd_exec_t</span><span class="p">;</span>
+<span class="k">type</span><span class="w"> </span><span class="nx">httpd_config_t</span><span class="p">;</span>
+<span class="k">type</span><span class="w"> </span><span class="nx">httpd_log_t</span><span class="p">;</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">域转换规则</span>
+<span class="nx">type_transition</span><span class="w"> </span><span class="nx">init_t</span><span class="w"> </span><span class="nx">httpd_exec_t</span><span class="p">:</span><span class="nx">process</span><span class="w"> </span><span class="nx">httpd_t</span><span class="p">;</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">访问向量规则</span>
+<span class="nx">allow</span><span class="w"> </span><span class="nx">httpd_t</span><span class="w"> </span><span class="nx">httpd_config_t</span><span class="p">:</span><span class="nx">file</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">read</span><span class="w"> </span><span class="nx">getattr</span><span class="w"> </span><span class="p">};</span>
+<span class="nx">allow</span><span class="w"> </span><span class="nx">httpd_t</span><span class="w"> </span><span class="nx">httpd_log_t</span><span class="p">:</span><span class="nx">file</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nx">write</span><span class="w"> </span><span class="nx">append</span><span class="w"> </span><span class="p">};</span>
+<span class="nx">allow</span><span class="w"> </span><span class="nx">httpd_t</span><span class="w"> </span><span class="kp">self</span><span class="p">:</span><span class="nx">tcp_socket</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">create</span><span class="w"> </span><span class="nx">bind</span><span class="w"> </span><span class="nx">listen</span><span class="w"> </span><span class="nx">accept</span><span class="w"> </span><span class="p">};</span>
+
+<span class="err">#</span><span class="w"> </span><span class="nx">宏定义简化策略编写</span>
+<span class="nx">define</span><span class="p">(</span><span class="err">`</span><span class="nx">apache_domain</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="err">`</span>
+<span class="w">    </span><span class="k">type</span><span class="w"> </span><span class="err">$</span><span class="mi">1</span><span class="nx">_t</span><span class="p">;</span>
+<span class="w">    </span><span class="k">type</span><span class="w"> </span><span class="err">$</span><span class="mi">1</span><span class="nx">_exec_t</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">domain_type</span><span class="p">(</span><span class="err">$</span><span class="mi">1</span><span class="nx">_t</span><span class="p">)</span>
+<span class="w">    </span><span class="nx">domain_entry_file</span><span class="p">(</span><span class="err">$</span><span class="mi">1</span><span class="err">\</span><span class="nx">_t</span><span class="p">,</span><span class="w"> </span><span class="err">$</span><span class="mi">1</span><span class="nx">_exec_t</span><span class="p">)</span>
+<span class="err">&#39;</span><span class="p">)</span>
+</code></pre></div>
+
+<h4 id="avcaccess-vector-cache">AVC（Access Vector Cache）</h4>
+<p>为了提高性能，SELinux实现了访问向量缓存：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">avc_node</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">avc_entry</span><span class="w">    </span><span class="n">ae</span><span class="p">;</span><span class="w">      </span><span class="c1">// 访问向量条目</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">hlist_node</span><span class="w">   </span><span class="n">list</span><span class="p">;</span><span class="w">    </span><span class="c1">// 哈希链表</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rcu_head</span><span class="w">     </span><span class="n">rhead</span><span class="p">;</span><span class="w">   </span><span class="c1">// RCU头</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">avc_entry</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">         </span><span class="n">ssid</span><span class="p">;</span><span class="w">       </span><span class="c1">// 源安全标识符</span>
+<span class="w">    </span><span class="n">u32</span><span class="w">         </span><span class="n">tsid</span><span class="p">;</span><span class="w">       </span><span class="c1">// 目标安全标识符</span>
+<span class="w">    </span><span class="n">u16</span><span class="w">         </span><span class="n">tclass</span><span class="p">;</span><span class="w">     </span><span class="c1">// 目标类别</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">av_decision</span><span class="w">  </span><span class="n">avd</span><span class="p">;</span><span class="w">  </span><span class="c1">// 访问决策</span>
+<span class="p">};</span>
+
+<span class="c1">// AVC查询流程</span>
+<span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">avc_has_perm</span><span class="p">(</span><span class="n">u32</span><span class="w"> </span><span class="n">ssid</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">tsid</span><span class="p">,</span>
+<span class="w">                               </span><span class="n">u16</span><span class="w"> </span><span class="n">tclass</span><span class="p">,</span><span class="w"> </span><span class="n">u32</span><span class="w"> </span><span class="n">requested</span><span class="p">,</span>
+<span class="w">                               </span><span class="k">struct</span><span class="w"> </span><span class="nc">common_audit_data</span><span class="w"> </span><span class="o">*</span><span class="n">auditdata</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">av_decision</span><span class="w"> </span><span class="n">avd</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">rc</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 快速路径：查询缓存</span>
+<span class="w">    </span><span class="n">rc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">avc_has_perm_noaudit</span><span class="p">(</span><span class="n">ssid</span><span class="p">,</span><span class="w"> </span><span class="n">tsid</span><span class="p">,</span><span class="w"> </span><span class="n">tclass</span><span class="p">,</span><span class="w"> </span><span class="n">requested</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">avd</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 慢速路径：查询策略</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rc</span><span class="p">)</span>
+<span class="w">        </span><span class="n">rc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">security_compute_av</span><span class="p">(</span><span class="n">ssid</span><span class="p">,</span><span class="w"> </span><span class="n">tsid</span><span class="p">,</span><span class="w"> </span><span class="n">tclass</span><span class="p">,</span><span class="w"> </span><span class="n">requested</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">avd</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 审计记录</span>
+<span class="w">    </span><span class="n">avc_audit</span><span class="p">(</span><span class="n">ssid</span><span class="p">,</span><span class="w"> </span><span class="n">tsid</span><span class="p">,</span><span class="w"> </span><span class="n">tclass</span><span class="p">,</span><span class="w"> </span><span class="n">requested</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">avd</span><span class="p">,</span><span class="w"> </span><span class="n">rc</span><span class="p">,</span><span class="w"> </span><span class="n">auditdata</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">rc</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1322-apparmor">13.2.2 AppArmor</h3>
+<p>AppArmor采用基于路径的访问控制，相比SELinux更容易理解和配置：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">AppArmor配置文件示例</span><span class="err">：</span>
+<span class="c1">#include &lt;tunables/global&gt;</span>
+
+<span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">sbin</span><span class="o">/</span><span class="n">nginx</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">#include &lt;abstractions/base&gt;</span>
+<span class="w">    </span><span class="c1">#include &lt;abstractions/nameservice&gt;</span>
+
+<span class="w">    </span><span class="n">capability</span><span class="w"> </span><span class="n">net_bind_service</span><span class="p">,</span>
+<span class="w">    </span><span class="n">capability</span><span class="w"> </span><span class="n">setuid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">capability</span><span class="w"> </span><span class="n">setgid</span><span class="p">,</span>
+
+<span class="w">    </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">nginx</span><span class="o">/</span><span class="w"> </span><span class="n">r</span><span class="p">,</span>
+<span class="w">    </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">nginx</span><span class="o">/**</span><span class="w"> </span><span class="n">r</span><span class="p">,</span>
+<span class="w">    </span><span class="o">/</span><span class="k">var</span><span class="o">/</span><span class="nb">log</span><span class="o">/</span><span class="n">nginx</span><span class="o">/*.</span><span class="n">log</span><span class="w"> </span><span class="n">w</span><span class="p">,</span>
+<span class="w">    </span><span class="o">/</span><span class="k">var</span><span class="o">/</span><span class="n">www</span><span class="o">/</span><span class="n">html</span><span class="o">/**</span><span class="w"> </span><span class="n">r</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">network</span><span class="w"> </span><span class="n">inet</span><span class="w"> </span><span class="n">stream</span><span class="p">,</span>
+<span class="w">    </span><span class="n">network</span><span class="w"> </span><span class="n">inet6</span><span class="w"> </span><span class="n">stream</span><span class="p">,</span>
+
+<span class="w">    </span><span class="c1"># 子配置文件</span>
+<span class="w">    </span><span class="o">^/</span><span class="n">usr</span><span class="o">/</span><span class="n">sbin</span><span class="o">/</span><span class="n">nginx</span><span class="o">-</span><span class="n">worker</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="o">/</span><span class="k">var</span><span class="o">/</span><span class="n">www</span><span class="o">/</span><span class="n">html</span><span class="o">/**</span><span class="w"> </span><span class="n">r</span><span class="p">,</span>
+<span class="w">        </span><span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="w"> </span><span class="n">r</span><span class="p">,</span>
+<span class="w">        </span><span class="o">/</span><span class="n">tmp</span><span class="o">/**</span><span class="w"> </span><span class="n">rw</span><span class="p">,</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>AppArmor的实现相对简单，主要依赖于DFA（确定有限自动机）进行路径匹配：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">路径匹配DFA</span><span class="err">：</span>
+<span class="w">        </span><span class="o">/</span><span class="n">etc</span>
+<span class="w">         </span><span class="err">│</span>
+<span class="w">    </span><span class="err">┌────┴────┐</span>
+<span class="w">    </span><span class="err">│</span><span class="w">         </span><span class="err">│</span>
+<span class="w">  </span><span class="n">nginx</span><span class="o">/</span><span class="w">    </span><span class="n">passwd</span>
+<span class="w">    </span><span class="err">│</span><span class="w">         </span><span class="err">│</span>
+<span class="w">  </span><span class="o">*</span><span class="p">.</span><span class="n">conf</span><span class="w">    </span><span class="o">[</span><span class="n">accept</span><span class="o">]</span>
+<span class="w">    </span><span class="err">│</span>
+<span class="w">  </span><span class="o">[</span><span class="n">accept</span><span class="o">]</span>
+</code></pre></div>
+
+<h3 id="1323-smacksimplified-mandatory-access-control-kernel">13.2.3 SMACK（Simplified Mandatory Access Control Kernel）</h3>
+<p>SMACK提供了更简单的标签式访问控制：</p>
+<div class="codehilite"><pre><span></span><code>SMACK规则格式：
+主体标签  客体标签  访问权限
+
+示例：
+WebServer Database  r     # WebServer可以读Database
+User      WebServer wx    # User可以写和执行WebServer
+System    _         rwxa  # System对所有对象有完全权限
+</code></pre></div>
+
+<h2 id="133-linuxcapabilities">13.3 Linux权能系统（Capabilities）</h2>
+<h3 id="1331">13.3.1 权能的设计理念</h3>
+<p>Linux权能系统将传统的超级用户权限分解为细粒度的权能，实现最小权限原则：</p>
+<div class="codehilite"><pre><span></span><code>传统模型 vs 权能模型：
+
+传统模型：                    权能模型：
+┌──────────────┐           ┌──────────────────┐
+│    root      │           │   CAP_NET_ADMIN  │
+│  (所有权限)   │   ───▶    │   CAP_SYS_ADMIN  │
+└──────────────┘           │   CAP_DAC_OVERRIDE│
+                           │   CAP_SETUID      │
+┌──────────────┐           │   ...            │
+│  普通用户     │           │   (38个权能)      │
+│  (受限权限)   │           └──────────────────┘
+└──────────────┘
+</code></pre></div>
+
+<h3 id="1332">13.3.2 权能的实现机制</h3>
+<p>每个进程维护多个权能集合：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// include/linux/cred.h</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">cred</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// ... 其他字段</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w">    </span><span class="n">cap_inheritable</span><span class="p">;</span><span class="w">  </span><span class="c1">// 可继承权能集</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w">    </span><span class="n">cap_permitted</span><span class="p">;</span><span class="w">    </span><span class="c1">// 允许权能集</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w">    </span><span class="n">cap_effective</span><span class="p">;</span><span class="w">    </span><span class="c1">// 有效权能集</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w">    </span><span class="n">cap_bset</span><span class="p">;</span><span class="w">        </span><span class="c1">// 边界集</span>
+<span class="w">    </span><span class="n">kernel_cap_t</span><span class="w">    </span><span class="n">cap_ambient</span><span class="p">;</span><span class="w">     </span><span class="c1">// 环境权能集</span>
+<span class="p">};</span>
+
+<span class="c1">// 权能检查宏</span>
+<span class="cp">#define capable(cap) (capable_wrt_inode_uidgid(current_cred(), \</span>
+<span class="cp">                     NULL, NULL, cap))</span>
+
+<span class="c1">// 文件权能存储在扩展属性中</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">vfs_cap_data</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">__le32</span><span class="w"> </span><span class="n">magic_etc</span><span class="p">;</span><span class="w">            </span><span class="c1">// 魔数和标志</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">__le32</span><span class="w"> </span><span class="n">permitted</span><span class="p">;</span><span class="w">        </span><span class="c1">// 允许权能</span>
+<span class="w">        </span><span class="n">__le32</span><span class="w"> </span><span class="n">inheritable</span><span class="p">;</span><span class="w">      </span><span class="c1">// 可继承权能</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">data</span><span class="p">[</span><span class="n">VFS_CAP_U32</span><span class="p">];</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>权能的传递规则遵循复杂的公式：</p>
+<div class="codehilite"><pre><span></span><code>P&#39;(ambient)     = (file caps || P(ambient))
+P&#39;(permitted)   = (P(inheritable) &amp; F(inheritable)) | 
+                  (F(permitted) &amp; cap_bset) | P&#39;(ambient)
+P&#39;(effective)   = F(effective) ? P&#39;(permitted) : P&#39;(ambient)
+P&#39;(inheritable) = P(inheritable)
+P&#39;(bset)        = P(bset)
+
+其中：
+P  = 父进程权能
+P&#39; = 子进程权能
+F  = 文件权能
+</code></pre></div>
+
+<h3 id="1333">13.3.3 常用权能详解</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 网络管理权能</span>
+<span class="n">CAP_NET_ADMIN</span><span class="w">       </span><span class="c1">// 配置网络接口、路由表、防火墙规则</span>
+<span class="n">CAP_NET_BIND_SERVICE</span><span class="w"> </span><span class="c1">// 绑定特权端口（&lt;1024）</span>
+<span class="n">CAP_NET_RAW</span><span class="w">         </span><span class="c1">// 使用原始套接字和包套接字</span>
+
+<span class="c1">// 系统管理权能</span>
+<span class="n">CAP_SYS_ADMIN</span><span class="w">       </span><span class="c1">// 执行系统管理操作（最强大的权能）</span>
+<span class="n">CAP_SYS_MODULE</span><span class="w">      </span><span class="c1">// 加载和卸载内核模块</span>
+<span class="n">CAP_SYS_PTRACE</span><span class="w">      </span><span class="c1">// 追踪任意进程</span>
+<span class="n">CAP_SYS_CHROOT</span><span class="w">      </span><span class="c1">// 使用chroot()</span>
+
+<span class="c1">// 文件系统权能</span>
+<span class="n">CAP_DAC_OVERRIDE</span><span class="w">    </span><span class="c1">// 绕过文件读、写、执行权限检查</span>
+<span class="n">CAP_DAC_READ_SEARCH</span><span class="w"> </span><span class="c1">// 绕过文件读权限和目录搜索权限检查</span>
+<span class="n">CAP_FOWNER</span><span class="w">          </span><span class="c1">// 绕过文件所有者检查</span>
+<span class="n">CAP_CHOWN</span><span class="w">           </span><span class="c1">// 改变文件所有者</span>
+
+<span class="c1">// 进程管理权能</span>
+<span class="n">CAP_SETUID</span><span class="w">          </span><span class="c1">// 设置UID</span>
+<span class="n">CAP_SETGID</span><span class="w">          </span><span class="c1">// 设置GID</span>
+<span class="n">CAP_KILL</span><span class="w">            </span><span class="c1">// 发送信号给任意进程</span>
+<span class="n">CAP_SETPCAP</span><span class="w">         </span><span class="c1">// 修改进程权能</span>
+</code></pre></div>
+
+<h2 id="134-ebpf">13.4 eBPF与安全策略</h2>
+<h3 id="1341-ebpf">13.4.1 eBPF在安全中的应用</h3>
+<p>eBPF（extended Berkeley Packet Filter）为Linux安全提供了可编程的、动态的安全策略实施机制：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 使用eBPF实现系统调用过滤</span>
+<span class="n">SEC</span><span class="p">(</span><span class="s">&quot;lsm/file_open&quot;</span><span class="p">)</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">BPF_PROG</span><span class="p">(</span><span class="n">file_open_security</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">file</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">task</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">bpf_get_current_task</span><span class="p">();</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">comm</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+<span class="w">    </span><span class="n">bpf_get_current_comm</span><span class="p">(</span><span class="o">&amp;</span><span class="n">comm</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">comm</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// 获取文件路径</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">path</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dentry</span><span class="w"> </span><span class="o">*</span><span class="n">dentry</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">file</span><span class="o">-&gt;</span><span class="n">f_path</span><span class="p">.</span><span class="n">dentry</span><span class="p">;</span>
+<span class="w">    </span><span class="n">bpf_d_path</span><span class="p">(</span><span class="o">&amp;</span><span class="n">file</span><span class="o">-&gt;</span><span class="n">f_path</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">path</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// 安全策略：禁止特定进程访问敏感文件</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">strncmp</span><span class="p">(</span><span class="n">comm</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;suspicious&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">strstr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/etc/shadow&quot;</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">bpf_printk</span><span class="p">(</span><span class="s">&quot;Blocked: %s accessing %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">comm</span><span class="p">,</span><span class="w"> </span><span class="n">path</span><span class="p">);</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">EPERM</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1342-bpf-lsm">13.4.2 BPF LSM框架</h3>
+<p>BPF LSM允许通过eBPF程序实现LSM钩子：</p>
+<div class="codehilite"><pre><span></span><code>BPF LSM架构：
+┌──────────────────────────────┐
+│      用户空间BPF程序          │
+└────────────┬─────────────────┘
+             │ bpf()系统调用
+             ▼
+┌──────────────────────────────┐
+│      BPF验证器               │
+│  • 类型检查                  │
+│  • 边界检查                  │
+│  • 循环检测                  │
+└────────────┬─────────────────┘
+             │
+             ▼
+┌──────────────────────────────┐
+│      BPF JIT编译器           │
+└────────────┬─────────────────┘
+             │
+             ▼
+┌──────────────────────────────┐
+│      LSM钩子点               │
+│  • file_open                 │
+│  • task_alloc                │
+│  • socket_connect            │
+└──────────────────────────────┘
+</code></pre></div>
+
+<h3 id="1343-ebpf">13.4.3 使用eBPF进行运行时安全监控</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 监控进程创建</span>
+<span class="n">SEC</span><span class="p">(</span><span class="s">&quot;tracepoint/sched/sched_process_fork&quot;</span><span class="p">)</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">trace_fork</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">trace_event_raw_sched_process_fork</span><span class="w"> </span><span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">parent_pid</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">child_pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">child_pid</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 记录进程树</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">process_info</span><span class="w"> </span><span class="n">info</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">.</span><span class="n">parent_pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pid</span><span class="p">,</span>
+<span class="w">        </span><span class="p">.</span><span class="n">child_pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">child_pid</span><span class="p">,</span>
+<span class="w">        </span><span class="p">.</span><span class="n">timestamp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bpf_ktime_get_ns</span><span class="p">(),</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">process_tree</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">child_pid</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">info</span><span class="p">,</span><span class="w"> </span><span class="n">BPF_ANY</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 检测异常fork行为</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="o">*</span><span class="n">fork_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">fork_stats</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">pid</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fork_count</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">*</span><span class="n">fork_count</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">FORK_THRESHOLD</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 触发告警</span>
+<span class="w">        </span><span class="n">bpf_send_signal</span><span class="p">(</span><span class="n">SIGKILL</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 监控网络连接</span>
+<span class="n">SEC</span><span class="p">(</span><span class="s">&quot;lsm/socket_connect&quot;</span><span class="p">)</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">BPF_PROG</span><span class="p">(</span><span class="n">socket_connect_security</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">socket</span><span class="w"> </span><span class="o">*</span><span class="n">sock</span><span class="p">,</span>
+<span class="w">             </span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr</span><span class="w"> </span><span class="o">*</span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">addrlen</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">address</span><span class="o">-&gt;</span><span class="n">sa_family</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">AF_INET</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr_in</span><span class="w"> </span><span class="o">*</span><span class="n">addr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">sockaddr_in</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">address</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">dest_ip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">addr</span><span class="o">-&gt;</span><span class="n">sin_addr</span><span class="p">.</span><span class="n">s_addr</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u16</span><span class="w"> </span><span class="n">dest_port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ntohs</span><span class="p">(</span><span class="n">addr</span><span class="o">-&gt;</span><span class="n">sin_port</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 检查黑名单</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">blacklist_ips</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dest_ip</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">bpf_printk</span><span class="p">(</span><span class="s">&quot;Blocked connection to %pI4:%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dest_ip</span><span class="p">,</span><span class="w"> </span><span class="n">dest_port</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">EPERM</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="135">13.5 内核安全威胁模型</h2>
+<h3 id="1351">13.5.1 常见攻击向量</h3>
+<p>Linux内核面临多种安全威胁：</p>
+<div class="codehilite"><pre><span></span><code>攻击向量分类：
+┌─────────────────────────────────────────┐
+│            内核攻击面                    │
+├─────────────────────────────────────────┤
+│  1. 系统调用接口                        │
+│     • 输入验证不足                      │
+│     • 竞态条件                          │
+│     • 整数溢出                          │
+│                                         │
+│  2. 设备驱动                            │
+│     • 未初始化内存                      │
+│     • 缓冲区溢出                        │
+│     • UAF（Use-After-Free）             │
+│                                         │
+│  3. 网络协议栈                          │
+│     • 包处理漏洞                        │
+│     • 协议状态机错误                    │
+│     • 拒绝服务攻击                      │
+│                                         │
+│  4. 文件系统                            │
+│     • 元数据损坏                        │
+│     • 符号链接攻击                      │
+│     • 权限绕过                          │
+└─────────────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="1352">13.5.2 权限提升攻击</h3>
+<p>权限提升是最严重的安全威胁之一：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 典型的权限提升漏洞模式</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">vulnerable_ioctl_data</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="n">user_ptr</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// 错误的权限检查</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">vulnerable_ioctl</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cmd</span><span class="p">,</span>
+<span class="w">                            </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">vulnerable_ioctl_data</span><span class="w"> </span><span class="n">data</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 缺少权限检查！</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">copy_from_user</span><span class="p">(</span><span class="o">&amp;</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">arg</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">EFAULT</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 危险：直接使用用户提供的指针</span>
+<span class="w">    </span><span class="n">memcpy</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">user_ptr</span><span class="p">,</span><span class="w"> </span><span class="n">kernel_secret</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">);</span><span class="w">  </span><span class="c1">// 信息泄露</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 正确的实现</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">secure_ioctl</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cmd</span><span class="p">,</span>
+<span class="w">                         </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">vulnerable_ioctl_data</span><span class="w"> </span><span class="n">data</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 权限检查</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">capable</span><span class="p">(</span><span class="n">CAP_SYS_ADMIN</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">EPERM</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 输入验证</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">copy_from_user</span><span class="p">(</span><span class="o">&amp;</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">arg</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">EFAULT</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">MAX_SIZE</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 使用安全的内核API</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">copy_to_user</span><span class="p">(</span><span class="n">data</span><span class="p">.</span><span class="n">user_ptr</span><span class="p">,</span><span class="w"> </span><span class="n">safe_data</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="p">.</span><span class="n">size</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">EFAULT</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1353">13.5.3 侧信道攻击</h3>
+<p>现代CPU的侧信道漏洞对内核安全构成新挑战：</p>
+<div class="codehilite"><pre><span></span><code>Spectre/Meltdown缓解措施：
+
+1. 页表隔离（PTI）：
+   ┌──────────────┐    ┌──────────────┐
+   │  用户页表     │    │  内核页表     │
+   │              │    │              │
+   │  用户空间映射 │    │  用户空间映射 │
+   │              │    │  +           │
+   │              │    │  内核空间映射 │
+   └──────────────┘    └──────────────┘
+
+2. 推测执行屏障：
+   asm volatile(&quot;lfence&quot; ::: &quot;memory&quot;);  // Intel
+   asm volatile(&quot;dsb sy&quot; ::: &quot;memory&quot;);  // ARM
+
+3. 间接分支预测屏障（IBPB）：
+   wrmsrl(MSR_IA32_PRED_CMD, PRED_CMD_IBPB);
+</code></pre></div>
+
+<h3 id="1354">13.5.4 内存损坏防护</h3>
+<p>内核实现了多种内存损坏防护机制：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// KASLR（内核地址空间布局随机化）</span>
+<span class="c1">// arch/x86/boot/compressed/kaslr.c</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">find_random_phys_addr</span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">minimum</span><span class="p">,</span>
+<span class="w">                                          </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">image_size</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">random_addr</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 获取随机数</span>
+<span class="w">    </span><span class="n">random_addr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kaslr_get_random_long</span><span class="p">(</span><span class="s">&quot;Physical&quot;</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 对齐到内核对齐边界</span>
+<span class="w">    </span><span class="n">random_addr</span><span class="w"> </span><span class="o">&amp;=</span><span class="w"> </span><span class="o">~</span><span class="p">(</span><span class="n">CONFIG_PHYSICAL_ALIGN</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 确保在有效范围内</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">random_addr</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">minimum</span><span class="p">)</span>
+<span class="w">        </span><span class="n">random_addr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">minimum</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">random_addr</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 栈溢出保护（Stack Canary）</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">__stack_chk_fail</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">panic</span><span class="p">(</span><span class="s">&quot;stack-protector: Kernel stack is corrupted in: %pS</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="n">__builtin_return_address</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="c1">// KFENCE（内核电栅栏）</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">kfence_guarded_alloc</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">addr</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">// 在分配区域前后设置保护页</span>
+<span class="w">    </span><span class="n">set_memory_valid</span><span class="p">((</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">addr</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">PAGE_SIZE</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span>
+<span class="w">    </span><span class="n">set_memory_valid</span><span class="p">((</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">addr</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cp">## 13.6 历史故事：Linux安全的演进之路</span>
+
+<span class="cp">### 13.6.1 NSA贡献SELinux的争议</span>
+
+<span class="mi">2000</span><span class="n">年</span><span class="err">，</span><span class="n">美国国家安全局</span><span class="err">（</span><span class="n">NSA</span><span class="err">）</span><span class="n">向Linux社区贡献SELinux代码时引发巨大争议</span><span class="err">。</span><span class="n">许多开发者质疑</span><span class="err">：</span><span class="s">&quot;为什么NSA要帮助加强Linux安全？是否有后门？&quot;</span>
+
+<span class="n">Linus</span><span class="w"> </span><span class="n">Torvalds最初的态度是谨慎的</span><span class="err">：</span><span class="s">&quot;我不会接受任何我不理解的安全代码。&quot;</span><span class="n">经过长达3年的代码审查和重构</span><span class="err">，</span><span class="n">SELinux最终在2003年进入2</span><span class="mf">.6</span><span class="n">内核</span><span class="err">。</span><span class="n">这个过程中</span><span class="err">，</span><span class="n">LSM框架应运而生</span><span class="err">——</span><span class="n">它允许SELinux作为可选模块存在</span><span class="err">，</span><span class="n">而不是强制所有人使用</span><span class="err">。</span>
+
+<span class="n">有趣的是</span><span class="err">，</span><span class="n">Edward</span><span class="w"> </span><span class="n">Snowden在2013年的爆料显示</span><span class="err">，</span><span class="n">NSA确实有各种监控项目</span><span class="err">，</span><span class="n">但没有证据表明SELinux存在后门</span><span class="err">。</span><span class="n">相反</span><span class="err">，</span><span class="n">SELinux的开源特性使其成为最透明</span><span class="err">、</span><span class="n">最被审查的安全系统之一</span><span class="err">。</span>
+
+<span class="cp">### 13.6.2 Linus对安全框架的态度转变</span>
+
+<span class="n">早期的Linus对复杂的安全框架持怀疑态度</span><span class="err">。</span><span class="n">他在2001年的邮件中写道</span><span class="err">：</span><span class="s">&quot;安全不应该妨碍正常使用。如果安全措施让系统变得难用，人们就会关闭它。&quot;</span>
+
+<span class="n">这种实用主义哲学深刻影响了Linux安全架构的设计</span><span class="err">：</span>
+
+<span class="o">-</span><span class="w"> </span><span class="n">安全功能必须是可选的</span>
+<span class="o">-</span><span class="w"> </span><span class="n">默认配置不能破坏现有系统</span>
+<span class="o">-</span><span class="w"> </span><span class="n">性能影响必须最小化</span>
+
+<span class="n">随着云计算和容器技术的兴起</span><span class="err">，</span><span class="n">Linus的态度有所软化</span><span class="err">。</span><span class="mi">2018</span><span class="n">年</span><span class="err">，</span><span class="n">他在一次采访中承认</span><span class="err">：</span><span class="s">&quot;安全已经变得如此重要，我们不能再把它当作次要功能。&quot;</span>
+
+<span class="cp">### 13.6.3 权能系统的漫长征程</span>
+
+<span class="n">Linux权能系统的实现经历了近20年的演进</span><span class="err">：</span>
+
+<span class="o">-</span><span class="w"> </span><span class="o">**</span><span class="mi">1997</span><span class="n">年</span><span class="o">**</span><span class="err">：</span><span class="n">首次引入权能概念</span><span class="err">（</span><span class="mf">2.1</span><span class="n">内核</span><span class="err">）</span>
+<span class="o">-</span><span class="w"> </span><span class="o">**</span><span class="mi">2008</span><span class="n">年</span><span class="o">**</span><span class="err">：</span><span class="n">文件权能支持</span><span class="err">（</span><span class="mf">2.6.24</span><span class="err">）</span>
+<span class="o">-</span><span class="w"> </span><span class="o">**</span><span class="mi">2015</span><span class="n">年</span><span class="o">**</span><span class="err">：</span><span class="n">环境权能</span><span class="err">（</span><span class="n">Ambient</span><span class="w"> </span><span class="n">Capabilities</span><span class="err">）</span><span class="n">引入</span><span class="err">（</span><span class="mf">4.3</span><span class="n">内核</span><span class="err">）</span>
+
+<span class="n">Andy</span><span class="w"> </span><span class="n">Lutomirski在实现环境权能时说</span><span class="err">：</span><span class="s">&quot;权能系统的问题是它太复杂了。我们需要让它对普通开发者更友好。&quot;</span><span class="n">这促成了环境权能的设计</span><span class="err">，</span><span class="n">使得非root进程也能保持某些权能</span><span class="err">。</span>
+
+<span class="cp">## 13.7 高级话题：现代内核安全技术</span>
+
+<span class="cp">### 13.7.1 内核自保护项目（KSPP）</span>
+
+<span class="n">Kernel</span><span class="w"> </span><span class="n">Self</span><span class="w"> </span><span class="n">Protection</span><span class="w"> </span><span class="n">Project由Kees</span><span class="w"> </span><span class="n">Cook领导</span><span class="err">，</span><span class="n">致力于将各种安全加固技术整合到主线内核</span><span class="err">：</span>
+
+<span class="err">```</span><span class="n">c</span>
+<span class="c1">// 控制流完整性（CFI）</span>
+<span class="c1">// 编译器在间接调用点插入类型检查</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">cfi_check_fn</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">fn</span><span class="p">)(</span><span class="kt">int</span><span class="p">),</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">// 编译器生成的CFI检查</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">__cfi_check</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="w"> </span><span class="n">CFI_TYPE_FN</span><span class="p">))</span>
+<span class="w">        </span><span class="n">__cfi_fail</span><span class="p">();</span>
+
+<span class="w">    </span><span class="n">fn</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span><span class="w">  </span><span class="c1">// 安全的间接调用</span>
+<span class="p">}</span>
+
+<span class="c1">// 内核地址空间隔离（KASI）</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">kasi_struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mm_struct</span><span class="w"> </span><span class="o">*</span><span class="n">isolated_mm</span><span class="p">;</span><span class="w">  </span><span class="c1">// 隔离的地址空间</span>
+<span class="w">    </span><span class="n">pte_t</span><span class="w"> </span><span class="o">*</span><span class="n">isolated_ptes</span><span class="p">;</span><span class="w">           </span><span class="c1">// 独立的页表项</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">isolated_start</span><span class="p">;</span><span class="w">   </span><span class="c1">// 隔离区域起始</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">isolated_size</span><span class="p">;</span><span class="w">    </span><span class="c1">// 隔离区域大小</span>
+<span class="p">};</span>
+
+<span class="c1">// 初始化完整性测量（IMA）</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">ima_calc_file_hash</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">ima_digest_data</span><span class="w"> </span><span class="o">*</span><span class="n">hash</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">loff_t</span><span class="w"> </span><span class="n">i_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i_size_read</span><span class="p">(</span><span class="n">file_inode</span><span class="p">(</span><span class="n">file</span><span class="p">));</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">crypto_shash</span><span class="w"> </span><span class="o">*</span><span class="n">tfm</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">shash_desc</span><span class="w"> </span><span class="o">*</span><span class="n">desc</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">tfm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ima_alloc_tfm</span><span class="p">(</span><span class="n">hash</span><span class="o">-&gt;</span><span class="n">algo</span><span class="p">);</span>
+<span class="w">    </span><span class="n">desc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ima_alloc_desc</span><span class="p">(</span><span class="n">tfm</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 计算文件哈希</span>
+<span class="w">    </span><span class="n">rc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">crypto_shash_init</span><span class="p">(</span><span class="n">desc</span><span class="p">);</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">offset</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">i_size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">rbuf_len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">min</span><span class="p">(</span><span class="n">i_size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">rbuf_size</span><span class="p">);</span>
+<span class="w">        </span><span class="n">rc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">integrity_kernel_read</span><span class="p">(</span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">rbuf</span><span class="p">,</span><span class="w"> </span><span class="n">rbuf_len</span><span class="p">);</span>
+<span class="w">        </span><span class="n">rc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">crypto_shash_update</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="n">rbuf</span><span class="p">,</span><span class="w"> </span><span class="n">rbuf_len</span><span class="p">);</span>
+<span class="w">        </span><span class="n">offset</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">rbuf_len</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">rc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">crypto_shash_final</span><span class="p">(</span><span class="n">desc</span><span class="p">,</span><span class="w"> </span><span class="n">hash</span><span class="o">-&gt;</span><span class="n">digest</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">rc</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1372">13.7.2 基于硬件的安全特性</h3>
+<p>现代处理器提供了越来越多的安全特性：</p>
+<div class="codehilite"><pre><span></span><code>Intel CET（控制流强制技术）：
+┌─────────────────────────────────┐
+│      Shadow Stack               │
+├─────────────────────────────────┤
+│  • 硬件维护的返回地址栈         │
+│  • 防止ROP攻击                  │
+│  • 自动验证返回地址             │
+└─────────────────────────────────┘
+
+ARM Pointer Authentication：
+┌─────────────────────────────────┐
+│   指针认证码（PAC）              │
+├─────────────────────────────────┤
+│  • 在指针高位嵌入认证码         │
+│  • 使用密钥生成和验证           │
+│  • 防止指针篡改                 │
+└─────────────────────────────────┘
+</code></pre></div>
+
+<h3 id="1373">13.7.3 容器安全与沙箱技术</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// seccomp-bpf沙箱实现</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">install_seccomp_filter</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock_filter</span><span class="w"> </span><span class="n">filter</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 检查系统调用号</span>
+<span class="w">        </span><span class="n">BPF_STMT</span><span class="p">(</span><span class="n">BPF_LD</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_W</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_ABS</span><span class="p">,</span>
+<span class="w">                </span><span class="n">offsetof</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">seccomp_data</span><span class="p">,</span><span class="w"> </span><span class="n">nr</span><span class="p">)),</span>
+
+<span class="w">        </span><span class="c1">// 允许的系统调用白名单</span>
+<span class="w">        </span><span class="n">BPF_JUMP</span><span class="p">(</span><span class="n">BPF_JMP</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_JEQ</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">__NR_read</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span>
+<span class="w">        </span><span class="n">BPF_STMT</span><span class="p">(</span><span class="n">BPF_RET</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">SECCOMP_RET_ALLOW</span><span class="p">),</span>
+
+<span class="w">        </span><span class="n">BPF_JUMP</span><span class="p">(</span><span class="n">BPF_JMP</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_JEQ</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">__NR_write</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span>
+<span class="w">        </span><span class="n">BPF_STMT</span><span class="p">(</span><span class="n">BPF_RET</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">SECCOMP_RET_ALLOW</span><span class="p">),</span>
+
+<span class="w">        </span><span class="n">BPF_JUMP</span><span class="p">(</span><span class="n">BPF_JMP</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_JEQ</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">__NR_exit</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span>
+<span class="w">        </span><span class="n">BPF_STMT</span><span class="p">(</span><span class="n">BPF_RET</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">SECCOMP_RET_ALLOW</span><span class="p">),</span>
+
+<span class="w">        </span><span class="c1">// 默认拒绝</span>
+<span class="w">        </span><span class="n">BPF_STMT</span><span class="p">(</span><span class="n">BPF_RET</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">BPF_K</span><span class="p">,</span><span class="w"> </span><span class="n">SECCOMP_RET_KILL</span><span class="p">),</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sock_fprog</span><span class="w"> </span><span class="n">prog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">.</span><span class="n">len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ARRAY_SIZE</span><span class="p">(</span><span class="n">filter</span><span class="p">),</span>
+<span class="w">        </span><span class="p">.</span><span class="n">filter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// 安装过滤器</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">prctl</span><span class="p">(</span><span class="n">PR_SET_NO_NEW_PRIVS</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">prctl</span><span class="p">(</span><span class="n">PR_SET_SECCOMP</span><span class="p">,</span><span class="w"> </span><span class="n">SECCOMP_MODE_FILTER</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">prog</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Landlock LSM - 用户空间沙箱</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">landlock_ruleset_attr</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">__u64</span><span class="w"> </span><span class="n">handled_access_fs</span><span class="p">;</span><span class="w">  </span><span class="c1">// 文件系统访问权限</span>
+<span class="w">    </span><span class="n">__u64</span><span class="w"> </span><span class="n">handled_access_net</span><span class="p">;</span><span class="w"> </span><span class="c1">// 网络访问权限</span>
+<span class="p">};</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">create_landlock_sandbox</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">landlock_ruleset_attr</span><span class="w"> </span><span class="n">attr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">.</span><span class="n">handled_access_fs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LANDLOCK_ACCESS_FS_READ_FILE</span><span class="w"> </span><span class="o">|</span>
+<span class="w">                            </span><span class="n">LANDLOCK_ACCESS_FS_READ_DIR</span><span class="p">,</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ruleset_fd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">landlock_create_ruleset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">attr</span><span class="p">),</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 添加规则</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">landlock_path_beneath_attr</span><span class="w"> </span><span class="n">path_beneath</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">.</span><span class="n">allowed_access</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LANDLOCK_ACCESS_FS_READ_FILE</span><span class="p">,</span>
+<span class="w">        </span><span class="p">.</span><span class="n">parent_fd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">open</span><span class="p">(</span><span class="s">&quot;/usr&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">O_PATH</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">O_CLOEXEC</span><span class="p">),</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">landlock_add_rule</span><span class="p">(</span><span class="n">ruleset_fd</span><span class="p">,</span><span class="w"> </span><span class="n">LANDLOCK_RULE_PATH_BENEATH</span><span class="p">,</span>
+<span class="w">                      </span><span class="o">&amp;</span><span class="n">path_beneath</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 应用限制</span>
+<span class="w">    </span><span class="n">landlock_restrict_self</span><span class="p">(</span><span class="n">ruleset_fd</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="138">13.8 本章小结</h2>
+<p>Linux内核安全子系统是一个复杂而精妙的体系，从LSM框架的灵活架构，到SELinux的强制访问控制，从细粒度的权能系统，到可编程的eBPF安全策略，每一层都体现了深思熟虑的设计。</p>
+<p><strong>核心要点回顾：</strong></p>
+<ol>
+<li><strong>LSM框架</strong>提供了统一的安全钩子机制，支持多种安全模型共存</li>
+<li><strong>SELinux</strong>实现了最严格的强制访问控制，适用于高安全需求场景</li>
+<li><strong>AppArmor</strong>采用基于路径的访问控制，配置更加直观</li>
+<li><strong>权能系统</strong>将root权限细分，实现最小权限原则</li>
+<li><strong>eBPF安全</strong>提供了动态、可编程的安全策略实施</li>
+<li><strong>威胁模型</strong>涵盖权限提升、侧信道、内存损坏等多种攻击向量</li>
+</ol>
+<p><strong>关键公式：</strong></p>
+<p>访问控制决策：
+$$\text{Decision} = \text{DAC}(S,O,P) \land \text{MAC}(S,O,P) \land \text{Capability}(S,P)$$
+其中：</p>
+<ul>
+<li>$S$ = 主体（Subject）</li>
+<li>$O$ = 客体（Object）  </li>
+<li>$P$ = 权限（Permission）</li>
+</ul>
+<p>权能传递公式：
+$$P'_{permitted} = (P_{inheritable} \cap F_{inheritable}) \cup (F_{permitted} \cap \text{cap_bset}) \cup P'_{ambient}$$
+安全强度评估：
+$$\text{Security_Strength} = \sum_{i=1}^{n} w_i \cdot \text{Control}_i$$</p>
+<p>其中$w_i$为各安全控制的权重。</p>
+<h2 id="139">13.9 练习题</h2>
+<h3 id="_4">基础题</h3>
+<p><strong>练习13.1</strong>：解释LSM框架中security_hook_heads的作用，以及它如何支持多个安全模块的串联。</p>
+<details>
+<summary>提示</summary>
+<p>考虑钩子链表的遍历顺序和返回值处理机制。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>security_hook_heads是一个包含所有安全钩子链表头的结构。每个钩子位置可以注册多个安全模块的处理函数，形成链表。调用时按注册顺序遍历，任何模块返回错误都会终止操作。这种设计允许多个安全模块协同工作，实现纵深防御。</p>
+</details>
+<p><strong>练习13.2</strong>：编写一个简单的AppArmor配置文件，限制nginx只能访问/var/www目录和监听80端口。</p>
+<details>
+<summary>提示</summary>
+<p>需要考虑文件访问权限、网络权限和必要的系统资源。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>配置包括：/var/www/*<em> r权限用于读取网页文件，/var/log/nginx/</em> w权限用于写日志，capability net_bind_service用于绑定80端口，network inet stream用于TCP连接。还需包含基础抽象如abstractions/base。</p>
+</details>
+<p><strong>练习13.3</strong>：说明为什么CAP_SYS_ADMIN被称为"新的root"，并给出三个应该避免授予此权能的原因。</p>
+<details>
+<summary>提示</summary>
+<p>查看CAP_SYS_ADMIN允许的操作列表。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>CAP_SYS_ADMIN允许挂载文件系统、配置交换空间、执行各种系统管理操作，几乎等同于root。应避免授予因为：1)违背最小权限原则，2)可能通过挂载绕过其他安全限制，3)增大攻击面。应该使用更具体的权能如CAP_NET_ADMIN或CAP_SYS_MODULE。</p>
+</details>
+<h3 id="_5">挑战题</h3>
+<p><strong>练习13.4</strong>：设计一个基于eBPF的安全监控系统，检测并阻止进程的异常fork行为（fork炸弹攻击）。</p>
+<details>
+<summary>提示</summary>
+<p>需要跟踪每个进程的fork频率，设置阈值，使用BPF map存储状态。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>方案包括：使用BPF_MAP_TYPE_HASH存储每个PID的fork计数和时间戳，在sched_process_fork跟踪点更新计数，实现滑动窗口算法计算fork速率，超过阈值时通过bpf_send_signal发送SIGKILL。需要考虑map清理和父子进程关系。</p>
+</details>
+<p><strong>练习13.5</strong>：分析Dirty COW（CVE-2016-5195）漏洞的原理，解释它如何绕过Linux的权限系统，以及内核是如何修复的。</p>
+<details>
+<summary>提示</summary>
+<p>关注写时复制（COW）机制和竞态条件。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>Dirty COW利用了get_user_pages()和COW机制之间的竞态条件。通过madvise(MADV_DONTNEED)和写入只读映射的竞争，可以直接修改页缓存中的原始页面。修复方案是在处理COW时增加额外的标志位FOLL_COW，确保写操作总是触发页面复制，避免直接修改共享页面。</p>
+</details>
+<p><strong>练习13.6</strong>：实现一个LSM模块，限制特定进程只能创建特定类型的文件（如只能创建.log文件）。</p>
+<details>
+<summary>提示</summary>
+<p>需要hook文件创建相关的LSM钩子，检查文件名后缀。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>实现需要：1)注册inode_create和inode_mknod钩子，2)在钩子函数中获取当前进程名和目标文件名，3)使用配置的白名单检查文件扩展名，4)维护进程到允许扩展名的映射表，5)处理符号链接和硬链接的特殊情况。</p>
+</details>
+<p><strong>练习13.7</strong>：设计一个基于SELinux的多租户隔离方案，确保不同租户的进程和文件完全隔离。</p>
+<details>
+<summary>提示</summary>
+<p>使用MCS（Multi-Category Security）或MLS（Multi-Level Security）。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>方案设计：为每个租户分配唯一的类别（如c0,c1,c2），创建租户专用的类型（tenant1_t, tenant2_t），使用MCS约束确保进程只能访问相同类别的资源。策略规则包括类型转换规则、文件上下文规则和网络标签规则。还需考虑共享资源的处理和管理域的设置。</p>
+</details>
+<p><strong>练习13.8</strong>：分析并比较KASLR、KPTI、CET三种内核保护机制的性能开销和安全效益。</p>
+<details>
+<summary>提示</summary>
+<p>考虑各机制防护的攻击类型和实现代价。</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>KASLR随机化内核地址，开销小（&lt;1%），但可通过侧信道泄露。KPTI隔离页表防Meltdown，开销大（5-30%），效果确定。CET防控制流劫持，需硬件支持，开销中等（2-5%），防护ROP/JOP攻击效果好。实际部署需根据威胁模型和性能要求权衡。</p>
+</details>
+<h2 id="1310">13.10 常见陷阱与错误</h2>
+<h3 id="1dac">陷阱1：过度依赖DAC权限检查</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：只检查DAC权限</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">capable</span><span class="p">(</span><span class="n">CAP_DAC_OVERRIDE</span><span class="p">))</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w">  </span><span class="c1">// 危险！绕过了所有LSM检查</span>
+
+<span class="c1">// 正确：DAC和LSM都要检查</span>
+<span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generic_permission</span><span class="p">(</span><span class="n">inode</span><span class="p">,</span><span class="w"> </span><span class="n">mask</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+<span class="k">return</span><span class="w"> </span><span class="n">security_inode_permission</span><span class="p">(</span><span class="n">inode</span><span class="p">,</span><span class="w"> </span><span class="n">mask</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="2">陷阱2：忽视权能的继承规则</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 错误：期望子进程继承父进程的所有权能</span>
+setcap<span class="w"> </span>cap_net_admin+ep<span class="w"> </span>/usr/bin/parent
+<span class="c1"># 子进程不会自动获得cap_net_admin</span>
+
+<span class="c1"># 正确：设置继承位</span>
+setcap<span class="w"> </span>cap_net_admin+eip<span class="w"> </span>/usr/bin/parent
+</code></pre></div>
+
+<h3 id="3selinux">陷阱3：SELinux上下文转换错误</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：忘记设置执行上下文</span>
+<span class="n">execve</span><span class="p">(</span><span class="s">&quot;/usr/bin/service&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">argv</span><span class="p">,</span><span class="w"> </span><span class="n">envp</span><span class="p">);</span>
+<span class="c1">// 进程仍在原域中运行</span>
+
+<span class="c1">// 正确：确保类型转换规则存在</span>
+<span class="c1">// type_transition init_t service_exec_t:process service_t;</span>
+</code></pre></div>
+
+<h3 id="4ebpf">陷阱4：eBPF验证器限制</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：无界循环</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">user_provided_value</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// BPF验证器会拒绝</span>
+<span class="p">}</span>
+
+<span class="c1">// 正确：有界循环</span>
+<span class="cp">#pragma unroll</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">user_value</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 验证器可以证明循环有界</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="5">陷阱5：安全模块加载顺序</h3>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 错误：期望后加载的模块优先级更高</span>
+insmod<span class="w"> </span>security_module1.ko
+insmod<span class="w"> </span>security_module2.ko<span class="w">  </span><span class="c1"># 不一定优先</span>
+
+<span class="c1"># 正确：使用security=参数指定主模块</span>
+<span class="c1"># 在grub中：security=selinux</span>
+</code></pre></div>
+
+<h2 id="1311">13.11 最佳实践检查清单</h2>
+<h3 id="_6">设计阶段</h3>
+<ul>
+<li>[ ] 明确定义安全需求和威胁模型</li>
+<li>[ ] 选择合适的安全模型（DAC/MAC/RBAC）</li>
+<li>[ ] 设计最小权限的权能集合</li>
+<li>[ ] 规划安全模块的部署策略</li>
+<li>[ ] 考虑性能影响和可用性平衡</li>
+</ul>
+<h3 id="_7">实现阶段</h3>
+<ul>
+<li>[ ] 正确实现LSM钩子，避免TOCTOU问题</li>
+<li>[ ] 使用内核加固选项（CONFIG_HARDENED_USERCOPY等）</li>
+<li>[ ] 实施输入验证和边界检查</li>
+<li>[ ] 避免信息泄露（清零敏感数据）</li>
+<li>[ ] 使用安全的内核API（如copy_from_user）</li>
+</ul>
+<h3 id="_8">配置阶段</h3>
+<ul>
+<li>[ ] 配置SELinux/AppArmor策略</li>
+<li>[ ] 设置适当的权能边界集</li>
+<li>[ ] 启用审计日志记录</li>
+<li>[ ] 配置seccomp过滤器</li>
+<li>[ ] 实施网络安全策略</li>
+</ul>
+<h3 id="_9">运行阶段</h3>
+<ul>
+<li>[ ] 监控安全事件和审计日志</li>
+<li>[ ] 定期更新安全策略</li>
+<li>[ ] 进行安全漏洞扫描</li>
+<li>[ ] 实施入侵检测系统</li>
+<li>[ ] 制定应急响应计划</li>
+</ul>
+<h3 id="_10">审计阶段</h3>
+<ul>
+<li>[ ] 审查权限和权能分配</li>
+<li>[ ] 检查安全策略的有效性</li>
+<li>[ ] 分析性能影响</li>
+<li>[ ] 评估安全合规性</li>
+<li>[ ] 更新威胁模型</li>
+</ul>
+<hr />
+<p>通过本章的学习，我们深入理解了Linux内核的安全架构，从灵活的LSM框架到强大的SELinux，从细粒度的权能系统到动态的eBPF安全。安全是一个持续演进的领域，需要在可用性、性能和安全性之间找到平衡。下一章，我们将探讨实时Linux，了解如何在保证安全的同时满足严格的实时性要求。
+```</p>
+            </article>
+            
+            <nav class="page-nav"><a href="chapter12.html" class="nav-link prev">← 第12章：容器与命名空间</a><a href="chapter14.html" class="nav-link next">第14章：实时Linux →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

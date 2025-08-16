@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
+    <title>第8章：设备驱动模型</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/highlight.css">
+    <script src="assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors', 'ams']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors', '[tex]/ams']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="sidebar-search-input" placeholder="搜索..." autocomplete="off">
+            </div>
+            <div id="tree-container">
+                <nav class="tree-nav" role="tree">
+                    <div class="tree-item " >
+                        <a href="index.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Linux 内核源代码深度解析</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter1.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第1章：Linux 内核概述与发展史</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter2.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第2章：进程管理与任务调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter3.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第3章：内存管理架构</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter4.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第4章：进程间通信机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter5.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第5章：虚拟文件系统（VFS）</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter6.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第6章：具体文件系统实现</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter7.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第7章：块设备层与I/O调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item active" >
+                        <a href="chapter8.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第8章：设备驱动模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter9.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第9章：网络协议栈</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter10.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第10章：内核同步机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter11.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第11章：并发编程模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter12.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第12章：容器与命名空间</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter13.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第13章：安全子系统</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter14.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第14章：实时Linux</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter15.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第15章：性能分析与调试</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter16.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第16章：引导过程与初始化</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="CLAUDE.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Untitled</span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="8">第8章：设备驱动模型</h1>
+<h2 id="_1">本章内容提要</h2>
+<p>Linux 设备驱动模型是内核中最复杂但也最优雅的子系统之一。从早期简单的字符设备和块设备抽象，演化到今天统一的设备模型，这一路径反映了 Linux 内核对硬件多样性和热插拔需求的不断适应。本章深入剖析设备驱动模型的核心机制，从 kobject/kset 的对象层次，到总线-设备-驱动的三角关系，再到中断处理的精妙设计。通过学习本章，读者将掌握如何编写高效、可靠的设备驱动，理解内核如何管理成千上万的硬件设备，以及现代 Linux 如何实现设备的自动发现和配置。</p>
+<h2 id="81">8.1 设备模型基础架构</h2>
+<h3 id="811-kobject">8.1.1 kobject：内核对象的基石</h3>
+<p>Linux 2.6 引入的 kobject（kernel object）是整个设备模型的基础。每个 kobject 代表内核中的一个对象，通过引用计数管理生命周期，通过 sysfs 向用户空间导出信息。</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w">              </span><span class="o">*</span><span class="n">name</span><span class="p">;</span><span class="w">          </span><span class="c1">// 对象名称</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w">        </span><span class="n">entry</span><span class="p">;</span><span class="w">          </span><span class="c1">// 链入 kset 的链表节点</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w">          </span><span class="o">*</span><span class="n">parent</span><span class="p">;</span><span class="w">        </span><span class="c1">// 父对象指针</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kset</span><span class="w">             </span><span class="o">*</span><span class="n">kset</span><span class="p">;</span><span class="w">          </span><span class="c1">// 所属的 kset</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobj_type</span><span class="w">        </span><span class="o">*</span><span class="n">ktype</span><span class="p">;</span><span class="w">         </span><span class="c1">// 对象类型和操作</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kernfs_node</span><span class="w">      </span><span class="o">*</span><span class="n">sd</span><span class="p">;</span><span class="w">            </span><span class="c1">// sysfs 目录项</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kref</span><span class="w">             </span><span class="n">kref</span><span class="p">;</span><span class="w">           </span><span class="c1">// 引用计数</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">state_initialized</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">       </span><span class="c1">// 初始化标志</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">state_in_sysfs</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">         </span><span class="c1">// 在 sysfs 中的标志</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">state_add_uevent_sent</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">  </span><span class="c1">// uevent 发送标志</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">state_remove_uevent_sent</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">uevent_suppress</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">        </span><span class="c1">// 抑制 uevent</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>kobject 的关键特性：</p>
+<ol>
+<li><strong>引用计数管理</strong>：通过 kref 实现自动内存管理</li>
+<li><strong>层次结构</strong>：通过 parent 指针形成树形结构</li>
+<li><strong>sysfs 表示</strong>：每个 kobject 对应 /sys 下的一个目录</li>
+<li><strong>事件通知</strong>：通过 uevent 机制通知用户空间</li>
+</ol>
+<h3 id="812-kset">8.1.2 kset：对象的集合</h3>
+<p>kset 是 kobject 的集合，提供了对同类对象的统一管理：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">kset</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">           </span><span class="c1">// kobject 链表头</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">list_lock</span><span class="p">;</span><span class="w">           </span><span class="c1">// 保护链表的自旋锁</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w"> </span><span class="n">kobj</span><span class="p">;</span><span class="w">            </span><span class="c1">// 内嵌的 kobject</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">kset_uevent_ops</span><span class="w"> </span><span class="o">*</span><span class="n">uevent_ops</span><span class="p">;</span><span class="w">  </span><span class="c1">// uevent 操作集</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>kset 的主要功能：</p>
+<ul>
+<li>将相关的 kobject 组织在一起</li>
+<li>提供热插拔事件的过滤和环境变量设置</li>
+<li>在 sysfs 中表现为包含多个子目录的目录</li>
+</ul>
+<h3 id="813-ktype">8.1.3 ktype：对象类型和操作</h3>
+<p>ktype 定义了 kobject 的类型特定操作：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">kobj_type</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">release</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w"> </span><span class="o">*</span><span class="n">kobj</span><span class="p">);</span><span class="w">     </span><span class="c1">// 释放函数</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">sysfs_ops</span><span class="w"> </span><span class="o">*</span><span class="n">sysfs_ops</span><span class="p">;</span><span class="w">        </span><span class="c1">// sysfs 操作</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">attribute</span><span class="w"> </span><span class="o">**</span><span class="n">default_attrs</span><span class="p">;</span><span class="w">          </span><span class="c1">// 默认属性</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">attribute_group</span><span class="w"> </span><span class="o">**</span><span class="n">default_groups</span><span class="p">;</span><span class="w">  </span><span class="c1">// 默认属性组</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobj_ns_type_operations</span><span class="w"> </span><span class="o">*</span><span class="n">child_ns_type</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">namespace</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w"> </span><span class="o">*</span><span class="n">kobj</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">get_ownership</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w"> </span><span class="o">*</span><span class="n">kobj</span><span class="p">,</span><span class="w"> </span><span class="n">kuid_t</span><span class="w"> </span><span class="o">*</span><span class="n">uid</span><span class="p">,</span><span class="w"> </span><span class="n">kgid_t</span><span class="w"> </span><span class="o">*</span><span class="n">gid</span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h2 id="82">8.2 总线、设备、驱动模型</h2>
+<h3 id="821-bus">8.2.1 总线（Bus）抽象</h3>
+<p>总线是连接设备和驱动的桥梁，Linux 将物理总线（如 PCI、USB）和虚拟总线（如 platform）都抽象为 bus_type：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">bus_type</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">;</span><span class="w">                      </span><span class="c1">// 总线名称</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">dev_name</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 设备名称前缀</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev_root</span><span class="p">;</span><span class="w">               </span><span class="c1">// 根设备</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">attribute_group</span><span class="w"> </span><span class="o">**</span><span class="n">bus_groups</span><span class="p">;</span><span class="w">     </span><span class="c1">// 总线属性组</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">attribute_group</span><span class="w"> </span><span class="o">**</span><span class="n">dev_groups</span><span class="p">;</span><span class="w">     </span><span class="c1">// 设备属性组</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">attribute_group</span><span class="w"> </span><span class="o">**</span><span class="n">drv_groups</span><span class="p">;</span><span class="w">     </span><span class="c1">// 驱动属性组</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">match</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">device_driver</span><span class="w"> </span><span class="o">*</span><span class="n">drv</span><span class="p">);</span><span class="w">  </span><span class="c1">// 匹配函数</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">uevent</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobj_uevent_env</span><span class="w"> </span><span class="o">*</span><span class="n">env</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">probe</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span><span class="w">      </span><span class="c1">// 探测设备</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">sync_state</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">remove</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span><span class="w">     </span><span class="c1">// 移除设备</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">shutdown</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span><span class="w">  </span><span class="c1">// 关闭设备</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">online</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">offline</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">suspend</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="n">pm_message_t</span><span class="w"> </span><span class="n">state</span><span class="p">);</span><span class="w">  </span><span class="c1">// 电源管理</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">resume</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">dev_pm_ops</span><span class="w"> </span><span class="o">*</span><span class="n">pm</span><span class="p">;</span><span class="w">           </span><span class="c1">// 电源管理操作集</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">iommu_ops</span><span class="w"> </span><span class="o">*</span><span class="n">iommu_ops</span><span class="p">;</span><span class="w">     </span><span class="c1">// IOMMU 操作集</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">subsys_private</span><span class="w"> </span><span class="o">*</span><span class="n">p</span><span class="p">;</span><span class="w">              </span><span class="c1">// 私有数据</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">lock_class_key</span><span class="w"> </span><span class="n">lock_key</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">need_parent_lock</span><span class="p">;</span><span class="w">                 </span><span class="c1">// 是否需要父设备锁</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>总线的核心职责：</p>
+<ol>
+<li><strong>设备枚举</strong>：发现连接到总线上的设备</li>
+<li><strong>驱动匹配</strong>：为设备找到合适的驱动程序</li>
+<li><strong>电源管理</strong>：协调设备的电源状态转换</li>
+<li><strong>热插拔处理</strong>：处理设备的动态添加和移除</li>
+</ol>
+<h3 id="822-device">8.2.2 设备（Device）表示</h3>
+<p>每个硬件设备在内核中用 struct device 表示：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w"> </span><span class="n">kobj</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 内嵌的 kobject</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">parent</span><span class="p">;</span><span class="w">                 </span><span class="c1">// 父设备</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device_private</span><span class="w"> </span><span class="o">*</span><span class="n">p</span><span class="p">;</span><span class="w">              </span><span class="c1">// 私有数据</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">init_name</span><span class="p">;</span><span class="w">                 </span><span class="c1">// 初始名称</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">device_type</span><span class="w"> </span><span class="o">*</span><span class="n">type</span><span class="p">;</span><span class="w">        </span><span class="c1">// 设备类型</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bus_type</span><span class="w"> </span><span class="o">*</span><span class="n">bus</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 所属总线</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device_driver</span><span class="w"> </span><span class="o">*</span><span class="n">driver</span><span class="p">;</span><span class="w">          </span><span class="c1">// 绑定的驱动</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">platform_data</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 平台特定数据</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">driver_data</span><span class="p">;</span><span class="w">                     </span><span class="c1">// 驱动私有数据</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mutex</span><span class="w"> </span><span class="n">mutex</span><span class="p">;</span><span class="w">                    </span><span class="c1">// 设备互斥锁</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dev_links_info</span><span class="w"> </span><span class="n">links</span><span class="p">;</span><span class="w">           </span><span class="c1">// 设备链接信息</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dev_pm_info</span><span class="w"> </span><span class="n">power</span><span class="p">;</span><span class="w">              </span><span class="c1">// 电源管理信息</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dev_pm_domain</span><span class="w"> </span><span class="o">*</span><span class="n">pm_domain</span><span class="p">;</span><span class="w">       </span><span class="c1">// PM 域</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">em_perf_domain</span><span class="w"> </span><span class="o">*</span><span class="n">em_pd</span><span class="p">;</span><span class="w">          </span><span class="c1">// 能效模型</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">irq_domain</span><span class="w"> </span><span class="o">*</span><span class="n">msi_domain</span><span class="p">;</span><span class="w">         </span><span class="c1">// MSI 中断域</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">msi_list</span><span class="p">;</span><span class="w">             </span><span class="c1">// MSI 描述符链表</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">dma_map_ops</span><span class="w"> </span><span class="o">*</span><span class="n">dma_ops</span><span class="p">;</span><span class="w">     </span><span class="c1">// DMA 操作集</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="o">*</span><span class="n">dma_mask</span><span class="p">;</span><span class="w">                         </span><span class="c1">// DMA 掩码</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">coherent_dma_mask</span><span class="p">;</span><span class="w">                 </span><span class="c1">// 一致性 DMA 掩码</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">bus_dma_limit</span><span class="p">;</span><span class="w">                     </span><span class="c1">// 总线 DMA 限制</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device_node</span><span class="w"> </span><span class="o">*</span><span class="n">of_node</span><span class="p">;</span><span class="w">           </span><span class="c1">// 设备树节点</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">fwnode_handle</span><span class="w"> </span><span class="o">*</span><span class="n">fwnode</span><span class="p">;</span><span class="w">          </span><span class="c1">// 固件节点</span>
+
+<span class="w">    </span><span class="kt">dev_t</span><span class="w"> </span><span class="n">devt</span><span class="p">;</span><span class="w">                            </span><span class="c1">// 设备号</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">id</span><span class="p">;</span><span class="w">                                </span><span class="c1">// 设备 ID</span>
+
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">devres_lock</span><span class="p">;</span><span class="w">                </span><span class="c1">// 资源管理锁</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">devres_head</span><span class="p">;</span><span class="w">          </span><span class="c1">// 资源链表</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">class</span><span class="w"> </span><span class="o">*</span><span class="n">class</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 设备类</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">attribute_group</span><span class="w"> </span><span class="o">**</span><span class="n">groups</span><span class="p">;</span><span class="w"> </span><span class="c1">// 属性组</span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">release</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span><span class="w">   </span><span class="c1">// 释放函数</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">iommu_group</span><span class="w"> </span><span class="o">*</span><span class="n">iommu_group</span><span class="p">;</span><span class="w">       </span><span class="c1">// IOMMU 组</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dev_iommu</span><span class="w"> </span><span class="o">*</span><span class="n">iommu</span><span class="p">;</span><span class="w">              </span><span class="c1">// IOMMU 数据</span>
+
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">offline_disabled</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">               </span><span class="c1">// 禁止离线</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">offline</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">                        </span><span class="c1">// 离线状态</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">of_node_reused</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">                </span><span class="c1">// 设备树节点复用</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">state_synced</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 状态已同步</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">can_match</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">                     </span><span class="c1">// 可以匹配驱动</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="823-driver">8.2.3 驱动（Driver）实现</h3>
+<p>设备驱动用 struct device_driver 表示：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">device_driver</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">;</span><span class="w">                      </span><span class="c1">// 驱动名称</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bus_type</span><span class="w"> </span><span class="o">*</span><span class="n">bus</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 所属总线</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">module</span><span class="w"> </span><span class="o">*</span><span class="n">owner</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 所属模块</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">mod_name</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 模块名称</span>
+
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">suppress_bind_attrs</span><span class="p">;</span><span class="w">              </span><span class="c1">// 抑制绑定属性</span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="n">probe_type</span><span class="w"> </span><span class="n">probe_type</span><span class="p">;</span><span class="w">            </span><span class="c1">// 探测类型</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">of_device_id</span><span class="w"> </span><span class="o">*</span><span class="n">of_match_table</span><span class="p">;</span><span class="w">     </span><span class="c1">// 设备树匹配表</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">acpi_device_id</span><span class="w"> </span><span class="o">*</span><span class="n">acpi_match_table</span><span class="p">;</span><span class="w"> </span><span class="c1">// ACPI 匹配表</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">probe</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span><span class="w">      </span><span class="c1">// 探测函数</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">sync_state</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">remove</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span><span class="w">     </span><span class="c1">// 移除函数</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">shutdown</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span><span class="w">  </span><span class="c1">// 关闭函数</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">suspend</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="n">pm_message_t</span><span class="w"> </span><span class="n">state</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">resume</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">attribute_group</span><span class="w"> </span><span class="o">**</span><span class="n">groups</span><span class="p">;</span><span class="w"> </span><span class="c1">// 属性组</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">attribute_group</span><span class="w"> </span><span class="o">**</span><span class="n">dev_groups</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">dev_pm_ops</span><span class="w"> </span><span class="o">*</span><span class="n">pm</span><span class="p">;</span><span class="w">          </span><span class="c1">// 电源管理操作</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">coredump</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">);</span><span class="w">  </span><span class="c1">// 核心转储</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">driver_private</span><span class="w"> </span><span class="o">*</span><span class="n">p</span><span class="p">;</span><span class="w">              </span><span class="c1">// 私有数据</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="824">8.2.4 设备与驱动的绑定过程</h3>
+<p>设备与驱动的绑定是设备模型的核心过程：</p>
+<div class="codehilite"><pre><span></span><code><span class="mf">1.</span><span class="w"> </span><span class="n">设备注册</span><span class="w"> </span><span class="p">(</span><span class="n">device_register</span><span class="p">)</span>
+<span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">device_initialize</span><span class="p">()</span><span class="err">：</span><span class="n">初始化设备结构</span>
+<span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">device_add</span><span class="p">()</span><span class="err">：</span><span class="n">添加到系统</span>
+<span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">kobject_add</span><span class="p">()</span><span class="err">：</span><span class="n">添加到</span><span class="w"> </span><span class="n">kobject</span><span class="w"> </span><span class="n">层次</span>
+<span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">device_create_file</span><span class="p">()</span><span class="err">：</span><span class="n">创建</span><span class="w"> </span><span class="kr">sys</span><span class="n">fs</span><span class="w"> </span><span class="n">属性</span>
+<span class="w">       </span><span class="err">├──</span><span class="w"> </span><span class="n">bus_add_device</span><span class="p">()</span><span class="err">：</span><span class="n">添加到总线</span>
+<span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">bus_probe_device</span><span class="p">()</span><span class="err">：</span><span class="n">尝试绑定驱动</span>
+<span class="w">           </span><span class="err">└──</span><span class="w"> </span><span class="n">device_initial_probe</span><span class="p">()</span>
+<span class="w">               </span><span class="err">└──</span><span class="w"> </span><span class="n">__device_attach</span><span class="p">()</span>
+<span class="w">                   </span><span class="err">├──</span><span class="w"> </span><span class="n">bus</span><span class="o">-&gt;</span><span class="n">match</span><span class="p">()</span><span class="err">：</span><span class="n">调用总线匹配函数</span>
+<span class="w">                   </span><span class="err">└──</span><span class="w"> </span><span class="n">driver_probe_device</span><span class="p">()</span><span class="err">：</span><span class="n">探测设备</span>
+<span class="w">                       </span><span class="err">└──</span><span class="w"> </span><span class="n">really_probe</span><span class="p">()</span>
+<span class="w">                           </span><span class="err">├──</span><span class="w"> </span><span class="n">driver</span><span class="o">-&gt;</span><span class="n">probe</span><span class="p">()</span><span class="err">：</span><span class="n">调用驱动探测函数</span>
+<span class="w">                           </span><span class="err">└──</span><span class="w"> </span><span class="n">driver_bound</span><span class="p">()</span><span class="err">：</span><span class="n">标记绑定成功</span>
+
+<span class="mf">2.</span><span class="w"> </span><span class="n">驱动注册</span><span class="w"> </span><span class="p">(</span><span class="n">driver_register</span><span class="p">)</span>
+<span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">bus_add_driver</span><span class="p">()</span><span class="err">：</span><span class="n">添加到总线</span>
+<span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">driver_attach</span><span class="p">()</span><span class="err">：</span><span class="n">尝试绑定设备</span>
+<span class="w">   </span><span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">bus_for_each_dev</span><span class="p">()</span><span class="err">：</span><span class="n">遍历总线上的设备</span>
+<span class="w">   </span><span class="err">│</span><span class="w">       </span><span class="err">└──</span><span class="w"> </span><span class="n">__driver_attach</span><span class="p">()</span><span class="err">：</span><span class="n">尝试绑定每个设备</span>
+<span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">module_add_driver</span><span class="p">()</span><span class="err">：</span><span class="n">关联到模块</span>
+</code></pre></div>
+
+<h2 id="83">8.3 平台设备与设备树</h2>
+<h3 id="831">8.3.1 平台设备架构</h3>
+<p>平台设备（platform device）是 Linux 为不依附于传统总线的设备提供的抽象：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">platform_device</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">;</span><span class="w">                      </span><span class="c1">// 设备名称</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">;</span><span class="w">                                </span><span class="c1">// 设备 ID</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">id_auto</span><span class="p">;</span><span class="w">                          </span><span class="c1">// 自动分配 ID</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="n">dev</span><span class="p">;</span><span class="w">                     </span><span class="c1">// 内嵌的 device</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">platform_dma_mask</span><span class="p">;</span><span class="w">                </span><span class="c1">// DMA 掩码</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device_dma_parameters</span><span class="w"> </span><span class="n">dma_parms</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">num_resources</span><span class="p">;</span><span class="w">                     </span><span class="c1">// 资源数量</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">resource</span><span class="w"> </span><span class="o">*</span><span class="n">resource</span><span class="p">;</span><span class="w">             </span><span class="c1">// 资源数组</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">platform_device_id</span><span class="w"> </span><span class="o">*</span><span class="n">id_entry</span><span class="p">;</span><span class="w">  </span><span class="c1">// ID 表项</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">driver_override</span><span class="p">;</span><span class="w">                 </span><span class="c1">// 驱动覆盖</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mfd_cell</span><span class="w"> </span><span class="o">*</span><span class="n">mfd_cell</span><span class="p">;</span><span class="w">            </span><span class="c1">// MFD 单元</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">pdev_archdata</span><span class="w"> </span><span class="n">archdata</span><span class="p">;</span><span class="w">        </span><span class="c1">// 架构特定数据</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">platform_driver</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">probe</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">platform_device</span><span class="w"> </span><span class="o">*</span><span class="p">);</span><span class="w">    </span><span class="c1">// 探测函数</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">remove</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">platform_device</span><span class="w"> </span><span class="o">*</span><span class="p">);</span><span class="w">   </span><span class="c1">// 移除函数</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">shutdown</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">platform_device</span><span class="w"> </span><span class="o">*</span><span class="p">);</span><span class="w"> </span><span class="c1">// 关闭函数</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">suspend</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">platform_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">pm_message_t</span><span class="w"> </span><span class="n">state</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">resume</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">platform_device</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device_driver</span><span class="w"> </span><span class="n">driver</span><span class="p">;</span><span class="w">               </span><span class="c1">// 内嵌的 driver</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">platform_device_id</span><span class="w"> </span><span class="o">*</span><span class="n">id_table</span><span class="p">;</span><span class="w"> </span><span class="c1">// ID 匹配表</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">prevent_deferred_probe</span><span class="p">;</span><span class="w">               </span><span class="c1">// 阻止延迟探测</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>资源描述：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">resource</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">resource_size_t</span><span class="w"> </span><span class="n">start</span><span class="p">;</span><span class="w">                 </span><span class="c1">// 起始地址</span>
+<span class="w">    </span><span class="n">resource_size_t</span><span class="w"> </span><span class="n">end</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 结束地址</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">;</span><span class="w">                      </span><span class="c1">// 资源名称</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 资源标志</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">desc</span><span class="p">;</span><span class="w">                    </span><span class="c1">// 描述符</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">resource</span><span class="w"> </span><span class="o">*</span><span class="n">parent</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">sibling</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">child</span><span class="p">;</span><span class="w">  </span><span class="c1">// 层次结构</span>
+<span class="p">};</span>
+
+<span class="c1">// 资源类型标志</span>
+<span class="cp">#define IORESOURCE_IO      0x00000100     </span><span class="c1">// I/O 端口资源</span>
+<span class="cp">#define IORESOURCE_MEM     0x00000200     </span><span class="c1">// 内存资源</span>
+<span class="cp">#define IORESOURCE_REG     0x00000300     </span><span class="c1">// 寄存器资源</span>
+<span class="cp">#define IORESOURCE_IRQ     0x00000400     </span><span class="c1">// 中断资源</span>
+<span class="cp">#define IORESOURCE_DMA     0x00000800     </span><span class="c1">// DMA 资源</span>
+<span class="cp">#define IORESOURCE_BUS     0x00001000     </span><span class="c1">// 总线资源</span>
+</code></pre></div>
+
+<h3 id="832-device-tree">8.3.2 设备树（Device Tree）</h3>
+<p>设备树是描述硬件的数据结构，从 PowerPC 引入，现已成为 ARM/RISC-V 等架构的标准：</p>
+<div class="codehilite"><pre><span></span><code><span class="nf">/</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;vendor,board&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">#address-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">#size-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nf">cpus</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kr">#address-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">        </span><span class="kr">#size-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">        </span><span class="nf">cpu</span><span class="o">@</span><span class="mi">0</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kr">device_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cpu&quot;</span><span class="p">;</span>
+<span class="w">            </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;arm,cortex-a72&quot;</span><span class="p">;</span>
+<span class="w">            </span><span class="kr">reg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mh">0x0</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">enable-method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;psci&quot;</span><span class="p">;</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nf">memory</span><span class="o">@</span><span class="mi">80000000</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kr">device_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;memory&quot;</span><span class="p">;</span>
+<span class="w">        </span><span class="kr">reg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0x80000000</span><span class="w"> </span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0x80000000</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="nf">soc</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;simple-bus&quot;</span><span class="p">;</span>
+<span class="w">        </span><span class="kr">#address-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">        </span><span class="kr">#size-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">        </span><span class="kr">ranges</span><span class="p">;</span>
+
+<span class="w">        </span><span class="nl">uart0</span><span class="p">:</span><span class="w"> </span><span class="nf">serial</span><span class="o">@</span><span class="mi">fe650000</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;vendor,uart&quot;</span><span class="p">;</span>
+<span class="w">            </span><span class="kr">reg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0xfe650000</span><span class="w"> </span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0x100</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">interrupts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="na">GIC_SPI</span><span class="w"> </span><span class="mi">117</span><span class="w"> </span><span class="na">IRQ_TYPE_LEVEL_HIGH</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">clocks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">cru</span><span class="w"> </span><span class="na">SCLK_UART0</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">cru</span><span class="w"> </span><span class="na">PCLK_UART0</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">clock-names</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;baudclk&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;apb_pclk&quot;</span><span class="p">;</span>
+<span class="w">            </span><span class="kr">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;okay&quot;</span><span class="p">;</span>
+<span class="w">        </span><span class="p">};</span>
+
+<span class="w">        </span><span class="nl">i2c0</span><span class="p">:</span><span class="w"> </span><span class="nf">i2c</span><span class="o">@</span><span class="mi">fe700000</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;vendor,i2c&quot;</span><span class="p">;</span>
+<span class="w">            </span><span class="kr">reg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0xfe700000</span><span class="w"> </span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0x1000</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">interrupts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="na">GIC_SPI</span><span class="w"> </span><span class="mi">36</span><span class="w"> </span><span class="na">IRQ_TYPE_LEVEL_HIGH</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="kr">#address-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="kr">#size-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">clock-frequency</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">400000</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">            </span><span class="nf">rtc</span><span class="o">@</span><span class="mi">51</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">                </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;nxp,pcf8563&quot;</span><span class="p">;</span>
+<span class="w">                </span><span class="kr">reg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mh">0x51</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">                </span><span class="n">interrupt-parent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">gpio0</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">                </span><span class="n">interrupts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="na">RK_PD3</span><span class="w"> </span><span class="na">IRQ_TYPE_EDGE_FALLING</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="p">};</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>设备树解析和匹配：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// OF (Open Firmware) 匹配表</span>
+<span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">of_device_id</span><span class="w"> </span><span class="n">my_driver_of_match</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;vendor,device-v1&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">device_v1_data</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">.</span><span class="n">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;vendor,device-v2&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">device_v2_data</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="p">}</span>
+<span class="p">};</span>
+<span class="n">MODULE_DEVICE_TABLE</span><span class="p">(</span><span class="n">of</span><span class="p">,</span><span class="w"> </span><span class="n">my_driver_of_match</span><span class="p">);</span>
+
+<span class="c1">// 从设备树获取资源</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">my_probe</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">platform_device</span><span class="w"> </span><span class="o">*</span><span class="n">pdev</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device_node</span><span class="w"> </span><span class="o">*</span><span class="n">np</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdev</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">.</span><span class="n">of_node</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">resource</span><span class="w"> </span><span class="o">*</span><span class="n">res</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="n">__iomem</span><span class="w"> </span><span class="o">*</span><span class="n">base</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">irq</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 获取内存资源</span>
+<span class="w">    </span><span class="n">res</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">platform_get_resource</span><span class="p">(</span><span class="n">pdev</span><span class="p">,</span><span class="w"> </span><span class="n">IORESOURCE_MEM</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">base</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">devm_ioremap_resource</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pdev</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="n">res</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">IS_ERR</span><span class="p">(</span><span class="n">base</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PTR_ERR</span><span class="p">(</span><span class="n">base</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 获取中断资源</span>
+<span class="w">    </span><span class="n">irq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">platform_get_irq</span><span class="p">(</span><span class="n">pdev</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">irq</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">irq</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 解析自定义属性</span>
+<span class="w">    </span><span class="n">u32</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">of_property_read_u32</span><span class="p">(</span><span class="n">np</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;custom-property&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">value</span><span class="p">))</span>
+<span class="w">        </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DEFAULT_VALUE</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="84">8.4 字符设备驱动</h2>
+<h3 id="841">8.4.1 字符设备基础</h3>
+<p>字符设备是 Linux 中最基本的设备类型之一，以字节流方式访问，不支持随机访问。典型的字符设备包括终端、串口、键盘、鼠标等。</p>
+<p>字符设备核心数据结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">cdev</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w"> </span><span class="n">kobj</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 内嵌的 kobject</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">module</span><span class="w"> </span><span class="o">*</span><span class="n">owner</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 所属模块</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file_operations</span><span class="w"> </span><span class="o">*</span><span class="n">ops</span><span class="p">;</span><span class="w">     </span><span class="c1">// 文件操作集</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">                 </span><span class="c1">// 设备链表</span>
+<span class="w">    </span><span class="kt">dev_t</span><span class="w"> </span><span class="n">dev</span><span class="p">;</span><span class="w">                             </span><span class="c1">// 设备号</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">count</span><span class="p">;</span><span class="w">                    </span><span class="c1">// 次设备号数量</span>
+<span class="p">};</span>
+
+<span class="c1">// 文件操作集</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">file_operations</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">module</span><span class="w"> </span><span class="o">*</span><span class="n">owner</span><span class="p">;</span>
+<span class="w">    </span><span class="n">loff_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">llseek</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">read</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">write</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">read_iter</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">kiocb</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">iov_iter</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">write_iter</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">kiocb</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">iov_iter</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">iopoll</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">kiocb</span><span class="w"> </span><span class="o">*</span><span class="n">kiocb</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">io_comp_batch</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">iterate</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">dir_context</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">iterate_shared</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">dir_context</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="n">__poll_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">poll</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">poll_table_struct</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">unlocked_ioctl</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">compat_ioctl</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">mmap</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">vm_area_struct</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">mmap_supported_flags</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">open</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">inode</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">flush</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">fl_owner_t</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">release</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">inode</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">fsync</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">datasync</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">fasync</span><span class="p">)(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">lock</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file_lock</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">sendpage</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="nf">long</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">get_unmapped_area</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">,</span>
+<span class="w">                                       </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">check_flags</span><span class="p">)(</span><span class="kt">int</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">flock</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file_lock</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">splice_write</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">pipe_inode_info</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                            </span><span class="kt">size_t</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">splice_read</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">pipe_inode_info</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">                          </span><span class="kt">size_t</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">setlease</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file_lock</span><span class="w"> </span><span class="o">**</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">fallocate</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">mode</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="n">offset</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">show_fdinfo</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">seq_file</span><span class="w"> </span><span class="o">*</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">copy_file_range</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="p">,</span>
+<span class="w">                               </span><span class="kt">size_t</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">);</span>
+<span class="w">    </span><span class="n">loff_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">remap_file_range</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">file_in</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="n">pos_in</span><span class="p">,</span>
+<span class="w">                               </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">file_out</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="n">pos_out</span><span class="p">,</span>
+<span class="w">                               </span><span class="n">loff_t</span><span class="w"> </span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">remap_flags</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">fadvise</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="842">8.4.2 设备号管理</h3>
+<p>Linux 使用主设备号和次设备号来标识设备：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 设备号宏</span>
+<span class="cp">#define MINORBITS    20                          </span><span class="c1">// 次设备号位数</span>
+<span class="cp">#define MINORMASK    ((1U &lt;&lt; MINORBITS) - 1)     </span><span class="c1">// 次设备号掩码</span>
+
+<span class="cp">#define MAJOR(dev)   ((unsigned int) ((dev) &gt;&gt; MINORBITS))  </span><span class="c1">// 获取主设备号</span>
+<span class="cp">#define MINOR(dev)   ((unsigned int) ((dev) &amp; MINORMASK))   </span><span class="c1">// 获取次设备号</span>
+<span class="cp">#define MKDEV(ma,mi) (((ma) &lt;&lt; MINORBITS) | (mi))           </span><span class="c1">// 合成设备号</span>
+
+<span class="c1">// 分配设备号</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">register_chrdev_region</span><span class="p">(</span><span class="kt">dev_t</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">count</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">);</span><span class="w">  </span><span class="c1">// 静态分配</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">alloc_chrdev_region</span><span class="p">(</span><span class="kt">dev_t</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">baseminor</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">count</span><span class="p">,</span><span class="w">   </span><span class="c1">// 动态分配</span>
+<span class="w">                        </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">);</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">unregister_chrdev_region</span><span class="p">(</span><span class="kt">dev_t</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">count</span><span class="p">);</span><span class="w">                 </span><span class="c1">// 释放</span>
+</code></pre></div>
+
+<h3 id="843">8.4.3 字符设备驱动实例</h3>
+<p>完整的字符设备驱动示例：</p>
+<div class="codehilite"><pre><span></span><code><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;linux/module.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;linux/fs.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;linux/cdev.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;linux/device.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;linux/uaccess.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;linux/slab.h&gt;</span>
+
+<span class="cp">#define DEVICE_NAME &quot;mychardev&quot;</span>
+<span class="cp">#define CLASS_NAME &quot;mychar&quot;</span>
+<span class="cp">#define BUFFER_SIZE 1024</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">mychar_dev</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cdev</span><span class="w"> </span><span class="n">cdev</span><span class="p">;</span><span class="w">              </span><span class="c1">// 字符设备结构</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">device</span><span class="w"> </span><span class="o">*</span><span class="n">device</span><span class="p">;</span><span class="w">         </span><span class="c1">// 设备结构</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mutex</span><span class="w"> </span><span class="n">mutex</span><span class="p">;</span><span class="w">            </span><span class="c1">// 互斥锁</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 数据缓冲区</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 当前数据大小</span>
+<span class="p">};</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">dev_t</span><span class="w"> </span><span class="n">dev_number</span><span class="p">;</span><span class="w">          </span><span class="c1">// 设备号</span>
+<span class="k">static</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">class</span><span class="w"> </span><span class="o">*</span><span class="n">dev_class</span><span class="p">;</span><span class="w">   </span><span class="c1">// 设备类</span>
+<span class="k">static</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">mychar_dev</span><span class="w"> </span><span class="o">*</span><span class="n">mydev</span><span class="p">;</span><span class="w">  </span><span class="c1">// 设备实例</span>
+
+<span class="c1">// 打开设备</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">mychar_open</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">inode</span><span class="w"> </span><span class="o">*</span><span class="n">inode</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">filp</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mychar_dev</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">dev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">container_of</span><span class="p">(</span><span class="n">inode</span><span class="o">-&gt;</span><span class="n">i_cdev</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">mychar_dev</span><span class="p">,</span><span class="w"> </span><span class="n">cdev</span><span class="p">);</span>
+<span class="w">    </span><span class="n">filp</span><span class="o">-&gt;</span><span class="n">private_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dev</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 读取设备</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">ssize_t</span><span class="w"> </span><span class="nf">mychar_read</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">filp</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="n">buf</span><span class="p">,</span>
+<span class="w">                           </span><span class="kt">size_t</span><span class="w"> </span><span class="n">count</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="o">*</span><span class="n">f_pos</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mychar_dev</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filp</span><span class="o">-&gt;</span><span class="n">private_data</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">mutex</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">f_pos</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">)</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">f_pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">)</span>
+<span class="w">        </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="n">f_pos</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">copy_to_user</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span><span class="w"> </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="o">*</span><span class="n">f_pos</span><span class="p">,</span><span class="w"> </span><span class="n">count</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">EFAULT</span><span class="p">;</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="o">*</span><span class="n">f_pos</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+<span class="w">    </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+
+<span class="nl">out</span><span class="p">:</span>
+<span class="w">    </span><span class="n">mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">mutex</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">retval</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 写入设备</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">ssize_t</span><span class="w"> </span><span class="nf">mychar_write</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">filp</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="n">buf</span><span class="p">,</span>
+<span class="w">                            </span><span class="kt">size_t</span><span class="w"> </span><span class="n">count</span><span class="p">,</span><span class="w"> </span><span class="n">loff_t</span><span class="w"> </span><span class="o">*</span><span class="n">f_pos</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mychar_dev</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filp</span><span class="o">-&gt;</span><span class="n">private_data</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">ssize_t</span><span class="w"> </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">ENOMEM</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">mutex</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">f_pos</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">BUFFER_SIZE</span><span class="p">)</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">f_pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">BUFFER_SIZE</span><span class="p">)</span>
+<span class="w">        </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BUFFER_SIZE</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="n">f_pos</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">copy_from_user</span><span class="p">(</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="o">*</span><span class="n">f_pos</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="p">,</span><span class="w"> </span><span class="n">count</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">EFAULT</span><span class="p">;</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="o">*</span><span class="n">f_pos</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">f_pos</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">)</span>
+<span class="w">        </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">f_pos</span><span class="p">;</span>
+<span class="w">    </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+
+<span class="nl">out</span><span class="p">:</span>
+<span class="w">    </span><span class="n">mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">mutex</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">retval</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// ioctl 操作</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">mychar_ioctl</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">filp</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cmd</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mychar_dev</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filp</span><span class="o">-&gt;</span><span class="n">private_data</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// ioctl 命令定义</span>
+<span class="w">    </span><span class="cp">#define MYCHAR_IOC_MAGIC &#39;k&#39;</span>
+<span class="w">    </span><span class="cp">#define MYCHAR_IOCRESET  _IO(MYCHAR_IOC_MAGIC, 0)</span>
+<span class="w">    </span><span class="cp">#define MYCHAR_IOCGSIZE  _IOR(MYCHAR_IOC_MAGIC, 1, int)</span>
+<span class="w">    </span><span class="cp">#define MYCHAR_IOCSSIZE  _IOW(MYCHAR_IOC_MAGIC, 2, int)</span>
+
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">MYCHAR_IOCRESET</span><span class="p">:</span>
+<span class="w">        </span><span class="n">mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">mutex</span><span class="p">);</span>
+<span class="w">        </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="n">memset</span><span class="p">(</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">BUFFER_SIZE</span><span class="p">);</span>
+<span class="w">        </span><span class="n">mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">mutex</span><span class="p">);</span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">MYCHAR_IOCGSIZE</span><span class="p">:</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">put_user</span><span class="p">(</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">arg</span><span class="p">))</span>
+<span class="w">            </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">EFAULT</span><span class="p">;</span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">MYCHAR_IOCSSIZE</span><span class="p">:</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">get_user</span><span class="p">(</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">__user</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">arg</span><span class="p">))</span>
+<span class="w">            </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">EFAULT</span><span class="p">;</span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">default</span><span class="o">:</span>
+<span class="w">        </span><span class="n">retval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">retval</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 文件操作集</span>
+<span class="k">static</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">file_operations</span><span class="w"> </span><span class="n">mychar_fops</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">.</span><span class="n">owner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">THIS_MODULE</span><span class="p">,</span>
+<span class="w">    </span><span class="p">.</span><span class="n">open</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mychar_open</span><span class="p">,</span>
+<span class="w">    </span><span class="p">.</span><span class="n">read</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mychar_read</span><span class="p">,</span>
+<span class="w">    </span><span class="p">.</span><span class="n">write</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mychar_write</span><span class="p">,</span>
+<span class="w">    </span><span class="p">.</span><span class="n">unlocked_ioctl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mychar_ioctl</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="c1">// 模块初始化</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">__init</span><span class="w"> </span><span class="nf">mychar_init</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 分配设备号</span>
+<span class="w">    </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_chrdev_region</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev_number</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">DEVICE_NAME</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pr_err</span><span class="p">(</span><span class="s">&quot;Failed to allocate device number</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 创建设备类</span>
+<span class="w">    </span><span class="n">dev_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">class_create</span><span class="p">(</span><span class="n">THIS_MODULE</span><span class="p">,</span><span class="w"> </span><span class="n">CLASS_NAME</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">IS_ERR</span><span class="p">(</span><span class="n">dev_class</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">unregister_chrdev_region</span><span class="p">(</span><span class="n">dev_number</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PTR_ERR</span><span class="p">(</span><span class="n">dev_class</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 分配设备结构</span>
+<span class="w">    </span><span class="n">mydev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kzalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">mydev</span><span class="p">),</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">mydev</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">ENOMEM</span><span class="p">;</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">fail_alloc</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 分配缓冲区</span>
+<span class="w">    </span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kzalloc</span><span class="p">(</span><span class="n">BUFFER_SIZE</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">ENOMEM</span><span class="p">;</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">fail_buffer</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 初始化字符设备</span>
+<span class="w">    </span><span class="n">cdev_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">cdev</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mychar_fops</span><span class="p">);</span>
+<span class="w">    </span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">cdev</span><span class="p">.</span><span class="n">owner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">THIS_MODULE</span><span class="p">;</span>
+<span class="w">    </span><span class="n">mutex_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">mutex</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 添加字符设备</span>
+<span class="w">    </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cdev_add</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">cdev</span><span class="p">,</span><span class="w"> </span><span class="n">dev_number</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pr_err</span><span class="p">(</span><span class="s">&quot;Failed to add cdev</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">fail_cdev</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 创建设备节点</span>
+<span class="w">    </span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">device</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">device_create</span><span class="p">(</span><span class="n">dev_class</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">dev_number</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">DEVICE_NAME</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">IS_ERR</span><span class="p">(</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">device</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PTR_ERR</span><span class="p">(</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">device</span><span class="p">);</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">fail_device</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">pr_info</span><span class="p">(</span><span class="s">&quot;mychar driver initialized</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="nl">fail_device</span><span class="p">:</span>
+<span class="w">    </span><span class="n">cdev_del</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">cdev</span><span class="p">);</span>
+<span class="nl">fail_cdev</span><span class="p">:</span>
+<span class="w">    </span><span class="n">kfree</span><span class="p">(</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="p">);</span>
+<span class="nl">fail_buffer</span><span class="p">:</span>
+<span class="w">    </span><span class="n">kfree</span><span class="p">(</span><span class="n">mydev</span><span class="p">);</span>
+<span class="nl">fail_alloc</span><span class="p">:</span>
+<span class="w">    </span><span class="n">class_destroy</span><span class="p">(</span><span class="n">dev_class</span><span class="p">);</span>
+<span class="w">    </span><span class="n">unregister_chrdev_region</span><span class="p">(</span><span class="n">dev_number</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 模块退出</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">__exit</span><span class="w"> </span><span class="nf">mychar_exit</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">device_destroy</span><span class="p">(</span><span class="n">dev_class</span><span class="p">,</span><span class="w"> </span><span class="n">dev_number</span><span class="p">);</span>
+<span class="w">    </span><span class="n">cdev_del</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">cdev</span><span class="p">);</span>
+<span class="w">    </span><span class="n">kfree</span><span class="p">(</span><span class="n">mydev</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="p">);</span>
+<span class="w">    </span><span class="n">kfree</span><span class="p">(</span><span class="n">mydev</span><span class="p">);</span>
+<span class="w">    </span><span class="n">class_destroy</span><span class="p">(</span><span class="n">dev_class</span><span class="p">);</span>
+<span class="w">    </span><span class="n">unregister_chrdev_region</span><span class="p">(</span><span class="n">dev_number</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="n">pr_info</span><span class="p">(</span><span class="s">&quot;mychar driver exited</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">module_init</span><span class="p">(</span><span class="n">mychar_init</span><span class="p">);</span>
+<span class="n">module_exit</span><span class="p">(</span><span class="n">mychar_exit</span><span class="p">);</span>
+
+<span class="n">MODULE_LICENSE</span><span class="p">(</span><span class="s">&quot;GPL&quot;</span><span class="p">);</span>
+<span class="n">MODULE_AUTHOR</span><span class="p">(</span><span class="s">&quot;Linux Kernel Developer&quot;</span><span class="p">);</span>
+<span class="n">MODULE_DESCRIPTION</span><span class="p">(</span><span class="s">&quot;A simple character device driver&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+<h2 id="85">8.5 块设备驱动</h2>
+<h3 id="851">8.5.1 块设备架构</h3>
+<p>块设备与字符设备的主要区别在于：块设备支持随机访问，以固定大小的块为单位进行数据传输，并且具有请求队列和 I/O 调度机制。</p>
+<p>块设备核心数据结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">major</span><span class="p">;</span><span class="w">                              </span><span class="c1">// 主设备号</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">first_minor</span><span class="p">;</span><span class="w">                       </span><span class="c1">// 第一个次设备号</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">minors</span><span class="p">;</span><span class="w">                             </span><span class="c1">// 次设备号数量</span>
+
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">disk_name</span><span class="p">[</span><span class="n">DISK_NAME_LEN</span><span class="p">];</span><span class="w">        </span><span class="c1">// 磁盘名称（如 sda）</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w"> </span><span class="n">events</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 支持的事件</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w"> </span><span class="n">event_flags</span><span class="p">;</span><span class="w">            </span><span class="c1">// 事件标志</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">xarray</span><span class="w"> </span><span class="n">part_tbl</span><span class="p">;</span><span class="w">                </span><span class="c1">// 分区表</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="n">part0</span><span class="p">;</span><span class="w">            </span><span class="c1">// 整个磁盘的 block_device</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device_operations</span><span class="w"> </span><span class="o">*</span><span class="n">fops</span><span class="p">;</span><span class="w">  </span><span class="c1">// 块设备操作集</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">queue</span><span class="p">;</span><span class="w">           </span><span class="c1">// 请求队列</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">private_data</span><span class="p">;</span><span class="w">                    </span><span class="c1">// 私有数据</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span><span class="w">                             </span><span class="c1">// 磁盘标志</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">state</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 磁盘状态</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mutex</span><span class="w"> </span><span class="n">open_mutex</span><span class="p">;</span><span class="w">               </span><span class="c1">// 打开互斥锁</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">open_partitions</span><span class="p">;</span><span class="w">              </span><span class="c1">// 打开的分区数</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">backing_dev_info</span><span class="w"> </span><span class="o">*</span><span class="n">bdi</span><span class="p">;</span><span class="w">         </span><span class="c1">// 后备设备信息</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w"> </span><span class="o">*</span><span class="n">slave_dir</span><span class="p">;</span><span class="w">            </span><span class="c1">// 从属目录</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">timer_rand_state</span><span class="w"> </span><span class="o">*</span><span class="n">random</span><span class="p">;</span><span class="w">      </span><span class="c1">// 随机数状态</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">sync_io</span><span class="p">;</span><span class="w">                      </span><span class="c1">// 同步 I/O 计数</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">disk_events</span><span class="w"> </span><span class="o">*</span><span class="n">ev</span><span class="p">;</span><span class="w">               </span><span class="c1">// 磁盘事件</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w"> </span><span class="n">integrity_kobj</span><span class="p">;</span><span class="w">        </span><span class="c1">// 完整性 kobject</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cdrom_device_info</span><span class="w"> </span><span class="o">*</span><span class="n">cdi</span><span class="p">;</span><span class="w">        </span><span class="c1">// CD-ROM 信息</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">node_id</span><span class="p">;</span><span class="w">                           </span><span class="c1">// NUMA 节点 ID</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">badblocks</span><span class="w"> </span><span class="o">*</span><span class="n">bb</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 坏块信息</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">lockdep_map</span><span class="w"> </span><span class="n">lockdep_map</span><span class="p">;</span><span class="w">       </span><span class="c1">// 锁依赖映射</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">diskseq</span><span class="p">;</span><span class="w">                          </span><span class="c1">// 磁盘序列号</span>
+<span class="p">};</span>
+
+<span class="c1">// 块设备操作集</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">block_device_operations</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">open</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="p">);</span><span class="w">       </span><span class="c1">// 打开设备</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">release</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="p">);</span><span class="w">        </span><span class="c1">// 释放设备</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">rw_page</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">sector_t</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">ioctl</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">compat_ioctl</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="nf">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">check_events</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="n">disk</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">clearing</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">unlock_native_capacity</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">revalidate_disk</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">getgeo</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">hd_geometry</span><span class="w"> </span><span class="o">*</span><span class="p">);</span><span class="w">  </span><span class="c1">// 获取几何信息</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">swap_slot_free_notify</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">report_zones</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">sector_t</span><span class="w"> </span><span class="n">sector</span><span class="p">,</span>
+<span class="w">                       </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nr_zones</span><span class="p">,</span><span class="w"> </span><span class="n">report_zones_cb</span><span class="w"> </span><span class="n">cb</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">devnode</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="n">disk</span><span class="p">,</span><span class="w"> </span><span class="n">umode_t</span><span class="w"> </span><span class="o">*</span><span class="n">mode</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">module</span><span class="w"> </span><span class="o">*</span><span class="n">owner</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">pr_ops</span><span class="w"> </span><span class="o">*</span><span class="n">pr_ops</span><span class="p">;</span><span class="w">           </span><span class="c1">// 持久预留操作</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">alternative_gpt_sector</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="n">disk</span><span class="p">,</span><span class="w"> </span><span class="n">sector_t</span><span class="w"> </span><span class="o">*</span><span class="n">sector</span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="852-bio">8.5.2 请求队列和 bio</h3>
+<p>块设备的 I/O 请求通过 bio（Block I/O）结构描述：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w">          </span><span class="o">*</span><span class="n">bi_next</span><span class="p">;</span><span class="w">          </span><span class="c1">// 请求队列中的下一个 bio</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w">      </span><span class="o">*</span><span class="n">bi_disk</span><span class="p">;</span><span class="w">          </span><span class="c1">// 目标磁盘</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">bi_opf</span><span class="p">;</span><span class="w">            </span><span class="c1">// 操作标志</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">      </span><span class="n">bi_flags</span><span class="p">;</span><span class="w">          </span><span class="c1">// 状态标志</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">      </span><span class="n">bi_ioprio</span><span class="p">;</span><span class="w">         </span><span class="c1">// I/O 优先级</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">      </span><span class="n">bi_write_hint</span><span class="p">;</span><span class="w">     </span><span class="c1">// 写入提示</span>
+<span class="w">    </span><span class="n">blk_status_t</span><span class="w">        </span><span class="n">bi_status</span><span class="p">;</span><span class="w">         </span><span class="c1">// 完成状态</span>
+<span class="w">    </span><span class="n">u8</span><span class="w">                  </span><span class="n">bi_partno</span><span class="p">;</span><span class="w">         </span><span class="c1">// 分区号</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w">            </span><span class="n">__bi_remaining</span><span class="p">;</span><span class="w">    </span><span class="c1">// 剩余计数</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bvec_iter</span><span class="w">    </span><span class="n">bi_iter</span><span class="p">;</span><span class="w">           </span><span class="c1">// 当前迭代器</span>
+
+<span class="w">    </span><span class="n">bio_end_io_t</span><span class="w">        </span><span class="o">*</span><span class="n">bi_end_io</span><span class="p">;</span><span class="w">        </span><span class="c1">// 完成回调函数</span>
+<span class="w">    </span><span class="kt">void</span><span class="w">                </span><span class="o">*</span><span class="n">bi_private</span><span class="p">;</span><span class="w">       </span><span class="c1">// 私有数据</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blkcg_gq</span><span class="w">     </span><span class="o">*</span><span class="n">bi_blkg</span><span class="p">;</span><span class="w">          </span><span class="c1">// cgroup 信息</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_issue</span><span class="w">    </span><span class="n">bi_issue</span><span class="p">;</span><span class="w">          </span><span class="c1">// 发出时间戳</span>
+
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_integrity_payload</span><span class="w"> </span><span class="o">*</span><span class="n">bi_integrity</span><span class="p">;</span><span class="w">  </span><span class="c1">// 完整性载荷</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">      </span><span class="n">bi_vcnt</span><span class="p">;</span><span class="w">           </span><span class="c1">// bio_vec 数量</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">      </span><span class="n">bi_max_vecs</span><span class="p">;</span><span class="w">       </span><span class="c1">// 最大 bio_vec 数量</span>
+
+<span class="w">    </span><span class="n">atomic_t</span><span class="w">            </span><span class="n">__bi_cnt</span><span class="p">;</span><span class="w">          </span><span class="c1">// 引用计数</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_vec</span><span class="w">      </span><span class="o">*</span><span class="n">bi_io_vec</span><span class="p">;</span><span class="w">        </span><span class="c1">// I/O 向量数组</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_set</span><span class="w">      </span><span class="o">*</span><span class="n">bi_pool</span><span class="p">;</span><span class="w">          </span><span class="c1">// 来源的 bio 池</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_vec</span><span class="w">      </span><span class="n">bi_inline_vecs</span><span class="p">[];</span><span class="w">  </span><span class="c1">// 内联向量数组</span>
+<span class="p">};</span>
+
+<span class="c1">// bio 向量：描述内存页面</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">bio_vec</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w">     </span><span class="o">*</span><span class="n">bv_page</span><span class="p">;</span><span class="w">              </span><span class="c1">// 页面指针</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">    </span><span class="n">bv_len</span><span class="p">;</span><span class="w">                </span><span class="c1">// 长度</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">    </span><span class="n">bv_offset</span><span class="p">;</span><span class="w">             </span><span class="c1">// 页内偏移</span>
+<span class="p">};</span>
+
+<span class="c1">// 请求结构</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">q</span><span class="p">;</span><span class="w">               </span><span class="c1">// 所属队列</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_ctx</span><span class="w"> </span><span class="o">*</span><span class="n">mq_ctx</span><span class="p">;</span><span class="w">            </span><span class="c1">// 多队列上下文</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_hw_ctx</span><span class="w"> </span><span class="o">*</span><span class="n">mq_hctx</span><span class="p">;</span><span class="w">        </span><span class="c1">// 硬件队列上下文</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cmd_flags</span><span class="p">;</span><span class="w">                </span><span class="c1">// 命令标志</span>
+<span class="w">    </span><span class="n">req_flags_t</span><span class="w"> </span><span class="n">rq_flags</span><span class="p">;</span><span class="w">                 </span><span class="c1">// 请求标志</span>
+
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">tag</span><span class="p">;</span><span class="w">                               </span><span class="c1">// 请求标签</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">internal_tag</span><span class="p">;</span><span class="w">                      </span><span class="c1">// 内部标签</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">__data_len</span><span class="p">;</span><span class="w">              </span><span class="c1">// 数据长度</span>
+<span class="w">    </span><span class="n">sector_t</span><span class="w"> </span><span class="n">__sector</span><span class="p">;</span><span class="w">                     </span><span class="c1">// 起始扇区</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">;</span><span class="w">                       </span><span class="c1">// bio 链表头</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">biotail</span><span class="p">;</span><span class="w">                   </span><span class="c1">// bio 链表尾</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">queuelist</span><span class="p">;</span><span class="w">           </span><span class="c1">// 队列链表节点</span>
+
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">hlist_node</span><span class="w"> </span><span class="n">hash</span><span class="p">;</span><span class="w">            </span><span class="c1">// 哈希链表节点</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">ipi_list</span><span class="p">;</span><span class="w">        </span><span class="c1">// IPI 链表</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">rb_node</span><span class="w"> </span><span class="n">rb_node</span><span class="p">;</span><span class="w">            </span><span class="c1">// 红黑树节点</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_vec</span><span class="w"> </span><span class="n">special_vec</span><span class="p">;</span><span class="w">       </span><span class="c1">// 特殊向量</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">completion_data</span><span class="p">;</span><span class="w">             </span><span class="c1">// 完成数据</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">error_count</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 错误计数</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">struct</span><span class="w"> </span><span class="nc">io_cq</span><span class="w"> </span><span class="o">*</span><span class="n">icq</span><span class="p">;</span><span class="w">            </span><span class="c1">// I/O 上下文队列</span>
+<span class="w">            </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">priv</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w">                </span><span class="c1">// 私有数据</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="n">elv</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">seq</span><span class="p">;</span><span class="w">              </span><span class="c1">// 序列号</span>
+<span class="w">            </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">        </span><span class="c1">// 链表</span>
+<span class="w">            </span><span class="n">rq_end_io_fn</span><span class="w"> </span><span class="o">*</span><span class="n">saved_end_io</span><span class="p">;</span><span class="w">   </span><span class="c1">// 保存的完成函数</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="n">flush</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">__call_single_data</span><span class="w"> </span><span class="n">csd</span><span class="p">;</span><span class="w">    </span><span class="c1">// 单次调用数据</span>
+<span class="w">        </span><span class="n">u64</span><span class="w"> </span><span class="n">fifo_time</span><span class="p">;</span><span class="w">                    </span><span class="c1">// FIFO 时间</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">rq_end_io_fn</span><span class="w"> </span><span class="o">*</span><span class="n">end_io</span><span class="p">;</span><span class="w">                 </span><span class="c1">// 完成回调函数</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">end_io_data</span><span class="p">;</span><span class="w">                    </span><span class="c1">// 完成回调数据</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="853">8.5.3 块设备驱动实例</h3>
+<p>简单的内存块设备驱动示例：</p>
+<div class="codehilite"><pre><span></span><code><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;linux/module.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;linux/blkdev.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;linux/hdreg.h&gt;</span>
+
+<span class="cp">#define MEMBLK_DISK_NAME    &quot;memblk&quot;</span>
+<span class="cp">#define MEMBLK_MINORS       16</span>
+<span class="cp">#define MEMBLK_SECTOR_SIZE  512</span>
+<span class="cp">#define MEMBLK_NSECTORS     (16 * 1024 * 2)  </span><span class="c1">// 16MB</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">memblk_device</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">major</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="n">disk</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">queue</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u8</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">;</span><span class="w">                              </span><span class="c1">// 数据存储区</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">;</span><span class="w">                           </span><span class="c1">// 设备大小</span>
+<span class="p">};</span>
+
+<span class="k">static</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">memblk_device</span><span class="w"> </span><span class="o">*</span><span class="n">memblk_dev</span><span class="p">;</span>
+
+<span class="c1">// 处理 I/O 请求</span>
+<span class="k">static</span><span class="w"> </span><span class="n">blk_status_t</span><span class="w"> </span><span class="nf">memblk_queue_rq</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_hw_ctx</span><span class="w"> </span><span class="o">*</span><span class="n">hctx</span><span class="p">,</span>
+<span class="w">                                    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_queue_data</span><span class="w"> </span><span class="o">*</span><span class="n">bd</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">*</span><span class="n">rq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bd</span><span class="o">-&gt;</span><span class="n">rq</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">memblk_device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">q</span><span class="o">-&gt;</span><span class="n">queuedata</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_vec</span><span class="w"> </span><span class="n">bvec</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">req_iterator</span><span class="w"> </span><span class="n">iter</span><span class="p">;</span>
+<span class="w">    </span><span class="n">loff_t</span><span class="w"> </span><span class="n">pos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blk_rq_pos</span><span class="p">(</span><span class="n">rq</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">9</span><span class="p">;</span><span class="w">     </span><span class="c1">// 扇区转字节</span>
+<span class="w">    </span><span class="n">loff_t</span><span class="w"> </span><span class="n">len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blk_rq_bytes</span><span class="p">(</span><span class="n">rq</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">blk_mq_start_request</span><span class="p">(</span><span class="n">rq</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">len</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pr_err</span><span class="p">(</span><span class="s">&quot;Request beyond device capacity</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">        </span><span class="n">blk_mq_end_request</span><span class="p">(</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">BLK_STS_IOERR</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">BLK_STS_IOERR</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 遍历请求中的所有 bio 向量</span>
+<span class="w">    </span><span class="n">rq_for_each_segment</span><span class="p">(</span><span class="n">bvec</span><span class="p">,</span><span class="w"> </span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">iter</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">buffer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">page_address</span><span class="p">(</span><span class="n">bvec</span><span class="p">.</span><span class="n">bv_page</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">bvec</span><span class="p">.</span><span class="n">bv_offset</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rq_data_dir</span><span class="p">(</span><span class="n">rq</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">WRITE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 写操作：从 buffer 复制到设备</span>
+<span class="w">            </span><span class="n">memcpy</span><span class="p">(</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">bvec</span><span class="p">.</span><span class="n">bv_len</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 读操作：从设备复制到 buffer</span>
+<span class="w">            </span><span class="n">memcpy</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="n">bvec</span><span class="p">.</span><span class="n">bv_len</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="n">pos</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">bvec</span><span class="p">.</span><span class="n">bv_len</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">blk_mq_end_request</span><span class="p">(</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">BLK_STS_OK</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">BLK_STS_OK</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 块设备操作集</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">memblk_open</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="n">bdev</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="w"> </span><span class="n">mode</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">memblk_release</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="n">disk</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="w"> </span><span class="n">mode</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">memblk_getgeo</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="n">bdev</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">hd_geometry</span><span class="w"> </span><span class="o">*</span><span class="n">geo</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">memblk_device</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bdev</span><span class="o">-&gt;</span><span class="n">bd_disk</span><span class="o">-&gt;</span><span class="n">private_data</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">MEMBLK_SECTOR_SIZE</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">geo</span><span class="o">-&gt;</span><span class="n">cylinders</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="o">~</span><span class="mh">0x3f</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span>
+<span class="w">    </span><span class="n">geo</span><span class="o">-&gt;</span><span class="n">heads</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+<span class="w">    </span><span class="n">geo</span><span class="o">-&gt;</span><span class="n">sectors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">16</span><span class="p">;</span>
+<span class="w">    </span><span class="n">geo</span><span class="o">-&gt;</span><span class="n">start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device_operations</span><span class="w"> </span><span class="n">memblk_ops</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">.</span><span class="n">owner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">THIS_MODULE</span><span class="p">,</span>
+<span class="w">    </span><span class="p">.</span><span class="n">open</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memblk_open</span><span class="p">,</span>
+<span class="w">    </span><span class="p">.</span><span class="n">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memblk_release</span><span class="p">,</span>
+<span class="w">    </span><span class="p">.</span><span class="n">getgeo</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memblk_getgeo</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="c1">// 多队列操作集</span>
+<span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_ops</span><span class="w"> </span><span class="n">memblk_mq_ops</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">.</span><span class="n">queue_rq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memblk_queue_rq</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="c1">// 模块初始化</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">__init</span><span class="w"> </span><span class="nf">memblk_init</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 分配设备结构</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kzalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">memblk_dev</span><span class="p">),</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">memblk_dev</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">ENOMEM</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 分配数据存储区</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MEMBLK_NSECTORS</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">MEMBLK_SECTOR_SIZE</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vzalloc</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">ENOMEM</span><span class="p">;</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">fail_data</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 注册块设备主设备号</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">major</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">register_blkdev</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MEMBLK_DISK_NAME</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">major</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">major</span><span class="p">;</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">fail_register</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 分配 gendisk</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_disk</span><span class="p">(</span><span class="n">MEMBLK_MINORS</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">ENOMEM</span><span class="p">;</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">fail_disk</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 初始化请求队列</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="o">-&gt;</span><span class="n">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blk_mq_init_sq_queue</span><span class="p">(</span><span class="o">&amp;</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">tag_set</span><span class="p">,</span>
+<span class="w">                                                   </span><span class="o">&amp;</span><span class="n">memblk_mq_ops</span><span class="p">,</span>
+<span class="w">                                                   </span><span class="mi">128</span><span class="p">,</span>
+<span class="w">                                                   </span><span class="n">BLK_MQ_F_SHOULD_MERGE</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">IS_ERR</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="o">-&gt;</span><span class="n">queue</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PTR_ERR</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="o">-&gt;</span><span class="n">queue</span><span class="p">);</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">fail_queue</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="o">-&gt;</span><span class="n">queue</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">queue</span><span class="o">-&gt;</span><span class="n">queuedata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memblk_dev</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 设置 gendisk 属性</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="o">-&gt;</span><span class="n">major</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">major</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="o">-&gt;</span><span class="n">first_minor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="o">-&gt;</span><span class="n">fops</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">memblk_ops</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="o">-&gt;</span><span class="n">private_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memblk_dev</span><span class="p">;</span>
+<span class="w">    </span><span class="n">snprintf</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="o">-&gt;</span><span class="n">disk_name</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="n">MEMBLK_DISK_NAME</span><span class="p">);</span>
+<span class="w">    </span><span class="n">set_capacity</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="p">,</span><span class="w"> </span><span class="n">MEMBLK_NSECTORS</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 添加磁盘</span>
+<span class="w">    </span><span class="n">add_disk</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">pr_info</span><span class="p">(</span><span class="s">&quot;memblk: initialized, size=%zu bytes</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="nl">fail_queue</span><span class="p">:</span>
+<span class="w">    </span><span class="n">put_disk</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="p">);</span>
+<span class="nl">fail_disk</span><span class="p">:</span>
+<span class="w">    </span><span class="n">unregister_blkdev</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">major</span><span class="p">,</span><span class="w"> </span><span class="n">MEMBLK_DISK_NAME</span><span class="p">);</span>
+<span class="nl">fail_register</span><span class="p">:</span>
+<span class="w">    </span><span class="n">vfree</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">);</span>
+<span class="nl">fail_data</span><span class="p">:</span>
+<span class="w">    </span><span class="n">kfree</span><span class="p">(</span><span class="n">memblk_dev</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 模块退出</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">__exit</span><span class="w"> </span><span class="nf">memblk_exit</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">del_gendisk</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="p">);</span>
+<span class="w">    </span><span class="n">blk_cleanup_queue</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">queue</span><span class="p">);</span>
+<span class="w">    </span><span class="n">put_disk</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">disk</span><span class="p">);</span>
+<span class="w">    </span><span class="n">unregister_blkdev</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">major</span><span class="p">,</span><span class="w"> </span><span class="n">MEMBLK_DISK_NAME</span><span class="p">);</span>
+<span class="w">    </span><span class="n">vfree</span><span class="p">(</span><span class="n">memblk_dev</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">);</span>
+<span class="w">    </span><span class="n">kfree</span><span class="p">(</span><span class="n">memblk_dev</span><span class="p">);</span>
+<span class="w">    </span><span class="n">pr_info</span><span class="p">(</span><span class="s">&quot;memblk: exited</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">module_init</span><span class="p">(</span><span class="n">memblk_init</span><span class="p">);</span>
+<span class="n">module_exit</span><span class="p">(</span><span class="n">memblk_exit</span><span class="p">);</span>
+
+<span class="n">MODULE_LICENSE</span><span class="p">(</span><span class="s">&quot;GPL&quot;</span><span class="p">);</span>
+<span class="n">MODULE_AUTHOR</span><span class="p">(</span><span class="s">&quot;Linux Kernel Developer&quot;</span><span class="p">);</span>
+<span class="n">MODULE_DESCRIPTION</span><span class="p">(</span><span class="s">&quot;Simple memory block device driver&quot;</span><span class="p">);</span>
+</code></pre></div>
+            </article>
+            
+            <nav class="page-nav"><a href="chapter7.html" class="nav-link prev">← 第7章：块设备层与I/O调度</a><a href="chapter9.html" class="nav-link next">第9章：网络协议栈 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

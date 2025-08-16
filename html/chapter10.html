@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
+    <title>第10章：内核同步机制</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/highlight.css">
+    <script src="assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors', 'ams']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors', '[tex]/ams']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="sidebar-search-input" placeholder="搜索..." autocomplete="off">
+            </div>
+            <div id="tree-container">
+                <nav class="tree-nav" role="tree">
+                    <div class="tree-item " >
+                        <a href="index.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Linux 内核源代码深度解析</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter1.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第1章：Linux 内核概述与发展史</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter2.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第2章：进程管理与任务调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter3.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第3章：内存管理架构</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter4.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第4章：进程间通信机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter5.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第5章：虚拟文件系统（VFS）</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter6.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第6章：具体文件系统实现</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter7.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第7章：块设备层与I/O调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter8.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第8章：设备驱动模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter9.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第9章：网络协议栈</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item active" >
+                        <a href="chapter10.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第10章：内核同步机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter11.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第11章：并发编程模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter12.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第12章：容器与命名空间</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter13.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第13章：安全子系统</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter14.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第14章：实时Linux</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter15.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第15章：性能分析与调试</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter16.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第16章：引导过程与初始化</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="CLAUDE.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Untitled</span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="10">第10章：内核同步机制</h1>
+<h2 id="_1">章节大纲</h2>
+<ol>
+<li><strong>开篇介绍</strong></li>
+<li><strong>原子操作与内存屏障</strong>
+   - 原子整数操作
+   - 原子位操作
+   - 内存屏障类型与使用</li>
+<li><strong>自旋锁家族</strong>
+   - 基本自旋锁（spinlock）
+   - 读写自旋锁（rwlock）
+   - 顺序锁（seqlock）</li>
+<li><strong>睡眠锁机制</strong>
+   - 互斥量（mutex）
+   - 信号量（semaphore）
+   - 完成量（completion）</li>
+<li><strong>RCU机制深度解析</strong>
+   - RCU基本原理
+   - RCU实现细节
+   - RCU使用模式</li>
+<li><strong>正确性保证工具</strong>
+   - lockdep死锁检测
+   - 锁依赖图分析
+   - 运行时锁验证</li>
+<li><strong>本章小结</strong></li>
+<li><strong>练习题</strong></li>
+<li><strong>常见陷阱与错误</strong></li>
+<li><strong>最佳实践检查清单</strong></li>
+</ol>
+<hr />
+<h2 id="101">10.1 开篇介绍</h2>
+<p>在多处理器系统中，内核同步机制是保证数据一致性和正确性的基石。Linux内核作为一个可抢占、支持SMP的操作系统，需要精心设计的同步原语来协调并发执行的内核路径。本章深入剖析Linux内核的同步机制，从最底层的原子操作到高层的RCU机制，揭示内核如何在性能与正确性之间取得平衡。</p>
+<p>本章学习目标：</p>
+<ul>
+<li>理解各种同步原语的实现原理和适用场景</li>
+<li>掌握内存屏障的语义和正确使用方法</li>
+<li>深入理解RCU的设计哲学和实现机制</li>
+<li>学会使用lockdep等工具进行死锁检测和调试</li>
+<li>建立选择合适同步机制的决策框架</li>
+</ul>
+<h2 id="102">10.2 原子操作与内存屏障</h2>
+<h3 id="1021">10.2.1 原子整数操作</h3>
+<p>Linux内核提供了一套完整的原子操作接口，这些操作保证在多处理器环境下的原子性。原子操作是构建更高级同步原语的基础。</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">typedef</span><span class="w"> </span><span class="nx">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">int</span><span class="w"> </span><span class="nx">counter</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="nx">atomic_t</span><span class="p">;</span>
+
+<span class="nx">typedef</span><span class="w"> </span><span class="nx">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">long</span><span class="w"> </span><span class="nx">counter</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="nx">atomic64_t</span><span class="p">;</span>
+</code></pre></div>
+
+<p>原子操作的核心实现依赖于处理器提供的原子指令。在x86架构上，主要使用LOCK前缀和XCHG、CMPXCHG等指令：</p>
+<div class="codehilite"><pre><span></span><code>static inline void atomic_add(int i, atomic_t *v)
+{
+    asm volatile(LOCK_PREFIX &quot;addl %1,%0&quot;
+                 : &quot;+m&quot; (v-&gt;counter)
+                 : &quot;ir&quot; (i));
+}
+
+static inline int atomic_cmpxchg(atomic_t *v, int old, int new)
+{
+    return cmpxchg(&amp;v-&gt;counter, old, new);
+}
+</code></pre></div>
+
+<p>原子操作的语义保证：</p>
+<ul>
+<li><strong>原子性</strong>：操作要么完全执行，要么完全不执行</li>
+<li><strong>有序性</strong>：某些原子操作提供内存序保证</li>
+<li><strong>可见性</strong>：操作结果对所有CPU立即可见</li>
+</ul>
+<h3 id="1022">10.2.2 原子位操作</h3>
+<p>位操作在内核中广泛用于标志管理和位图操作：</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">set_bit</span><span class="p">(</span><span class="nx">nr</span><span class="p">,</span><span class="w"> </span><span class="kd">addr</span><span class="p">)</span><span class="w">       </span><span class="c1">// 原子设置第nr位</span>
+<span class="nx">clear_bit</span><span class="p">(</span><span class="nx">nr</span><span class="p">,</span><span class="w"> </span><span class="kd">addr</span><span class="p">)</span><span class="w">     </span><span class="c1">// 原子清除第nr位</span>
+<span class="nx">test_bit</span><span class="p">(</span><span class="nx">nr</span><span class="p">,</span><span class="w"> </span><span class="kd">addr</span><span class="p">)</span><span class="w">      </span><span class="c1">// 测试第nr位</span>
+<span class="nx">test_and_set_bit</span><span class="p">(</span><span class="nx">nr</span><span class="p">,</span><span class="w"> </span><span class="kd">addr</span><span class="p">)</span><span class="w">  </span><span class="c1">// 测试并设置</span>
+</code></pre></div>
+
+<p>这些操作在实现上使用了处理器的BTS（Bit Test and Set）、BTR（Bit Test and Reset）等指令，配合LOCK前缀实现原子性。</p>
+<h3 id="1023">10.2.3 内存屏障类型与使用</h3>
+<p>内存屏障是控制内存访问顺序的关键机制。Linux内核定义了多种类型的屏障：</p>
+<p><strong>编译器屏障</strong>：</p>
+<div class="codehilite"><pre><span></span><code>barrier()  // 阻止编译器重排序
+</code></pre></div>
+
+<p><strong>CPU内存屏障</strong>：</p>
+<div class="codehilite"><pre><span></span><code>mb()    // 全屏障：读写都不能跨越
+rmb()   // 读屏障：读操作不能跨越
+wmb()   // 写屏障：写操作不能跨越
+smp_mb()   // SMP系统的全屏障
+smp_rmb()  // SMP系统的读屏障
+smp_wmb()  // SMP系统的写屏障
+</code></pre></div>
+
+<p><strong>数据依赖屏障</strong>：</p>
+<div class="codehilite"><pre><span></span><code>read_barrier_depends()  // Alpha架构特有
+smp_read_barrier_depends()
+</code></pre></div>
+
+<p>内存屏障的典型使用模式：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 生产者-消费者模式</span>
+<span class="c1">// 生产者：</span>
+<span class="n">data</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
+<span class="n">smp_wmb</span><span class="p">();</span><span class="w">  </span><span class="c1">// 确保data写入在flag之前</span>
+<span class="n">flag</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+
+<span class="c1">// 消费者：</span>
+<span class="k">while</span><span class="w"> </span><span class="p">(</span>!<span class="n">flag</span><span class="p">)</span>
+<span class="w">    </span><span class="n">cpu_relax</span><span class="p">();</span>
+<span class="n">smp_rmb</span><span class="p">();</span><span class="w">  </span><span class="c1">// 确保读data在读flag之后</span>
+<span class="n">use</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="1024">10.2.4 内存序模型</h3>
+<p>Linux内核采用的内存序模型考虑了不同架构的特性：</p>
+<ul>
+<li><strong>x86/x86-64</strong>：强内存序（TSO），大部分操作自然有序</li>
+<li><strong>ARM/PowerPC</strong>：弱内存序，需要显式屏障</li>
+<li><strong>Alpha</strong>：最弱内存序，甚至数据依赖都需要屏障</li>
+</ul>
+<p>内核通过抽象层屏蔽了这些差异，但理解底层差异对性能优化至关重要。</p>
+<h2 id="103">10.3 自旋锁家族</h2>
+<h3 id="1031-spinlock">10.3.1 基本自旋锁（spinlock）</h3>
+<p>自旋锁是内核中最基本的同步原语，适用于短期持有的临界区保护：</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">typedef</span><span class="w"> </span><span class="nx">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">arch_spinlock_t</span><span class="w"> </span><span class="nx">raw_lock</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="nx">spinlock_t</span><span class="p">;</span>
+
+<span class="nx">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lock</span><span class="p">);</span>
+<span class="c1">// 临界区</span>
+<span class="nx">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lock</span><span class="p">);</span>
+
+<span class="c1">// 禁用中断的版本</span>
+<span class="nx">spin_lock_irqsave</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lock</span><span class="p">,</span><span class="w"> </span><span class="nx">flags</span><span class="p">);</span>
+<span class="c1">// 临界区</span>
+<span class="nx">spin_unlock_irqrestore</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lock</span><span class="p">,</span><span class="w"> </span><span class="nx">flags</span><span class="p">);</span>
+</code></pre></div>
+
+<p>自旋锁的实现演进经历了多个阶段：</p>
+<p><strong>1. 简单测试-设置锁（早期）</strong>：</p>
+<div class="codehilite"><pre><span></span><code>while (test_and_set(&amp;lock))
+    cpu_relax();
+</code></pre></div>
+
+<p><strong>2. Ticket锁（2.6.25引入）</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">typedef</span><span class="w"> </span><span class="nx">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">u32</span><span class="w"> </span><span class="nx">head_tail</span><span class="p">;</span>
+<span class="w">        </span><span class="nx">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kt">u16</span><span class="w"> </span><span class="nx">head</span><span class="p">;</span>
+<span class="w">            </span><span class="kt">u16</span><span class="w"> </span><span class="nx">tail</span><span class="p">;</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">}</span><span class="w"> </span><span class="nx">arch_spinlock_t</span><span class="p">;</span>
+</code></pre></div>
+
+<p>Ticket锁保证了FIFO顺序，避免了饥饿问题。</p>
+<p><strong>3. MCS锁和队列自旋锁（3.15引入）</strong>：</p>
+<div class="codehilite"><pre><span></span><code>struct mcs_spinlock {
+    struct mcs_spinlock *next;
+    int locked;
+};
+</code></pre></div>
+
+<p>队列自旋锁减少了缓存行争用，提高了NUMA系统性能。</p>
+<h3 id="1032-rwlock">10.3.2 读写自旋锁（rwlock）</h3>
+<p>读写锁允许多个读者同时访问，但写者独占：</p>
+<div class="codehilite"><pre><span></span><code>rwlock_t lock;
+
+// 读者
+read_lock(&amp;lock);
+// 读临界区
+read_unlock(&amp;lock);
+
+// 写者
+write_lock(&amp;lock);
+// 写临界区
+write_unlock(&amp;lock);
+</code></pre></div>
+
+<p>读写锁的实现使用计数器跟踪读者数量：</p>
+<ul>
+<li>正数表示读者数量</li>
+<li>负数表示有写者</li>
+<li>零表示无人持有</li>
+</ul>
+<p>读写锁存在的问题：</p>
+<ul>
+<li><strong>写者饥饿</strong>：持续的读者可能导致写者永远无法获得锁</li>
+<li><strong>缓存行乒乓</strong>：读者增减计数器导致缓存行在CPU间移动</li>
+</ul>
+<h3 id="1033-seqlock">10.3.3 顺序锁（seqlock）</h3>
+<p>顺序锁优化了读多写少的场景，读者不会阻塞写者：</p>
+<div class="codehilite"><pre><span></span><code><span class="nx">typedef</span><span class="w"> </span><span class="nx">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">struct</span><span class="w"> </span><span class="nx">seqcount</span><span class="w"> </span><span class="nx">seqcount</span><span class="p">;</span>
+<span class="w">    </span><span class="nx">spinlock_t</span><span class="w"> </span><span class="nx">lock</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="nx">seqlock_t</span><span class="p">;</span>
+
+<span class="c1">// 写者</span>
+<span class="nx">write_seqlock</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">sl</span><span class="p">);</span>
+<span class="c1">// 更新数据</span>
+<span class="nx">write_sequnlock</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">sl</span><span class="p">);</span>
+
+<span class="c1">// 读者</span>
+<span class="nx">unsigned</span><span class="w"> </span><span class="nx">seq</span><span class="p">;</span>
+<span class="nx">do</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nx">seq</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">read_seqbegin</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">sl</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// 读取数据</span>
+<span class="p">}</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="nx">read_seqretry</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">sl</span><span class="p">,</span><span class="w"> </span><span class="nx">seq</span><span class="p">));</span>
+</code></pre></div>
+
+<p>顺序锁的核心思想：</p>
+<ol>
+<li>写者增加序列号（奇数表示正在写）</li>
+<li>读者检查序列号是否改变</li>
+<li>如果改变，读者重试</li>
+</ol>
+<p>顺序锁的适用场景：</p>
+<ul>
+<li>读远多于写</li>
+<li>数据可以安全地多次读取</li>
+<li>不适合指针（可能读到无效地址）</li>
+</ul>
+<h2 id="104">10.4 睡眠锁机制</h2>
+<h3 id="1041-mutex">10.4.1 互斥量（mutex）</h3>
+<p>互斥量是可睡眠的锁，适用于可能长时间持有的临界区：</p>
+<div class="codehilite"><pre><span></span><code>struct mutex {
+    atomic_long_t owner;
+    spinlock_t wait_lock;
+    struct list_head wait_list;
+};
+
+mutex_lock(&amp;mutex);
+// 临界区，可以睡眠
+mutex_unlock(&amp;mutex);
+</code></pre></div>
+
+<p>互斥量的特性：</p>
+<ul>
+<li><strong>自适应自旋</strong>：短暂自旋后才睡眠，减少上下文切换</li>
+<li><strong>优先级继承</strong>：RT补丁中支持，防止优先级反转</li>
+<li><strong>调试支持</strong>：CONFIG_DEBUG_MUTEXES提供死锁检测</li>
+</ul>
+<p>互斥量的优化技术：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// MCS锁风格的等待队列</span>
+<span class="nb">struct</span><span class="w"> </span><span class="n">mutex_waiter</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nb">struct</span><span class="w"> </span><span class="n">list_head</span><span class="w"> </span><span class="nb">list</span><span class="p">;</span>
+<span class="w">    </span><span class="nb">struct</span><span class="w"> </span><span class="n">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">task</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// 乐观自旋</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">mutex_can_spin_on_owner</span><span class="p">(</span><span class="n">lock</span><span class="p">))</span>
+<span class="w">    </span><span class="n">mutex_optimistic_spin</span><span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="1042-semaphore">10.4.2 信号量（semaphore）</h3>
+<p>信号量是更通用的同步原语，支持计数：</p>
+<div class="codehilite"><pre><span></span><code>struct semaphore {
+    raw_spinlock_t lock;
+    unsigned int count;
+    struct list_head wait_list;
+};
+
+// 二值信号量（类似互斥量）
+down(&amp;sem);      // P操作，可能睡眠
+up(&amp;sem);        // V操作
+
+// 计数信号量
+sema_init(&amp;sem, count);  // 初始化为count
+</code></pre></div>
+
+<p>信号量与互斥量的区别：</p>
+<ul>
+<li>信号量可以在不同上下文up/down</li>
+<li>信号量支持计数（资源池）</li>
+<li>互斥量有更严格的语义和更好的调试支持</li>
+</ul>
+<h3 id="1043-completion">10.4.3 完成量（completion）</h3>
+<p>完成量用于等待特定事件的发生：</p>
+<div class="codehilite"><pre><span></span><code>struct completion {
+    unsigned int done;
+    wait_queue_head_t wait;
+};
+
+// 等待方
+wait_for_completion(&amp;comp);
+
+// 通知方
+complete(&amp;comp);
+complete_all(&amp;comp);  // 唤醒所有等待者
+</code></pre></div>
+
+<p>完成量的典型用途：</p>
+<ul>
+<li>等待模块初始化完成</li>
+<li>等待内核线程退出</li>
+<li>等待硬件操作完成</li>
+</ul>
+<p>完成量与信号量的区别：</p>
+<ul>
+<li>完成量语义更清晰（一次性事件）</li>
+<li>完成量自动处理虚假唤醒</li>
+<li>完成量支持超时等待</li>
+</ul>
+<h2 id="105-rcu">10.5 RCU机制深度解析</h2>
+<h3 id="1051-rcu">10.5.1 RCU基本原理</h3>
+<p>RCU（Read-Copy-Update）是Linux内核中最精妙的同步机制之一，实现了读者零开销：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 读者</span>
+<span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="n">ptr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">rcu_dereference</span><span class="p">(</span><span class="n">gptr</span><span class="p">);</span>
+<span class="c1">// 使用ptr，不能睡眠</span>
+<span class="n">rcu_read_unlock</span><span class="p">();</span>
+
+<span class="c1">// 写者</span>
+<span class="n">old_ptr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">gptr</span><span class="p">;</span>
+<span class="n">new_ptr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">kmalloc</span><span class="p">(...);</span>
+<span class="o">*</span><span class="n">new_ptr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="o">*</span><span class="n">old_ptr</span><span class="p">;</span>
+<span class="c1">// 修改new_ptr</span>
+<span class="n">rcu_assign_pointer</span><span class="p">(</span><span class="n">gptr</span><span class="p">,</span><span class="w"> </span><span class="n">new_ptr</span><span class="p">);</span>
+<span class="n">synchronize_rcu</span><span class="p">();</span><span class="w">  </span><span class="c1">// 等待所有读者完成</span>
+<span class="n">kfree</span><span class="p">(</span><span class="n">old_ptr</span><span class="p">);</span>
+</code></pre></div>
+
+<p>RCU的核心思想：</p>
+<ol>
+<li><strong>读者不加锁</strong>：通过禁用抢占标记临界区</li>
+<li><strong>写者复制</strong>：创建新版本而不是就地修改</li>
+<li><strong>延迟回收</strong>：等待所有读者退出后才回收旧版本</li>
+</ol>
+<h3 id="1052-grace-period">10.5.2 宽限期（Grace Period）</h3>
+<p>宽限期是RCU的核心概念，表示所有CPU都经历了静止状态：</p>
+<div class="codehilite"><pre><span></span><code>     CPU0        CPU1        CPU2
+      |           |           |
+   rcu_read_lock  |           |
+      |        rcu_read_lock  |
+      |           |      synchronize_rcu()
+
+      |           |      synchronize_rcu()
+      |           |           |
+   rcu_read_unlock|           |
+      |---------- GP ---------|
+      |        rcu_read_unlock|
+      |           |           |
+      |           |      (GP结束)
+</code></pre></div>
+
+<p>静止状态的定义：</p>
+<ul>
+<li>用户态执行</li>
+<li>空闲循环</li>
+<li>上下文切换</li>
+<li>显式声明（rcu_quiescent_state）</li>
+</ul>
+<h3 id="1053-rcu">10.5.3 RCU实现变体</h3>
+<p>Linux内核包含多种RCU实现：</p>
+<p><strong>1. RCU-sched</strong>：
+- 禁用抢占作为读端标记
+- 调度器时钟中断检测静止状态
+- 适用于大部分内核代码</p>
+<p><strong>2. RCU-bh</strong>：
+- 禁用软中断作为读端标记
+- 专门优化软中断处理路径</p>
+<p><strong>3. SRCU（Sleepable RCU）</strong>：
+- 允许读者睡眠
+- 使用per-CPU计数器
+- 开销较大但更灵活</p>
+<p><strong>4. Tasks RCU</strong>：
+- 等待所有任务经历上下文切换
+- 用于跟踪点和BPF</p>
+<h3 id="1054-rcu">10.5.4 RCU回调机制</h3>
+<p>RCU使用回调机制进行延迟释放：</p>
+<div class="codehilite"><pre><span></span><code>struct rcu_head {
+    struct rcu_head *next;
+    void (*func)(struct rcu_head *head);
+};
+
+call_rcu(&amp;obj-&gt;rcu_head, free_func);
+</code></pre></div>
+
+<p>回调批处理优化：</p>
+<div class="codehilite"><pre><span></span><code>struct rcu_data {
+    struct rcu_head *nxtlist;     // 新回调
+    struct rcu_head *curlist;     // 当前批次
+    struct rcu_head *donelist;    // 完成批次
+};
+</code></pre></div>
+
+<h3 id="1055-rcu">10.5.5 RCU调试支持</h3>
+<p>内核提供了丰富的RCU调试工具：</p>
+<div class="codehilite"><pre><span></span><code>CONFIG_RCU_TRACE         // RCU跟踪
+CONFIG_RCU_CPU_STALL_DETECTOR  // 停滞检测
+CONFIG_PROVE_RCU         // 运行时验证
+
+// 调试接口
+rcu_dereference_check()  // 带检查的解引用
+rcu_access_pointer()     // 只访问指针值
+</code></pre></div>
+
+<h2 id="106">10.6 正确性保证工具</h2>
+<h3 id="1061-lockdep">10.6.1 lockdep死锁检测</h3>
+<p>lockdep是Linux内核的运行时锁验证系统：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">struct</span><span class="w"> </span><span class="n">lockdep_map</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">struct</span><span class="w"> </span><span class="n">lock_class_key</span><span class="w"> </span><span class="o">*</span><span class="n">key</span><span class="p">;</span>
+<span class="w">    </span><span class="n">struct</span><span class="w"> </span><span class="n">lock_class</span><span class="w"> </span><span class="o">*</span><span class="n">class_cache</span><span class="p">;</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="nb">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="o">//</span><span class="w"> </span><span class="err">锁类定义</span>
+<span class="k">static</span><span class="w"> </span><span class="n">struct</span><span class="w"> </span><span class="n">lock_class_key</span><span class="w"> </span><span class="n">key</span><span class="p">;</span>
+<span class="n">spin_lock_init_key</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
+</code></pre></div>
+
+<p>lockdep检测的问题类型：</p>
+<ol>
+<li><strong>死锁</strong>：循环锁依赖</li>
+<li><strong>锁顺序违反</strong>：AB-BA模式</li>
+<li><strong>中断安全违反</strong>：中断上下文锁使用错误</li>
+<li><strong>睡眠原语误用</strong>：原子上下文中睡眠</li>
+</ol>
+<h3 id="1062">10.6.2 锁依赖图分析</h3>
+<p>lockdep维护锁类之间的依赖图：</p>
+<div class="codehilite"><pre><span></span><code><span class="w">     </span><span class="n">A</span><span class="w"> </span><span class="o">-----&gt;</span><span class="w"> </span><span class="n">B</span>
+<span class="w">     </span><span class="o">^</span><span class="w">         </span><span class="o">|</span>
+<span class="w">     </span><span class="o">|</span><span class="w">         </span><span class="n">v</span>
+<span class="w">     </span><span class="n">D</span><span class="w"> </span><span class="o">&lt;-----</span><span class="w"> </span><span class="n">C</span>
+
+<span class="c1">// 检测到循环：死锁！</span>
+</code></pre></div>
+
+<p>依赖规则：</p>
+<ul>
+<li>前向依赖：持有A时获取B，创建A→B边</li>
+<li>传递性：A→B且B→C，则A→C</li>
+<li>独立类：不同key的锁属于不同类</li>
+</ul>
+<h3 id="1063">10.6.3 运行时锁验证</h3>
+<p>内核提供了多种运行时检查：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 自旋锁检查</span>
+<span class="n">CONFIG_DEBUG_SPINLOCK</span>
+
+<span class="o">-</span><span class="w"> </span>检测未初始化的锁
+<span class="o">-</span><span class="w"> </span>检测重复解锁
+<span class="o">-</span><span class="w"> </span>检测错误的<span class="n">CPU</span>
+
+<span class="c1">// 互斥量检查</span>
+<span class="n">CONFIG_DEBUG_MUTEXES</span>
+
+<span class="o">-</span><span class="w"> </span>检测<span class="n">API误用</span>
+<span class="o">-</span><span class="w"> </span>检测优先级反转
+
+<span class="c1">// 原子睡眠检查</span>
+<span class="n">CONFIG_DEBUG_ATOMIC_SLEEP</span>
+
+<span class="o">-</span><span class="w"> </span>检测原子上下文中的睡眠
+</code></pre></div>
+
+<h2 id="107">10.7 本章小结</h2>
+<p>Linux内核同步机制构成了一个完整的层次体系，从底层的原子操作到高层的RCU机制，每种同步原语都有其适用场景和性能特征。</p>
+<p><strong>关键概念总结</strong>：</p>
+<ol>
+<li>
+<p><strong>原子操作与内存屏障</strong>：
+   - 原子操作是所有同步机制的基础
+   - 内存屏障控制操作的可见性顺序
+   - 不同架构的内存模型差异巨大</p>
+</li>
+<li>
+<p><strong>自旋锁选择原则</strong>：
+   - spinlock：短临界区，不能睡眠
+   - rwlock：读多写少，注意写者饥饿
+   - seqlock：读远多于写，数据可重读</p>
+</li>
+<li>
+<p><strong>睡眠锁使用指南</strong>：
+   - mutex：首选的睡眠锁，有调试支持
+   - semaphore：需要计数或跨上下文释放
+   - completion：等待一次性事件</p>
+</li>
+<li>
+<p><strong>RCU核心思想</strong>：
+   - 读者零开销，写者承担复杂性
+   - 通过延迟回收保证安全性
+   - 适合读多写少的数据结构</p>
+</li>
+<li>
+<p><strong>正确性保证</strong>：
+   - lockdep提供运行时死锁检测
+   - 各种DEBUG选项帮助发现并发错误
+   - 遵循锁层次避免死锁</p>
+</li>
+</ol>
+<p><strong>性能考量公式</strong>：</p>
+<p>临界区选择决策：
+$$\text{同步开销} = \text{获取开销} + \text{持有时间} + \text{释放开销} + \text{争用开销}$$
+RCU读写性能比：
+$$\text{RCU收益} = \frac{\text{读频率} \times \text{读开销}_{传统}}{\text{读频率} \times \text{读开销}_{RCU} + \text{写频率} \times \text{写开销}_{RCU}}$$
+锁粒度优化：
+$$\text{并发度} = \frac{1}{P + \frac{1-P}{N}}$$
+其中P是串行部分比例，N是处理器数量（Amdahl定律）</p>
+<h2 id="108">10.8 练习题</h2>
+<h3 id="_2">基础理解题</h3>
+<p><strong>练习10.1</strong>：解释为什么在x86架构上大多数原子操作需要LOCK前缀，而XCHG指令不需要？</p>
+<details>
+<summary>答案</summary>
+<p>XCHG指令在x86架构上具有隐式的LOCK语义，即使没有LOCK前缀也会锁定总线或缓存行。这是x86的历史设计决定。其他指令如ADD、SUB等需要显式的LOCK前缀才能保证原子性。这种设计简化了某些原子操作的实现，但XCHG的隐式锁定也意味着它总是比普通MOV指令慢。</p>
+</details>
+<p><strong>练习10.2</strong>：在什么情况下读写锁（rwlock）的性能可能比普通自旋锁（spinlock）更差？</p>
+<details>
+<summary>答案</summary>
+<ol>
+<li>写操作频繁时：读写锁的写者需要等待所有读者完成，可能导致写者饥饿</li>
+<li>读临界区很短时：读写锁的获取/释放开销比spinlock大</li>
+<li>NUMA系统上：读者计数器的更新导致缓存行在节点间移动</li>
+<li>读者和写者交替时：频繁的模式切换增加开销</li>
+<li>争用激烈时：多个读者更新同一个计数器造成缓存行乒乓</li>
+</ol>
+</details>
+<p><strong>练习10.3</strong>：为什么RCU读端临界区内不能睡眠？如果需要睡眠应该使用什么？</p>
+<details>
+<summary>答案</summary>
+<p>经典RCU使用禁用抢占来标记读端临界区。如果读者睡眠，会导致：</p>
+<ol>
+<li>抢占计数不平衡，系统错误</li>
+<li>宽限期无法结束，因为睡眠的读者不会经历静止状态</li>
+<li>可能导致系统停滞或死锁</li>
+</ol>
+<p>需要睡眠时应使用SRCU（Sleepable RCU），它使用per-CPU计数器而非禁用抢占，允许读者睡眠，代价是更高的读端开销。</p>
+</details>
+<h3 id="_3">代码分析题</h3>
+<p><strong>练习10.4</strong>：分析以下代码可能存在的并发问题：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">counter</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">process_foo</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="o">*</span><span class="n">f</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">counter</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+<span class="w">        </span><span class="n">schedule</span><span class="p">();</span><span class="w">  </span><span class="c1">// 让出CPU</span>
+<span class="w">        </span><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+<span class="w">        </span><span class="n">f</span><span class="o">-&gt;</span><span class="n">counter</span><span class="o">--</span><span class="p">;</span>
+<span class="w">        </span><span class="c1">// 处理list</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<details>
+<summary>答案</summary>
+<p>问题：检查条件和执行操作之间释放了锁，存在TOCTOU（Time-Of-Check-Time-Of-Use）竞态。</p>
+<p>具体场景：</p>
+<ol>
+<li>线程A检查counter &gt; 0，成功</li>
+<li>线程A释放锁，调用schedule()</li>
+<li>线程B获得锁，将counter减到0</li>
+<li>线程A重新获得锁，错误地将counter减到负数</li>
+</ol>
+<p>修复方案：不要在检查和操作之间释放锁，或重新检查条件：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">counter</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">f</span><span class="o">-&gt;</span><span class="n">counter</span><span class="o">--</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// 如果必须让出CPU，保存状态</span>
+<span class="p">}</span>
+<span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">f</span><span class="o">-&gt;</span><span class="n">lock</span><span class="p">);</span>
+</code></pre></div>
+
+</details>
+<p><strong>练习10.5</strong>：解释以下RCU代码模式的正确性，指出可能的问题：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rcu_head</span><span class="w"> </span><span class="n">rcu</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">data</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">reader</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="o">*</span><span class="n">p</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">val</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="w">    </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rcu_dereference</span><span class="p">(</span><span class="n">global_foo</span><span class="p">);</span>
+<span class="w">    </span><span class="n">val</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rcu_read_unlock</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">val</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="w">        </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rcu_dereference</span><span class="p">(</span><span class="n">global_foo</span><span class="p">);</span>
+<span class="w">        </span><span class="n">p</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">val</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">  </span><span class="c1">// 问题行</span>
+<span class="w">        </span><span class="n">rcu_read_unlock</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<details>
+<summary>答案</summary>
+<p>问题：RCU读者不能修改数据！第二个rcu_read_lock()块中试图修改p-&gt;data违反了RCU语义。</p>
+<p>具体错误：</p>
+<ol>
+<li>RCU是读-复制-更新，读者只能读</li>
+<li>两次rcu_dereference()可能得到不同的指针</li>
+<li>修改共享数据需要适当的锁保护</li>
+</ol>
+<p>正确的更新模式：</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">updater</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">increment</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="o">*</span><span class="n">old</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">new</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">new</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">new</span><span class="p">),</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">update_lock</span><span class="p">);</span>
+<span class="w">    </span><span class="n">old</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">global_foo</span><span class="p">;</span>
+<span class="w">    </span><span class="o">*</span><span class="n">new</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">old</span><span class="p">;</span>
+<span class="w">    </span><span class="n">new</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">increment</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rcu_assign_pointer</span><span class="p">(</span><span class="n">global_foo</span><span class="p">,</span><span class="w"> </span><span class="n">new</span><span class="p">);</span>
+<span class="w">    </span><span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">update_lock</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">synchronize_rcu</span><span class="p">();</span>
+<span class="w">    </span><span class="n">kfree</span><span class="p">(</span><span class="n">old</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+<h3 id="_4">设计实现题</h3>
+<p><strong>练习10.6</strong>：设计一个读多写少的计数器，要求读操作开销最小。比较至少三种实现方案的优缺点。</p>
+<details>
+<summary>答案</summary>
+<p>方案1：原子变量</p>
+<div class="codehilite"><pre><span></span><code><span class="n">atomic_t</span><span class="w"> </span><span class="n">counter</span><span class="p">;</span>
+<span class="n">读</span><span class="err">：</span><span class="n">atomic_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">counter</span><span class="p">)</span><span class="w">  </span><span class="c1">// 单指令</span>
+<span class="n">写</span><span class="err">：</span><span class="n">atomic_inc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">counter</span><span class="p">)</span><span class="w">   </span><span class="c1">// 原子操作</span>
+<span class="n">优点</span><span class="err">：</span><span class="n">简单</span><span class="err">，</span><span class="n">开销小</span>
+<span class="n">缺点</span><span class="err">：</span><span class="n">写操作在多CPU下有缓存行争用</span>
+</code></pre></div>
+
+<p>方案2：顺序锁保护</p>
+<div class="codehilite"><pre><span></span><code><span class="n">seqlock_t</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">counter</span><span class="p">;</span>
+<span class="n">读</span><span class="err">：</span><span class="n">循环读取直到序列号稳定</span>
+<span class="n">写</span><span class="err">：</span><span class="n">获取写锁更新</span>
+<span class="n">优点</span><span class="err">：</span><span class="n">读者不阻塞写者</span>
+<span class="n">缺点</span><span class="err">：</span><span class="n">读者可能需要重试</span>
+</code></pre></div>
+
+<p>方案3：Per-CPU计数器 + RCU</p>
+<div class="codehilite"><pre><span></span><code><span class="n">DEFINE_PER_CPU</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">counters</span><span class="p">);</span>
+<span class="n">读</span><span class="err">：</span><span class="n">累加所有CPU的值</span><span class="err">（</span><span class="n">RCU保护</span><span class="err">）</span>
+<span class="n">写</span><span class="err">：</span><span class="n">更新本地CPU计数器</span>
+<span class="n">优点</span><span class="err">：</span><span class="n">写操作无争用</span><span class="err">，</span><span class="n">扩展性好</span>
+<span class="n">缺点</span><span class="err">：</span><span class="n">读操作开销O</span><span class="p">(</span><span class="n">NR_CPUS</span><span class="p">)</span><span class="err">，</span><span class="n">计数可能不精确</span>
+</code></pre></div>
+
+<p>方案4：分片计数器（最优）</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">counter</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">shards</span><span class="p">[</span><span class="n">NR_SHARDS</span><span class="p">];</span>
+<span class="p">};</span>
+<span class="n">读</span><span class="err">：</span><span class="n">累加所有分片</span>
+<span class="n">写</span><span class="err">：</span><span class="n">hash选择分片更新</span>
+<span class="n">优点</span><span class="err">：</span><span class="n">平衡读写性能</span><span class="err">，</span><span class="n">减少争用</span>
+<span class="n">缺点</span><span class="err">：</span><span class="n">实现复杂</span><span class="err">，</span><span class="n">需要选择合适的分片数</span>
+</code></pre></div>
+
+<p>选择依据：</p>
+<ul>
+<li>极端读多：原子变量</li>
+<li>需要精确值：顺序锁</li>
+<li>高并发写：Per-CPU或分片</li>
+</ul>
+</details>
+<p><strong>练习10.7</strong>：实现一个支持超时的读写信号量，要求支持读者升级为写者。给出伪代码和关键设计决策。</p>
+<details>
+<summary>答案</summary>
+<p>关键设计决策：</p>
+<ol>
+<li>使用等待队列支持超时</li>
+<li>读者升级需要原子性保证</li>
+<li>防止升级导致的死锁</li>
+</ol>
+<p>伪代码实现：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">timed_rwsem</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">count</span><span class="p">;</span><span class="w">  </span><span class="c1">// &gt;0:读者数，-1:写者，0:空闲</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">wait_lock</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">read_waiters</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">write_waiters</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">owner</span><span class="p">;</span><span class="w">  </span><span class="c1">// 当前写者</span>
+<span class="p">};</span>
+
+<span class="c1">// 读者获取（支持超时）</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">down_read_timeout</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">timed_rwsem</span><span class="w"> </span><span class="o">*</span><span class="n">sem</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">timeout</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">atomic_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 有写者，需要等待</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">wait_event_timeout</span><span class="p">(</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">read_waiters</span><span class="p">,</span>
+<span class="w">                              </span><span class="n">atomic_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">                              </span><span class="n">timeout</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="n">ETIMEDOUT</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">atomic_inc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 读者升级为写者</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">upgrade_read_to_write</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">timed_rwsem</span><span class="w"> </span><span class="o">*</span><span class="n">sem</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="c1">// 原子地从读者变为升级等待者</span>
+<span class="w">    </span><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">wait_lock</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 标记为升级中，阻止新读者</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">atomic_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 还有其他读者，等待</span>
+<span class="w">        </span><span class="n">atomic_dec</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">);</span><span class="w">  </span><span class="c1">// 释放读锁</span>
+
+<span class="w">        </span><span class="c1">// 等待成为唯一访问者</span>
+<span class="w">        </span><span class="n">wait_event</span><span class="p">(</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">write_waiters</span><span class="p">,</span>
+<span class="w">                  </span><span class="n">atomic_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">atomic_set</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">,</span><span class="w"> </span><span class="mi">-1</span><span class="p">);</span><span class="w">  </span><span class="c1">// 获取写锁</span>
+<span class="w">        </span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">owner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">current</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 唯一读者，直接升级</span>
+<span class="w">        </span><span class="n">atomic_set</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">,</span><span class="w"> </span><span class="mi">-1</span><span class="p">);</span>
+<span class="w">        </span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">owner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">current</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sem</span><span class="o">-&gt;</span><span class="n">wait_lock</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 防止死锁策略</span>
+
+<span class="mf">1.</span><span class="w"> </span><span class="n">升级失败时回退到读者</span>
+<span class="mf">2.</span><span class="w"> </span><span class="n">使用try_upgrade</span><span class="err">，</span><span class="n">失败则释放读锁再获取写锁</span>
+<span class="mf">3.</span><span class="w"> </span><span class="n">限制同时升级的读者数量</span>
+</code></pre></div>
+
+</details>
+<p><strong>练习10.8</strong>：设计一个调试工具，检测内核中潜在的锁顺序违规。要求能处理动态分配的锁和条件加锁。</p>
+<details>
+<summary>答案</summary>
+<p>设计思路：扩展lockdep，支持动态场景</p>
+<p>核心数据结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">lock_pattern</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">lock_class_ids</span><span class="p">[</span><span class="n">MAX_DEPTH</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">depth</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">stack_trace</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">count</span><span class="p">;</span><span class="w">  </span><span class="c1">// 出现次数</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">dynamic_lock_class</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">key</span><span class="p">;</span><span class="w">  </span><span class="c1">// 动态生成的key</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">allocation_site</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">patterns</span><span class="p">;</span><span class="w">  </span><span class="c1">// 此锁参与的模式</span>
+<span class="p">};</span>
+
+<span class="c1">// 运行时检测</span>
+
+<span class="mf">1.</span><span class="w"> </span><span class="n">Hook所有锁操作</span>
+<span class="mf">2.</span><span class="w"> </span><span class="n">记录锁获取序列</span>
+<span class="mf">3.</span><span class="w"> </span><span class="n">构建动态依赖图</span>
+<span class="mf">4.</span><span class="w"> </span><span class="n">检测环和异常模式</span>
+
+<span class="c1">// 条件加锁处理</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">conditional_lock</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">condition</span><span class="p">)(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">context</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">lock_pattern</span><span class="w"> </span><span class="o">*</span><span class="n">true_path</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">lock_pattern</span><span class="w"> </span><span class="o">*</span><span class="n">false_path</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// 检测算法</span>
+<span class="n">detect_violations</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 1. 收集所有锁序列</span>
+<span class="w">    </span><span class="n">for_each_thread</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">record_lock_sequence</span><span class="p">(</span><span class="n">t</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 2. 构建全局锁序图</span>
+<span class="w">    </span><span class="n">build_lock_order_graph</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 3. 检测违规</span>
+<span class="w">    </span><span class="c1">// a) 直接环</span>
+<span class="w">    </span><span class="n">detect_cycles</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// b) 条件死锁</span>
+<span class="w">    </span><span class="n">for_each_conditional_pattern</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">can_form_cycle</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+<span class="w">            </span><span class="n">report_conditional_deadlock</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// c) 锁层次违反</span>
+<span class="w">    </span><span class="n">check_lock_hierarchy</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// 4. 生成报告</span>
+<span class="w">    </span><span class="n">generate_violation_report</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="c1">// 输出格式</span>
+<span class="n">LOCK</span><span class="w"> </span><span class="n">ORDER</span><span class="w"> </span><span class="n">VIOLATION</span><span class="o">:</span>
+<span class="n">Thread</span><span class="w"> </span><span class="n">A</span><span class="o">:</span><span class="w"> </span><span class="n">Lock1</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Lock2</span>
+<span class="n">Thread</span><span class="w"> </span><span class="n">B</span><span class="o">:</span><span class="w"> </span><span class="n">Lock2</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">Lock1</span>
+<span class="nl">Conditional</span><span class="p">:</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">condition</span><span class="p">)</span><span class="w"> </span><span class="n">Lock3</span>
+<span class="nl">Recommendation</span><span class="p">:</span><span class="w"> </span><span class="n">Establish</span><span class="w"> </span><span class="n">lock</span><span class="w"> </span><span class="n">hierarchy</span>
+</code></pre></div>
+
+<p>高级功能：</p>
+<ol>
+<li>概率性死锁检测（基于运行时条件概率）</li>
+<li>性能影响评估（锁持有时间分析）</li>
+<li>自动修复建议（基于模式库）</li>
+</ol>
+</details>
+<h2 id="109-gotchas">10.9 常见陷阱与错误（Gotchas）</h2>
+<h3 id="1091">10.9.1 死锁陷阱</h3>
+<ol>
+<li><strong>ABBA死锁</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// CPU 0              // CPU 1</span>
+<span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">A</span><span class="p">);</span><span class="w">        </span><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">B</span><span class="p">);</span>
+<span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">B</span><span class="p">);</span><span class="w">        </span><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">A</span><span class="p">);</span><span class="w">  </span><span class="c1">// 死锁！</span>
+</code></pre></div>
+
+<p><strong>预防</strong>：建立全局锁顺序</p>
+<ol start="2">
+<li><strong>中断死锁</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock</span><span class="p">);</span>
+<span class="c1">// 中断发生</span>
+<span class="w">  </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">interrupt_handler</span><span class="p">()</span>
+<span class="w">     </span><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock</span><span class="p">);</span><span class="w">  </span><span class="c1">// 死锁！</span>
+</code></pre></div>
+
+<p><strong>预防</strong>：使用spin_lock_irqsave()</p>
+<ol start="3">
+<li><strong>优先级反转</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">低优先级任务持有锁</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">高优先级任务等待</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">中优先级任务抢占低优先级</span>
+</code></pre></div>
+
+<p><strong>预防</strong>：使用优先级继承协议</p>
+<h3 id="1092-rcu">10.9.2 RCU陷阱</h3>
+<ol>
+<li><strong>过早释放</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rcu_dereference</span><span class="p">(</span><span class="n">gp</span><span class="p">);</span>
+<span class="n">rcu_read_unlock</span><span class="p">();</span>
+<span class="n">use</span><span class="p">(</span><span class="n">p</span><span class="p">);</span><span class="w">  </span><span class="c1">// 错误！p可能已被释放</span>
+</code></pre></div>
+
+<ol start="2">
+<li><strong>引用计数与RCU混用</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rcu_dereference</span><span class="p">(</span><span class="n">gp</span><span class="p">);</span>
+<span class="n">atomic_inc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">refcount</span><span class="p">);</span><span class="w">  </span><span class="c1">// 危险！p可能正在释放</span>
+<span class="n">rcu_read_unlock</span><span class="p">();</span>
+</code></pre></div>
+
+<p><strong>正确方式</strong>：在RCU临界区内完成引用计数增加</p>
+<ol start="3">
+<li><strong>RCU与睡眠</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="n">kmalloc</span><span class="p">(</span><span class="n">GFP_KERNEL</span><span class="p">);</span><span class="w">  </span><span class="c1">// 错误！可能睡眠</span>
+<span class="n">rcu_read_unlock</span><span class="p">();</span>
+</code></pre></div>
+
+<h3 id="1093">10.9.3 内存屏障陷阱</h3>
+<ol>
+<li><strong>编译器优化</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">flag</span><span class="p">);</span><span class="w">  </span><span class="c1">// 编译器可能优化为 if(!flag) while(1);</span>
+<span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shared</span><span class="p">;</span>
+</code></pre></div>
+
+<p><strong>修复</strong>：使用READ_ONCE(flag)</p>
+<ol start="2">
+<li><strong>依赖排序</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">READ_ONCE</span><span class="p">(</span><span class="n">gp</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="w">    </span><span class="n">val</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span><span class="w">  </span><span class="c1">// ARM/Alpha可能乱序</span>
+</code></pre></div>
+
+<p><strong>修复</strong>：使用smp_read_barrier_depends()（已废弃）或rcu_dereference()</p>
+<h3 id="1094">10.9.4 性能陷阱</h3>
+<ol>
+<li><strong>锁粒度过细</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">1000</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock</span><span class="p">);</span>
+<span class="w">    </span><span class="n">do_something_tiny</span><span class="p">();</span>
+<span class="w">    </span><span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>问题</strong>：锁开销超过实际工作</p>
+<ol start="2">
+<li><strong>读写锁误用</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">read_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rwlock</span><span class="p">);</span>
+<span class="n">lengthy_computation</span><span class="p">();</span><span class="w">  </span><span class="c1">// 阻塞所有写者</span>
+<span class="n">read_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rwlock</span><span class="p">);</span>
+</code></pre></div>
+
+<ol start="3">
+<li><strong>虚假共享</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">percpu_counter</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu0_count</span><span class="p">;</span><span class="w">  </span><span class="c1">// 同一缓存行</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu1_count</span><span class="p">;</span><span class="w">  </span><span class="c1">// 造成乒乓</span>
+<span class="p">}</span><span class="w"> </span><span class="n">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">));</span>
+</code></pre></div>
+
+<p><strong>修复</strong>：使用____cacheline_aligned</p>
+<h2 id="1010">10.10 最佳实践检查清单</h2>
+<h3 id="_5">设计阶段</h3>
+<ul>
+<li>[ ] <strong>锁层次设计</strong></li>
+<li>定义清晰的锁获取顺序</li>
+<li>文档化锁之间的依赖关系</li>
+<li>
+<p>避免嵌套锁超过3层</p>
+</li>
+<li>
+<p>[ ] <strong>锁粒度决策</strong></p>
+</li>
+<li>评估临界区大小</li>
+<li>考虑NUMA影响</li>
+<li>
+<p>平衡并发度与开销</p>
+</li>
+<li>
+<p>[ ] <strong>同步原语选择</strong></p>
+</li>
+<li>临界区能睡眠？→ mutex</li>
+<li>读多写少？→ RCU/seqlock</li>
+<li>需要计数？→ semaphore</li>
+<li>简单保护？→ spinlock</li>
+</ul>
+<h3 id="_6">实现阶段</h3>
+<ul>
+<li>[ ] <strong>正确性保证</strong></li>
+<li>启用lockdep（CONFIG_PROVE_LOCKING）</li>
+<li>启用死锁检测（CONFIG_DEBUG_DEADLOCKS）</li>
+<li>
+<p>运行时检查（CONFIG_DEBUG_ATOMIC_SLEEP）</p>
+</li>
+<li>
+<p>[ ] <strong>中断安全</strong></p>
+</li>
+<li>中断处理程序使用的锁需要irqsave</li>
+<li>软中断使用的锁需要bh_disable</li>
+<li>
+<p>注意本地中断与远程中断的区别</p>
+</li>
+<li>
+<p>[ ] <strong>内存序保证</strong></p>
+</li>
+<li>使用适当的屏障</li>
+<li>注意编译器优化</li>
+<li>测试弱内存序架构</li>
+</ul>
+<h3 id="_7">优化阶段</h3>
+<ul>
+<li>[ ] <strong>缓存行对齐</strong></li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">optimized</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">lock</span><span class="w"> </span><span class="n">____cacheline_aligned</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">shared_data</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">____cacheline_aligned</span><span class="p">;</span>
+</code></pre></div>
+
+<ul>
+<li>[ ] <strong>per-CPU优化</strong></li>
+<li>考虑per-CPU变量减少争用</li>
+<li>使用local_t进行本地计数</li>
+<li>
+<p>注意CPU热插拔处理</p>
+</li>
+<li>
+<p>[ ] <strong>RCU转换检查</strong></p>
+</li>
+<li>读写比例是否合适（10:1以上）</li>
+<li>能否接受过期数据</li>
+<li>更新是否可以复制</li>
+</ul>
+<h3 id="_8">调试阶段</h3>
+<ul>
+<li>[ ] <strong>死锁排查</strong></li>
+<li>检查/proc/lockdep</li>
+<li>分析lockdep报告</li>
+<li>
+<p>使用ftrace跟踪锁事件</p>
+</li>
+<li>
+<p>[ ] <strong>性能分析</strong></p>
+</li>
+<li>perf记录锁争用</li>
+<li>分析锁持有时间</li>
+<li>
+<p>检查锁等待队列长度</p>
+</li>
+<li>
+<p>[ ] <strong>压力测试</strong></p>
+</li>
+<li>高并发场景测试</li>
+<li>CPU热插拔测试</li>
+<li>内存压力测试</li>
+</ul>
+<h3 id="_9">维护阶段</h3>
+<ul>
+<li>[ ] <strong>文档更新</strong></li>
+<li>记录锁的用途和保护的数据</li>
+<li>更新锁依赖图</li>
+<li>
+<p>记录已知的性能特征</p>
+</li>
+<li>
+<p>[ ] <strong>代码审查要点</strong></p>
+</li>
+<li>所有锁路径都有对应的解锁</li>
+<li>错误路径正确释放锁</li>
+<li>
+<p>没有递归锁的使用</p>
+</li>
+<li>
+<p>[ ] <strong>版本兼容</strong></p>
+</li>
+<li>检查内核版本差异</li>
+<li>注意API变化（如自旋锁初始化）</li>
+<li>测试实时补丁（PREEMPT_RT）兼容性</li>
+</ul>
+            </article>
+            
+            <nav class="page-nav"><a href="chapter9.html" class="nav-link prev">← 第9章：网络协议栈</a><a href="chapter11.html" class="nav-link next">第11章：并发编程模型 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
+    <title>第11章：并发编程模型</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/highlight.css">
+    <script src="assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors', 'ams']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors', '[tex]/ams']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="sidebar-search-input" placeholder="搜索..." autocomplete="off">
+            </div>
+            <div id="tree-container">
+                <nav class="tree-nav" role="tree">
+                    <div class="tree-item " >
+                        <a href="index.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Linux 内核源代码深度解析</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter1.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第1章：Linux 内核概述与发展史</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter2.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第2章：进程管理与任务调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter3.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第3章：内存管理架构</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter4.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第4章：进程间通信机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter5.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第5章：虚拟文件系统（VFS）</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter6.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第6章：具体文件系统实现</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter7.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第7章：块设备层与I/O调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter8.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第8章：设备驱动模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter9.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第9章：网络协议栈</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter10.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第10章：内核同步机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item active" >
+                        <a href="chapter11.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第11章：并发编程模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter12.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第12章：容器与命名空间</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter13.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第13章：安全子系统</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter14.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第14章：实时Linux</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter15.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第15章：性能分析与调试</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter16.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第16章：引导过程与初始化</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="CLAUDE.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Untitled</span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="11">第11章：并发编程模型</h1>
+<h2 id="_1">本章导读</h2>
+<p>在现代多核处理器系统中，Linux 内核必须高效地处理并发执行的挑战。本章深入探讨内核中的并发编程模型，从内核抢占机制到无锁数据结构，从 per-CPU 变量到内存一致性模型。我们将分析内核如何在保证正确性的前提下，最大化利用硬件并行能力，减少锁竞争，优化缓存使用。通过学习本章，您将掌握内核并发编程的核心技术，理解如何在复杂的多处理器环境中编写高性能、可扩展的内核代码。</p>
+<h2 id="111">11.1 内核抢占与临界区</h2>
+<h3 id="1111">11.1.1 内核抢占的演进历程</h3>
+<p>Linux 内核抢占机制经历了从完全不可抢占到完全可抢占的演变过程。早期 Linux 内核（2.4 及之前）采用不可抢占设计，一旦进程进入内核态执行，必须主动让出 CPU 或返回用户态才能被调度。这种设计简化了内核同步，但严重影响了系统响应性。</p>
+<p>2.6 版本引入了内核抢占机制，通过在 <code>thread_info</code> 结构中维护 <code>preempt_count</code> 计数器来控制抢占：</p>
+<div class="codehilite"><pre><span></span><code>preempt_count 位域分配：
+[31:28] - HARDIRQ    硬中断嵌套计数
+[27:20] - SOFTIRQ    软中断嵌套计数  
+[19:16] - NMI        NMI中断计数
+[15:8]  - PREEMPT    抢占禁用计数
+[7:0]   - 保留
+</code></pre></div>
+
+<p>当 <code>preempt_count</code> 为 0 时，表示内核可以被抢占。任何非零值都会禁止抢占，这包括：</p>
+<ul>
+<li>持有自旋锁时（<code>spin_lock</code> 会增加计数）</li>
+<li>处理中断时（硬中断和软中断都会增加对应计数）</li>
+<li>显式禁用抢占时（<code>preempt_disable()</code> 增加 PREEMPT 域）</li>
+</ul>
+<h3 id="1112">11.1.2 抢占点与调度时机</h3>
+<p>内核抢占发生在特定的抢占点（preemption points）：</p>
+<ol>
+<li><strong>中断返回时</strong>：从中断处理程序返回内核态时，检查是否需要调度</li>
+<li><strong>解锁时</strong>：释放自旋锁后，如果 <code>preempt_count</code> 降为 0 且有更高优先级任务等待</li>
+<li><strong>显式抢占点</strong>：调用 <code>cond_resched()</code> 或 <code>might_sleep()</code> 时</li>
+<li><strong>系统调用返回</strong>：从系统调用返回用户态前</li>
+</ol>
+<p>抢占检查的核心逻辑：</p>
+<div class="codehilite"><pre><span></span><code>need_resched = test_tsk_need_resched(current)
+can_preempt = (preempt_count == 0) &amp;&amp; !irqs_disabled()
+should_preempt = need_resched &amp;&amp; can_preempt
+</code></pre></div>
+
+<h3 id="1113">11.1.3 临界区保护策略</h3>
+<p>内核提供多层次的临界区保护机制：</p>
+<ol>
+<li><strong>禁用抢占（最轻量级）</strong>
+适用于纯内核态临界区，不涉及中断处理：</li>
+</ol>
+<ul>
+<li><code>preempt_disable()</code> / <code>preempt_enable()</code></li>
+<li>开销最小，仅修改 per-CPU 变量</li>
+<li>不影响中断，仍可被中断打断</li>
+</ul>
+<ol start="2">
+<li><strong>禁用软中断</strong>
+保护软中断上下文共享的数据：</li>
+</ol>
+<ul>
+<li><code>local_bh_disable()</code> / <code>local_bh_enable()</code></li>
+<li>禁止软中断和下半部执行</li>
+<li>硬中断仍可执行</li>
+</ul>
+<ol start="3">
+<li><strong>禁用硬中断（最重量级）</strong>
+完全的原子操作保护：</li>
+</ol>
+<ul>
+<li><code>local_irq_disable()</code> / <code>local_irq_enable()</code></li>
+<li><code>local_irq_save(flags)</code> / <code>local_irq_restore(flags)</code></li>
+<li>禁止所有中断，影响系统响应性</li>
+</ul>
+<h3 id="1114">11.1.4 抢占模型配置</h3>
+<p>Linux 内核支持多种抢占模型，通过编译选项配置：</p>
+<p><strong>CONFIG_PREEMPT_NONE（服务器模式）</strong></p>
+<ul>
+<li>传统非抢占内核</li>
+<li>最大吞吐量，最差响应延迟</li>
+<li>适合批处理和高性能计算</li>
+</ul>
+<p><strong>CONFIG_PREEMPT_VOLUNTARY（桌面模式）</strong></p>
+<ul>
+<li>在关键路径插入显式抢占点</li>
+<li>平衡吞吐量和响应性</li>
+<li>默认配置选项</li>
+</ul>
+<p><strong>CONFIG_PREEMPT（低延迟模式）</strong></p>
+<ul>
+<li>完全可抢占内核</li>
+<li>最佳响应性，略有性能损失</li>
+<li>适合交互式系统</li>
+</ul>
+<p><strong>CONFIG_PREEMPT_RT（实时模式）</strong></p>
+<ul>
+<li>PREEMPT_RT 补丁集</li>
+<li>将自旋锁转换为可睡眠锁</li>
+<li>硬实时保证，显著性能开销</li>
+</ul>
+<h3 id="1115">11.1.5 抢占调试与分析</h3>
+<p>内核提供了丰富的抢占调试工具：</p>
+<p><strong>preempt_count 追踪</strong>
+通过 <code>/proc/[pid]/status</code> 查看进程的抢占计数，异常值表示可能的死锁或泄漏。</p>
+<p><strong>preemptirqsoff 跟踪器</strong>
+使用 ftrace 追踪最长的抢占/中断禁用区间：</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">echo</span><span class="w"> </span>preemptirqsoff<span class="w"> </span>&gt;<span class="w"> </span>/sys/kernel/debug/tracing/current_tracer
+<span class="nb">echo</span><span class="w"> </span><span class="m">1</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/kernel/debug/tracing/tracing_on
+</code></pre></div>
+
+<p><strong>调度延迟统计</strong>
+<code>/proc/sys/kernel/sched_latency_ns</code> 控制目标调度延迟，过小会增加上下文切换开销。</p>
+<h2 id="112-per-cpu">11.2 per-CPU 变量与本地化</h2>
+<h3 id="1121-per-cpu">11.2.1 per-CPU 变量原理</h3>
+<p>per-CPU 变量是内核中重要的并发优化技术，为每个 CPU 分配独立的变量副本，避免缓存行竞争和锁开销。其核心思想是用空间换时间，将共享数据转换为 CPU 本地数据。</p>
+<p>内存布局示意：</p>
+<div class="codehilite"><pre><span></span><code>CPU0 区域: [base + 0]      变量A | 变量B | 变量C | ...
+CPU1 区域: [base + offset1] 变量A | 变量B | 变量C | ...
+CPU2 区域: [base + offset2] 变量A | 变量B | 变量C | ...
+...
+</code></pre></div>
+
+<p>每个 CPU 通过 <code>gs</code> 段寄存器（x86-64）或专用寄存器存储自己的 per-CPU 基址偏移。</p>
+<h3 id="1122-per-cpu">11.2.2 静态与动态 per-CPU 变量</h3>
+<p><strong>静态定义</strong>
+使用 <code>DEFINE_PER_CPU</code> 宏在编译时分配：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">DEFINE_PER_CPU</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">cpu_counter</span><span class="p">);</span>
+<span class="n">DEFINE_PER_CPU_SHARED_ALIGNED</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">mystruct</span><span class="p">,</span><span class="w"> </span><span class="n">shared_data</span><span class="p">);</span>
+</code></pre></div>
+
+<p><strong>动态分配</strong>
+运行时通过 <code>alloc_percpu</code> 分配：</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">counters</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_percpu</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">mystruct</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_percpu_gfp</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">mystruct</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+</code></pre></div>
+
+<p><strong>访问方法</strong>
+必须在禁用抢占的情况下访问 per-CPU 变量：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">preempt_disable</span><span class="p">();</span>
+<span class="n">this_cpu_inc</span><span class="p">(</span><span class="n">cpu_counter</span><span class="p">);</span><span class="w">        </span><span class="c1">// 原子递增当前CPU的变量</span>
+<span class="o">*</span><span class="n">this_cpu_ptr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">shared_data</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">;</span><span class="w">  </span><span class="c1">// 访问当前CPU的结构体</span>
+<span class="n">preempt_enable</span><span class="p">();</span>
+</code></pre></div>
+
+<h3 id="1123-per-cpu">11.2.3 per-CPU 操作优化</h3>
+<p>现代处理器提供了特殊指令优化 per-CPU 操作：</p>
+<p><strong>this_cpu_ops 系列</strong></p>
+<ul>
+<li><code>this_cpu_read(var)</code> - 读取</li>
+<li><code>this_cpu_write(var, val)</code> - 写入</li>
+<li><code>this_cpu_add(var, val)</code> - 原子加法</li>
+<li><code>this_cpu_cmpxchg(var, old, new)</code> - 比较交换</li>
+</ul>
+<p>这些操作在 x86 上编译为单指令，利用 <code>gs</code> 段前缀直接访问。</p>
+<p><strong>批量操作优化</strong>
+对于需要访问所有 CPU 数据的场景：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">for_each_possible_cpu</span><span class="p">(</span><span class="n">cpu</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">per_cpu_ptr</span><span class="p">(</span><span class="n">counters</span><span class="p">,</span><span class="w"> </span><span class="n">cpu</span><span class="p">);</span>
+<span class="w">    </span><span class="n">total</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1124-numa-per-cpu">11.2.4 NUMA 感知的 per-CPU 分配</h3>
+<p>在 NUMA 系统中，per-CPU 变量分配考虑内存节点亲和性：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">NUMA节点0</span><span class="o">:</span><span class="w"> </span><span class="n">CPU0</span><span class="o">-</span><span class="mi">3</span><span class="w"> </span><span class="err">的</span><span class="w"> </span><span class="n">per</span><span class="o">-</span><span class="n">CPU</span><span class="w"> </span><span class="err">区域</span>
+<span class="n">NUMA节点1</span><span class="o">:</span><span class="w"> </span><span class="n">CPU4</span><span class="o">-</span><span class="mi">7</span><span class="w"> </span><span class="err">的</span><span class="w"> </span><span class="n">per</span><span class="o">-</span><span class="n">CPU</span><span class="w"> </span><span class="err">区域</span>
+</code></pre></div>
+
+<p>内核通过 <code>cpu_to_node()</code> 映射确保 per-CPU 数据分配在对应 CPU 的本地内存节点，减少跨节点访问延迟。</p>
+<h3 id="1125-per-cpu">11.2.5 per-CPU 变量的典型应用</h3>
+<ol>
+<li>
+<p><strong>统计计数器</strong>
+网络包统计、系统调用计数等高频更新的计数器。</p>
+</li>
+<li>
+<p><strong>缓存池</strong>
+内存分配器的 per-CPU 缓存，如 SLUB 的 per-CPU partial 链表。</p>
+</li>
+<li>
+<p><strong>延迟处理队列</strong>
+RCU 回调链表、工作队列的 per-CPU 工作池。</p>
+</li>
+<li>
+<p><strong>中断上下文数据</strong>
+中断栈、软中断待处理标志等。</p>
+</li>
+</ol>
+<h2 id="113">11.3 无锁数据结构</h2>
+<h3 id="1131">11.3.1 无锁编程基础</h3>
+<p>无锁（lock-free）编程通过原子操作和精心设计的算法，实现多线程并发访问而无需传统锁。其核心优势是避免了锁带来的开销：上下文切换、优先级反转、死锁风险。</p>
+<p>Linux 内核中的原子操作基础：</p>
+<ul>
+<li><strong>原子整数操作</strong>：<code>atomic_t</code>、<code>atomic64_t</code></li>
+<li><strong>原子位操作</strong>：<code>set_bit()</code>、<code>clear_bit()</code>、<code>test_and_set_bit()</code></li>
+<li><strong>比较交换</strong>：<code>cmpxchg()</code>、<code>try_cmpxchg()</code></li>
+<li><strong>内存屏障</strong>：<code>smp_mb()</code>、<code>smp_rmb()</code>、<code>smp_wmb()</code></li>
+</ul>
+<h3 id="1132">11.3.2 无锁链表实现</h3>
+<p>内核中的无锁单链表（<code>llist</code>）实现：</p>
+<div class="codehilite"><pre><span></span><code>结构定义：
+struct llist_node {
+    struct llist_node *next;
+};
+
+struct llist_head {
+    struct llist_node *first;
+};
+</code></pre></div>
+
+<p><strong>无锁入队（压栈）操作</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">bool</span><span class="w"> </span><span class="nf">llist_add</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">llist_node</span><span class="w"> </span><span class="o">*</span><span class="n">new</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">llist_head</span><span class="w"> </span><span class="o">*</span><span class="n">head</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">llist_node</span><span class="w"> </span><span class="o">*</span><span class="n">first</span><span class="p">;</span>
+<span class="w">    </span><span class="k">do</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">first</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">READ_ONCE</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">first</span><span class="p">);</span>
+<span class="w">        </span><span class="n">new</span><span class="o">-&gt;</span><span class="n">next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">first</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">cmpxchg</span><span class="p">(</span><span class="o">&amp;</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="n">new</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">first</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">first</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>批量出队操作</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">llist_node</span><span class="w"> </span><span class="o">*</span><span class="n">llist_del_all</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">llist_head</span><span class="w"> </span><span class="o">*</span><span class="n">head</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">xchg</span><span class="p">(</span><span class="o">&amp;</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">first</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>这种设计适合单生产者-单消费者（SPSC）或多生产者-单消费者（MPSC）场景。</p>
+<h3 id="1133">11.3.3 无锁环形缓冲区</h3>
+<p>内核的 <code>kfifo</code> 实现了高效的无锁环形缓冲区：</p>
+<div class="codehilite"><pre><span></span><code>核心数据结构：
+struct kfifo {
+    unsigned char *buffer;  // 缓冲区指针
+    unsigned int size;      // 缓冲区大小（2的幂）
+    unsigned int in;        // 写入位置
+    unsigned int out;       // 读取位置
+};
+</code></pre></div>
+
+<p><strong>关键设计点</strong>：</p>
+<ol>
+<li>大小必须是 2 的幂，利用无符号整数溢出特性</li>
+<li>单生产者-单消费者模型，无需锁</li>
+<li>使用内存屏障保证顺序</li>
+</ol>
+<p><strong>写入操作</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">kfifo_in</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">kfifo</span><span class="w"> </span><span class="o">*</span><span class="n">fifo</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buf</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">len</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">l</span><span class="p">;</span>
+<span class="w">    </span><span class="n">len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">min</span><span class="p">(</span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">in</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">out</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// 复制数据到环形缓冲区</span>
+<span class="w">    </span><span class="n">l</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">min</span><span class="p">(</span><span class="n">len</span><span class="p">,</span><span class="w"> </span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">in</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)));</span>
+<span class="w">    </span><span class="n">memcpy</span><span class="p">(</span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">in</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="p">(</span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)),</span><span class="w"> </span><span class="n">buf</span><span class="p">,</span><span class="w"> </span><span class="n">l</span><span class="p">);</span>
+<span class="w">    </span><span class="n">memcpy</span><span class="p">(</span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">buf</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">l</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">l</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">smp_wmb</span><span class="p">();</span><span class="w"> </span><span class="c1">// 确保数据写入完成后才更新in</span>
+<span class="w">    </span><span class="n">fifo</span><span class="o">-&gt;</span><span class="n">in</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">len</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">len</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1134-rcu">11.3.4 RCU 保护的数据结构</h3>
+<p>RCU（Read-Copy-Update）是 Linux 内核中最重要的无锁同步机制：</p>
+<p><strong>RCU 链表遍历</strong>（读端无锁）：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="n">list_for_each_entry_rcu</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">head</span><span class="p">,</span><span class="w"> </span><span class="n">list</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 安全访问 pos，不会被释放</span>
+<span class="w">    </span><span class="n">process</span><span class="p">(</span><span class="n">pos</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="n">rcu_read_unlock</span><span class="p">();</span>
+</code></pre></div>
+
+<p><strong>RCU 保护的更新</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="o">*</span><span class="n">new</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">new</span><span class="p">),</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+<span class="o">*</span><span class="n">new</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="n">old</span><span class="p">;</span>
+<span class="n">new</span><span class="o">-&gt;</span><span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_value</span><span class="p">;</span>
+
+<span class="n">rcu_assign_pointer</span><span class="p">(</span><span class="n">global_ptr</span><span class="p">,</span><span class="w"> </span><span class="n">new</span><span class="p">);</span>
+<span class="n">synchronize_rcu</span><span class="p">();</span><span class="w">  </span><span class="c1">// 等待所有读者完成</span>
+<span class="n">kfree</span><span class="p">(</span><span class="n">old</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="1135">11.3.5 无锁队列与栈</h3>
+<p><strong>Michael &amp; Scott 队列算法</strong>的简化实现：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">msqueue</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">node</span><span class="w"> </span><span class="o">*</span><span class="n">head</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">node</span><span class="w"> </span><span class="o">*</span><span class="n">tail</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">enqueue</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">msqueue</span><span class="w"> </span><span class="o">*</span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">node</span><span class="w"> </span><span class="o">*</span><span class="n">new</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">node</span><span class="w"> </span><span class="o">*</span><span class="n">tail</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">next</span><span class="p">;</span>
+<span class="w">    </span><span class="n">new</span><span class="o">-&gt;</span><span class="n">next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">tail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">READ_ONCE</span><span class="p">(</span><span class="n">q</span><span class="o">-&gt;</span><span class="n">tail</span><span class="p">);</span>
+<span class="w">        </span><span class="n">next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">READ_ONCE</span><span class="p">(</span><span class="n">tail</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tail</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">q</span><span class="o">-&gt;</span><span class="n">tail</span><span class="p">)</span><span class="w"> </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">next</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 尾部不是真正的尾，尝试推进</span>
+<span class="w">            </span><span class="n">cmpxchg</span><span class="p">(</span><span class="o">&amp;</span><span class="n">q</span><span class="o">-&gt;</span><span class="n">tail</span><span class="p">,</span><span class="w"> </span><span class="n">tail</span><span class="p">,</span><span class="w"> </span><span class="n">next</span><span class="p">);</span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// 尝试链接新节点</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cmpxchg</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tail</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">new</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 尝试推进尾指针</span>
+<span class="w">    </span><span class="n">cmpxchg</span><span class="p">(</span><span class="o">&amp;</span><span class="n">q</span><span class="o">-&gt;</span><span class="n">tail</span><span class="p">,</span><span class="w"> </span><span class="n">tail</span><span class="p">,</span><span class="w"> </span><span class="n">new</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="1136">11.3.6 无锁编程的挑战</h3>
+<p><strong>ABA 问题</strong>
+指针在 A→B→A 变化后，CAS 操作无法检测到中间状态。解决方案：</p>
+<ul>
+<li>使用版本号或标记指针</li>
+<li>使用 hazard pointers</li>
+<li>依赖 RCU 的延迟回收</li>
+</ul>
+<p><strong>内存回收</strong>
+无锁数据结构的最大挑战是安全回收内存。Linux 内核主要使用 RCU 机制解决。</p>
+<p><strong>正确性验证</strong>
+无锁算法极易出错，需要：</p>
+<ul>
+<li>形式化验证</li>
+<li>压力测试</li>
+<li>内存模型分析工具</li>
+</ul>
+<h2 id="114">11.4 内存模型与一致性</h2>
+<h3 id="1141-linux-lkmm">11.4.1 Linux 内核内存模型（LKMM）</h3>
+<p>Linux 内核内存模型定义了并发内存操作的语义，规定了：</p>
+<ul>
+<li>内存操作的可见性规则</li>
+<li>编译器和 CPU 的重排序限制</li>
+<li>同步原语的语义保证</li>
+</ul>
+<p>LKMM 采用 "happens-before" 关系定义操作顺序：</p>
+<div class="codehilite"><pre><span></span><code>A happens-before B 意味着：
+
+- A 的效果对 B 可见
+- A 和 B 之间存在因果关系
+</code></pre></div>
+
+<h3 id="1142">11.4.2 内存屏障类型与语义</h3>
+<p><strong>编译器屏障</strong>
+<code>barrier()</code> 阻止编译器重排序，但不影响 CPU：</p>
+<div class="codehilite"><pre><span></span><code><span class="cp">#define barrier() __asm__ __volatile__(&quot;&quot;: : :&quot;memory&quot;)</span>
+</code></pre></div>
+
+<p><strong>CPU 内存屏障</strong></p>
+<ul>
+<li><code>smp_mb()</code> - 全屏障，禁止所有重排序</li>
+<li><code>smp_rmb()</code> - 读屏障，禁止读-读重排序</li>
+<li><code>smp_wmb()</code> - 写屏障，禁止写-写重排序</li>
+<li><code>smp_read_barrier_depends()</code> - 地址依赖屏障（多数架构为空）</li>
+</ul>
+<p><strong>获取-释放语义</strong></p>
+<ul>
+<li><code>smp_load_acquire()</code> - 获取语义的读</li>
+<li><code>smp_store_release()</code> - 释放语义的写</li>
+</ul>
+<p>这对操作建立同步关系：release 之前的操作对 acquire 之后可见。</p>
+<h3 id="1143">11.4.3 缓存一致性协议</h3>
+<p>现代处理器使用 MESI（或其变种）协议维护缓存一致性：</p>
+<div class="codehilite"><pre><span></span><code><span class="err">状态转换：</span>
+<span class="n">M</span><span class="w"> </span><span class="p">(</span><span class="n">Modified</span><span class="p">)</span><span class="w">   </span><span class="o">-</span><span class="w"> </span><span class="err">独占且已修改</span>
+<span class="n">E</span><span class="w"> </span><span class="p">(</span><span class="kr">Exclusive</span><span class="p">)</span><span class="w">  </span><span class="o">-</span><span class="w"> </span><span class="err">独占未修改</span>
+<span class="n">S</span><span class="w"> </span><span class="p">(</span><span class="kr">Shared</span><span class="p">)</span><span class="w">     </span><span class="o">-</span><span class="w"> </span><span class="err">共享只读</span>
+<span class="n">I</span><span class="w"> </span><span class="p">(</span><span class="n">Invalid</span><span class="p">)</span><span class="w">    </span><span class="o">-</span><span class="w"> </span><span class="err">无效</span>
+
+<span class="err">缓存行状态机：</span>
+<span class="n">I</span><span class="w"> </span><span class="o">--</span><span class="err">读</span><span class="o">--&gt;</span><span class="w"> </span><span class="n">E</span><span class="o">/</span><span class="n">S</span>
+<span class="n">E</span><span class="w"> </span><span class="o">--</span><span class="err">写</span><span class="o">--&gt;</span><span class="w"> </span><span class="n">M</span>
+<span class="n">S</span><span class="w"> </span><span class="o">--</span><span class="err">写</span><span class="o">--&gt;</span><span class="w"> </span><span class="n">M</span><span class="w"> </span><span class="p">(</span><span class="err">需要使其他副本无效</span><span class="p">)</span>
+<span class="n">M</span><span class="w"> </span><span class="o">--</span><span class="err">其他</span><span class="n">CPU读</span><span class="o">--&gt;</span><span class="w"> </span><span class="n">S</span>
+</code></pre></div>
+
+<p><strong>伪共享问题</strong>
+不同 CPU 访问同一缓存行的不同变量导致性能下降：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">bad</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu0_data</span><span class="p">;</span><span class="w">  </span><span class="c1">// CPU0 频繁更新</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu1_data</span><span class="p">;</span><span class="w">  </span><span class="c1">// CPU1 频繁更新</span>
+<span class="p">};</span><span class="w"> </span><span class="c1">// 两个变量在同一缓存行</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">good</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu0_data</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">pad</span><span class="p">[</span><span class="n">CACHE_LINE_SIZE</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">)];</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu1_data</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">__aligned</span><span class="p">(</span><span class="n">CACHE_LINE_SIZE</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="1144">11.4.4 内存序与原子操作</h3>
+<p>C11/C++11 内存序在内核中的对应：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">memory_order_relaxed</span><span class="w">  </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">READ_ONCE</span><span class="o">/</span><span class="n">WRITE_ONCE</span>
+<span class="n">memory_order_acquire</span><span class="w">  </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">smp_load_acquire</span>
+<span class="n">memory_order_release</span><span class="w">  </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">smp_store_release</span><span class="w">  </span>
+<span class="n">memory_order_seq_cst</span><span class="w">  </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">smp_mb</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="err">原子操作</span>
+</code></pre></div>
+
+<p><strong>原子操作的内存序保证</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">atomic_add</span><span class="p">(</span><span class="o">&amp;</span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w">           </span><span class="c1">// 默认全序</span>
+<span class="n">atomic_add_return</span><span class="p">(</span><span class="o">&amp;</span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w">    </span><span class="c1">// 全屏障语义</span>
+<span class="n">atomic_add_relaxed</span><span class="p">(</span><span class="o">&amp;</span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w">   </span><span class="c1">// 无序，仅原子性</span>
+</code></pre></div>
+
+<h3 id="1145-numa">11.4.5 NUMA 架构的一致性挑战</h3>
+<p>NUMA 系统中，跨节点内存访问带来额外的一致性开销：</p>
+<div class="codehilite"><pre><span></span><code><span class="err">本地访问延迟</span><span class="o">:</span><span class="w"> </span><span class="o">~</span><span class="mi">10</span><span class="n">ns</span>
+<span class="err">远程访问延迟</span><span class="o">:</span><span class="w"> </span><span class="o">~</span><span class="mi">20</span><span class="o">-</span><span class="mi">100</span><span class="n">ns</span>
+
+<span class="err">缓存目录协议：</span>
+<span class="n">Node0</span><span class="w"> </span><span class="err">目录</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="err">跟踪</span><span class="w"> </span><span class="n">Node0</span><span class="w"> </span><span class="err">内存的缓存位置</span>
+<span class="n">Node1</span><span class="w"> </span><span class="err">目录</span><span class="w"> </span><span class="o">--&gt;</span><span class="w"> </span><span class="err">跟踪</span><span class="w"> </span><span class="n">Node1</span><span class="w"> </span><span class="err">内存的缓存位置</span>
+</code></pre></div>
+
+<p><strong>NUMA 优化策略</strong>：</p>
+<ol>
+<li><strong>节点本地分配</strong>：<code>alloc_pages_node()</code></li>
+<li><strong>CPU 亲和性</strong>：将线程绑定到数据所在节点</li>
+<li><strong>复制而非共享</strong>：per-node 数据结构</li>
+<li><strong>批量传输</strong>：减少跨节点同步频率</li>
+</ol>
+<h3 id="1146">11.4.6 内存模型验证工具</h3>
+<p><strong>litmus 测试</strong>
+使用 herd7 工具验证特定的内存访问模式：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">C</span><span class="w"> </span><span class="n">example</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">P0</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">WRITE_ONCE</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="n">smp_wmb</span><span class="p">();</span>
+<span class="w">    </span><span class="n">WRITE_ONCE</span><span class="p">(</span><span class="o">*</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">P1</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">r1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">READ_ONCE</span><span class="p">(</span><span class="o">*</span><span class="n">y</span><span class="p">);</span>
+<span class="w">    </span><span class="n">smp_rmb</span><span class="p">();</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">r2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">READ_ONCE</span><span class="p">(</span><span class="o">*</span><span class="n">x</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">exists</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="o">:</span><span class="n">r1</span><span class="o">=</span><span class="mi">1</span><span class="w"> </span><span class="o">/</span><span class="err">\</span><span class="w"> </span><span class="mi">1</span><span class="o">:</span><span class="n">r2</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="w">  </span><span class="c1">// 这种结果可能吗？</span>
+</code></pre></div>
+
+<p><strong>KCSAN（Kernel Concurrency Sanitizer）</strong>
+运行时检测数据竞争：</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">CONFIG_KCSAN</span><span class="o">=</span>y
+<span class="nv">CONFIG_KCSAN_REPORT_ONCE_IN_MS</span><span class="o">=</span><span class="m">3000</span>
+</code></pre></div>
+
+<h2 id="_2">本章小结</h2>
+<p>本章深入探讨了 Linux 内核的并发编程模型，涵盖了从基础的抢占机制到高级的无锁数据结构。关键要点包括：</p>
+<p><strong>内核抢占机制</strong></p>
+<ul>
+<li><code>preempt_count</code> 计数器控制抢占时机，包含硬中断、软中断、NMI 和抢占禁用计数</li>
+<li>抢占点包括中断返回、解锁、显式抢占点和系统调用返回</li>
+<li>提供多层次临界区保护：禁用抢占、禁用软中断、禁用硬中断</li>
+<li>支持四种抢占模型：NONE、VOLUNTARY、PREEMPT、RT</li>
+</ul>
+<p><strong>per-CPU 变量技术</strong></p>
+<ul>
+<li>为每个 CPU 分配独立变量副本，消除缓存行竞争</li>
+<li>静态（<code>DEFINE_PER_CPU</code>）和动态（<code>alloc_percpu</code>）两种分配方式</li>
+<li>必须在禁用抢占下访问，使用 <code>this_cpu_ops</code> 系列操作</li>
+<li>NUMA 系统中考虑内存节点亲和性，减少跨节点访问</li>
+</ul>
+<p><strong>无锁数据结构</strong></p>
+<ul>
+<li>基于原子操作（<code>atomic_t</code>、<code>cmpxchg</code>）和内存屏障构建</li>
+<li>内核实现了无锁链表（<code>llist</code>）、环形缓冲区（<code>kfifo</code>）</li>
+<li>RCU 机制提供高效的读端无锁访问</li>
+<li>需要解决 ABA 问题和内存安全回收挑战</li>
+</ul>
+<p><strong>内存模型与一致性</strong></p>
+<ul>
+<li>LKMM 定义了内存操作的可见性和因果关系</li>
+<li>提供多种内存屏障：编译器屏障、CPU 屏障、获取-释放语义</li>
+<li>MESI 协议维护缓存一致性，需注意伪共享问题</li>
+<li>NUMA 架构需要特殊优化策略减少远程访问</li>
+</ul>
+<p><strong>关键公式与度量</strong></p>
+<ol>
+<li>
+<p><strong>抢占延迟计算</strong>：
+   $$T_{preempt} = T_{disable} + T_{critical} + T_{enable}$$
+其中 $T_{disable}$ 和 $T_{enable}$ 通常为常数时间</p>
+</li>
+<li>
+<p><strong>缓存行伪共享开销</strong>：
+$$Overhead = N_{invalidations} \times (T_{invalidate} + T_{refetch})$$</p>
+</li>
+<li>
+<p><strong>NUMA 访问延迟比</strong>：
+$$R_{NUMA} = \frac{T_{remote}}{T_{local}} \approx 2-10$$</p>
+</li>
+<li>
+<p><strong>无锁算法的进展保证</strong>：
+   - <strong>Wait-free</strong>：每个操作在有限步内完成
+   - <strong>Lock-free</strong>：系统整体持续进展
+   - <strong>Obstruction-free</strong>：单独运行时有限步完成</p>
+</li>
+</ol>
+<h2 id="_3">练习题</h2>
+<h3 id="_4">基础题</h3>
+<p><strong>练习 11.1：抢占计数分析</strong>
+分析以下代码片段的 <code>preempt_count</code> 值变化：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock1</span><span class="p">);</span><span class="w">        </span><span class="c1">// (1)</span>
+<span class="n">local_bh_disable</span><span class="p">();</span><span class="w">       </span><span class="c1">// (2)  </span>
+<span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock2</span><span class="p">);</span><span class="w">        </span><span class="c1">// (3)</span>
+<span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock2</span><span class="p">);</span><span class="w">      </span><span class="c1">// (4)</span>
+<span class="n">local_bh_enable</span><span class="p">();</span><span class="w">        </span><span class="c1">// (5)</span>
+<span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lock1</span><span class="p">);</span><span class="w">      </span><span class="c1">// (6)</span>
+</code></pre></div>
+
+<p>问：在每个标记点，<code>preempt_count</code> 的值是多少？假设初始值为 0。</p>
+<p><em>Hint</em>：<code>spin_lock</code> 增加 1，<code>local_bh_disable</code> 增加 0x100（SOFTIRQ 域）。</p>
+<details>
+<summary>参考答案</summary>
+<ul>
+<li>(1) 后：0x00000001（PREEMPT 域 +1）</li>
+<li>(2) 后：0x00000101（SOFTIRQ 域 +1）  </li>
+<li>(3) 后：0x00000102（PREEMPT 域再 +1）</li>
+<li>(4) 后：0x00000101（PREEMPT 域 -1）</li>
+<li>(5) 后：0x00000001（SOFTIRQ 域 -1）</li>
+<li>(6) 后：0x00000000（PREEMPT 域 -1）</li>
+</ul>
+<p>关键理解：不同域独立计数，<code>spin_lock</code> 只影响 PREEMPT 域。</p>
+</details>
+<p><strong>练习 11.2：per-CPU 变量访问</strong>
+以下代码有什么问题？如何修正？</p>
+<div class="codehilite"><pre><span></span><code><span class="n">DEFINE_PER_CPU</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">my_counter</span><span class="p">);</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">increment_counter</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">smp_processor_id</span><span class="p">();</span>
+<span class="w">    </span><span class="n">per_cpu</span><span class="p">(</span><span class="n">my_counter</span><span class="p">,</span><span class="w"> </span><span class="n">cpu</span><span class="p">)</span><span class="o">++</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><em>Hint</em>：考虑抢占发生的时机。</p>
+<details>
+<summary>参考答案</summary>
+<p>问题：获取 CPU ID 和访问 per-CPU 变量之间可能被抢占，导致在错误的 CPU 上执行递增。</p>
+<p>修正方案：</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">increment_counter</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">preempt_disable</span><span class="p">();</span>
+<span class="w">    </span><span class="n">this_cpu_inc</span><span class="p">(</span><span class="n">my_counter</span><span class="p">);</span>
+<span class="w">    </span><span class="n">preempt_enable</span><span class="p">();</span>
+<span class="p">}</span>
+<span class="c1">// 或使用更简洁的：</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">increment_counter</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">this_cpu_inc</span><span class="p">(</span><span class="n">my_counter</span><span class="p">);</span><span class="w">  </span><span class="c1">// 内部已处理抢占</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+<p><strong>练习 11.3：内存屏障选择</strong>
+为以下场景选择合适的内存屏障：</p>
+<ol>
+<li>确保数据写入后再设置标志位</li>
+<li>确保读取标志位后再读取数据</li>
+<li>确保两个写操作的顺序</li>
+<li>在自旋锁的实现中</li>
+</ol>
+<p><em>Hint</em>：考虑单向屏障和双向屏障的区别。</p>
+<details>
+<summary>参考答案</summary>
+<ol>
+<li><code>smp_wmb()</code> 或 <code>smp_store_release()</code>（写屏障）</li>
+<li><code>smp_rmb()</code> 或 <code>smp_load_acquire()</code>（读屏障）</li>
+<li><code>smp_wmb()</code>（写-写屏障）</li>
+<li><code>smp_mb()</code>（全屏障，锁的获取和释放需要全序）</li>
+</ol>
+<p>选择原则：尽量使用最轻量的屏障满足需求，acquire-release 对适合生产者-消费者模式。</p>
+</details>
+<h3 id="_5">挑战题</h3>
+<p><strong>练习 11.4：无锁计数器设计</strong>
+设计一个无锁的全局计数器，支持：</p>
+<ul>
+<li>多个 CPU 并发递增</li>
+<li>读取全局总和（可以是近似值）</li>
+<li>最小化缓存行竞争</li>
+</ul>
+<p><em>Hint</em>：结合 per-CPU 变量和原子操作。</p>
+<details>
+<summary>参考答案</summary>
+<p>设计思路：</p>
+<ol>
+<li>使用 per-CPU 计数器减少竞争</li>
+<li>定期或按需聚合到全局计数器</li>
+<li>读取时遍历所有 per-CPU 值</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">DEFINE_PER_CPU</span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">,</span><span class="w"> </span><span class="n">local_counter</span><span class="p">);</span>
+<span class="n">atomic64_t</span><span class="w"> </span><span class="n">global_counter</span><span class="p">;</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">increment</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="o">*</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">this_cpu_ptr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">local_counter</span><span class="p">);</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">ptr</span><span class="p">)</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 每 1024 次更新全局计数器</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="o">*</span><span class="n">ptr</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="mh">0x3ff</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">atomic64_add</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">global_counter</span><span class="p">);</span>
+<span class="w">        </span><span class="o">*</span><span class="n">ptr</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="mi">1024</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">read_counter</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">sum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">atomic64_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">global_counter</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">for_each_possible_cpu</span><span class="p">(</span><span class="n">cpu</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">sum</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">per_cpu</span><span class="p">(</span><span class="n">local_counter</span><span class="p">,</span><span class="w"> </span><span class="n">cpu</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">sum</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+<p><strong>练习 11.5：RCU 链表遍历竞态</strong>
+分析以下 RCU 保护的链表遍历代码，找出潜在问题：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">data</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bar</span><span class="w"> </span><span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">reader</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="o">*</span><span class="n">entry</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="w">    </span><span class="n">list_for_each_entry_rcu</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">head</span><span class="p">,</span><span class="w"> </span><span class="n">list</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">entry</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">process</span><span class="p">(</span><span class="n">entry</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span><span class="w">  </span><span class="c1">// 这里安全吗？</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">rcu_read_unlock</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><em>Hint</em>：考虑 <code>entry-&gt;ptr</code> 指向的对象生命周期。</p>
+<details>
+<summary>参考答案</summary>
+<p>问题：<code>entry-&gt;ptr</code> 指向的 <code>bar</code> 对象可能不受 RCU 保护，访问 <code>entry-&gt;ptr-&gt;value</code> 可能导致使用已释放内存。</p>
+<p>解决方案：</p>
+<ol>
+<li>确保 <code>bar</code> 对象也通过 RCU 延迟释放</li>
+<li>或在 <code>foo</code> 结构中嵌入 <code>bar</code> 数据</li>
+<li>使用引用计数保护 <code>bar</code> 对象</li>
+</ol>
+<p>修正代码：</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">reader</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">foo</span><span class="w"> </span><span class="o">*</span><span class="n">entry</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bar</span><span class="w"> </span><span class="o">*</span><span class="n">bar</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="w">    </span><span class="n">list_for_each_entry_rcu</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">head</span><span class="p">,</span><span class="w"> </span><span class="n">list</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">entry</span><span class="o">-&gt;</span><span class="n">data</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">bar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rcu_dereference</span><span class="p">(</span><span class="n">entry</span><span class="o">-&gt;</span><span class="n">ptr</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">bar</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">process</span><span class="p">(</span><span class="n">bar</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">rcu_read_unlock</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+<p><strong>练习 11.6：缓存行对齐优化</strong>
+某内核模块定义了如下结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">stats</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">rx_packets</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">rx_bytes</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">tx_packets</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">tx_bytes</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">last_update</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>网络接收路径频繁更新 <code>rx_*</code>，发送路径频繁更新 <code>tx_*</code>。如何优化以减少缓存行竞争？</p>
+<p><em>Hint</em>：计算各字段大小，考虑缓存行边界。</p>
+<details>
+<summary>参考答案</summary>
+<p>优化方案：将频繁并发访问的字段分离到不同缓存行：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">stats</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// RX 路径专用缓存行</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">rx_packets</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">rx_bytes</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">pad1</span><span class="p">[</span><span class="n">CACHE_LINE_SIZE</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="o">*</span><span class="k">sizeof</span><span class="p">(</span><span class="n">atomic_t</span><span class="p">)];</span>
+
+<span class="w">    </span><span class="c1">// TX 路径专用缓存行  </span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">tx_packets</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">tx_bytes</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">pad2</span><span class="p">[</span><span class="n">CACHE_LINE_SIZE</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">2</span><span class="o">*</span><span class="k">sizeof</span><span class="p">(</span><span class="n">atomic_t</span><span class="p">)];</span>
+
+<span class="w">    </span><span class="c1">// 管理字段单独缓存行</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">last_update</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">__aligned</span><span class="p">(</span><span class="n">CACHE_LINE_SIZE</span><span class="p">);</span>
+</code></pre></div>
+
+<p>或使用 per-CPU 统计进一步优化：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">stats</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">DEFINE_PER_CPU_ALIGNED</span><span class="p">(</span><span class="n">atomic_t</span><span class="p">,</span><span class="w"> </span><span class="n">rx_packets</span><span class="p">);</span>
+<span class="w">    </span><span class="n">DEFINE_PER_CPU_ALIGNED</span><span class="p">(</span><span class="n">atomic_t</span><span class="p">,</span><span class="w"> </span><span class="n">rx_bytes</span><span class="p">);</span>
+<span class="w">    </span><span class="n">DEFINE_PER_CPU_ALIGNED</span><span class="p">(</span><span class="n">atomic_t</span><span class="p">,</span><span class="w"> </span><span class="n">tx_packets</span><span class="p">);</span>
+<span class="w">    </span><span class="n">DEFINE_PER_CPU_ALIGNED</span><span class="p">(</span><span class="n">atomic_t</span><span class="p">,</span><span class="w"> </span><span class="n">tx_bytes</span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre></div>
+
+</details>
+<p><strong>练习 11.7：内存序分析</strong>
+分析以下代码在弱内存序架构（如 ARM）上的行为：</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">int</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="c1">// CPU 0</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">producer</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">42</span><span class="p">;</span>
+<span class="w">    </span><span class="n">flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// CPU 1</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">consumer</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">flag</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">use</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>问：<code>consumer</code> 看到的 <code>data</code> 值一定是 42 吗？如何保证？</p>
+<p><em>Hint</em>：考虑编译器和 CPU 重排序。</p>
+<details>
+<summary>参考答案</summary>
+<p>不一定。存在两个问题：</p>
+<ol>
+<li>编译器可能重排序 <code>producer</code> 中的写操作</li>
+<li>CPU 可能重排序或延迟可见性</li>
+</ol>
+<p>修正方案使用 acquire-release 语义：</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">int</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="c1">// CPU 0</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">producer</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">42</span><span class="p">;</span>
+<span class="w">    </span><span class="n">smp_store_release</span><span class="p">(</span><span class="o">&amp;</span><span class="n">flag</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// CPU 1  </span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">consumer</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">smp_load_acquire</span><span class="p">(</span><span class="o">&amp;</span><span class="n">flag</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">use</span><span class="p">(</span><span class="n">data</span><span class="p">);</span><span class="w">  </span><span class="c1">// 保证看到 data = 42</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>或使用显式屏障：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// CPU 0</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">producer</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">42</span><span class="p">;</span>
+<span class="w">    </span><span class="n">smp_wmb</span><span class="p">();</span><span class="w">  </span><span class="c1">// 确保 data 写入在 flag 之前</span>
+<span class="w">    </span><span class="n">WRITE_ONCE</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// CPU 1</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">consumer</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">READ_ONCE</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">smp_rmb</span><span class="p">();</span><span class="w">  </span><span class="c1">// 确保 flag 读取在 data 之前</span>
+<span class="w">    </span><span class="n">use</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+<p><strong>练习 11.8：NUMA 优化策略</strong>
+某服务器有 2 个 NUMA 节点，各 32 个 CPU。一个网络处理模块需要维护连接状态表。设计数据结构和访问策略，优化 NUMA 访问。</p>
+<p><em>Hint</em>：考虑连接的亲和性和负载均衡。</p>
+<details>
+<summary>参考答案</summary>
+<p>优化策略：</p>
+<ol>
+<li><strong>分区哈希表</strong>：每个 NUMA 节点独立哈希表</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">conn_table</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">hlist_head</span><span class="w"> </span><span class="o">*</span><span class="n">buckets</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="o">*</span><span class="n">locks</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">node_id</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">__cacheline_aligned</span><span class="p">;</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">conn_table</span><span class="w"> </span><span class="n">conn_tables</span><span class="p">[</span><span class="n">MAX_NUMA_NODES</span><span class="p">];</span>
+
+<span class="c1">// 初始化</span>
+<span class="n">for_each_online_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">conn_tables</span><span class="p">[</span><span class="n">node</span><span class="p">].</span><span class="n">buckets</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_pages_node</span><span class="p">(</span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span>
+<span class="w">    </span><span class="n">conn_tables</span><span class="p">[</span><span class="n">node</span><span class="p">].</span><span class="n">locks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_percpu_on_node</span><span class="p">(</span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="p">...);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<ol start="2">
+<li><strong>连接亲和性</strong>：根据连接特征分配到特定节点</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="kt">int</span><span class="w"> </span><span class="nf">get_conn_node</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">connection</span><span class="w"> </span><span class="o">*</span><span class="n">conn</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 基于源 IP 哈希到 NUMA 节点</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">hash_32</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">src_ip</span><span class="p">,</span><span class="w"> </span><span class="n">NUMA_SHIFT</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">nr_numa_nodes</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<ol start="3">
+<li><strong>CPU 绑定</strong>：网卡中断和处理线程绑定到同一节点</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 中断亲和性</span>
+<span class="n">echo</span><span class="w"> </span><span class="n">$NODE0</span><span class="err">\</span><span class="n">_CPUS</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="o">/</span><span class="n">proc</span><span class="o">/</span><span class="n">irq</span><span class="o">/</span><span class="n">$IRQ</span><span class="o">/</span><span class="n">smp_affinity</span>
+
+<span class="c1">// 工作线程 CPU 亲和性</span>
+<span class="n">CPU_SET</span><span class="p">(</span><span class="n">cpu</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cpuset</span><span class="p">);</span>
+<span class="n">pthread_setaffinity_np</span><span class="p">(</span><span class="kr">thread</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">cpuset</span><span class="p">),</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cpuset</span><span class="p">);</span>
+</code></pre></div>
+
+<ol start="4">
+<li><strong>批量处理</strong>：减少跨节点同步</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 本地批量处理后再同步到远程节点</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">local_batch_size</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">BATCH_THRESHOLD</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">flush_to_remote_node</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div>
+
+</details>
+<h2 id="_6">常见陷阱与错误</h2>
+<h3 id="1">1. 抢占相关错误</h3>
+<p><strong>错误：抢占计数泄漏</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">buggy_function</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">preempt_disable</span><span class="p">();</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">error_condition</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span><span class="w">  </span><span class="c1">// 忘记 preempt_enable()！</span>
+<span class="w">    </span><span class="n">preempt_enable</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>后果</strong>：系统最终死锁，调度器无法运行。</p>
+<p><strong>调试方法</strong>：</p>
+<ul>
+<li>检查 <code>/proc/[pid]/status</code> 中的 preempt 计数</li>
+<li>使用 <code>CONFIG_DEBUG_PREEMPT</code> 检测不平衡</li>
+</ul>
+<h3 id="2-per-cpu">2. per-CPU 变量误用</h3>
+<p><strong>错误：跨 CPU 访问</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kt">int</span><span class="w"> </span><span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">smp_processor_id</span><span class="p">();</span>
+<span class="c1">// ... 可能被抢占迁移到其他 CPU ...</span>
+<span class="n">per_cpu</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="w"> </span><span class="n">cpu</span><span class="p">)</span><span class="o">++</span><span class="p">;</span><span class="w">  </span><span class="c1">// 访问错误的 CPU 变量！</span>
+</code></pre></div>
+
+<p><strong>错误：未禁用抢占访问</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">this_cpu_ptr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">data</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">;</span><span class="w">  </span><span class="c1">// 可能在访问中被抢占</span>
+</code></pre></div>
+
+<p><strong>正确做法</strong>：使用 <code>get_cpu()</code>/<code>put_cpu()</code> 或 <code>this_cpu_*</code> 原语。</p>
+<h3 id="3">3. 无锁编程陷阱</h3>
+<p><strong>ABA 问题示例</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 线程 1 读到 A</span>
+<span class="n">old</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">head</span><span class="p">;</span><span class="w">  </span><span class="c1">// head = A</span>
+<span class="c1">// 线程 2: A-&gt;B-&gt;A 的变化</span>
+<span class="c1">// 线程 1 CAS 成功但状态已变</span>
+<span class="n">cmpxchg</span><span class="p">(</span><span class="o">&amp;</span><span class="n">head</span><span class="p">,</span><span class="w"> </span><span class="n">old</span><span class="p">,</span><span class="w"> </span><span class="n">new</span><span class="p">);</span><span class="w">  </span><span class="c1">// 错误地认为没有变化</span>
+</code></pre></div>
+
+<p><strong>内存序错误</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：缺少内存屏障</span>
+<span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">  </span><span class="c1">// 其他 CPU 可能先看到 flag=1</span>
+</code></pre></div>
+
+<h3 id="4">4. 缓存行伪共享</h3>
+<p><strong>性能杀手示例</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">bad_design</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu0_counter</span><span class="p">;</span><span class="w">  </span><span class="c1">// 频繁更新</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu1_counter</span><span class="p">;</span><span class="w">  </span><span class="c1">// 频繁更新，同一缓存行！</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p><strong>症状</strong>：性能急剧下降，缓存未命中率高。</p>
+<h3 id="5-rcu">5. RCU 误用</h3>
+<p><strong>错误：过早释放</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">rcu_assign_pointer</span><span class="p">(</span><span class="n">global_ptr</span><span class="p">,</span><span class="w"> </span><span class="n">new</span><span class="p">);</span>
+<span class="n">kfree</span><span class="p">(</span><span class="n">old</span><span class="p">);</span><span class="w">  </span><span class="c1">// 错误！还有读者在访问</span>
+<span class="c1">// 正确：synchronize_rcu() 或 call_rcu()</span>
+</code></pre></div>
+
+<p><strong>错误：长时间持有 rcu_read_lock</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">rcu_read_lock</span><span class="p">();</span>
+<span class="n">msleep</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span><span class="w">  </span><span class="c1">// 错误！阻塞 RCU grace period</span>
+<span class="n">rcu_read_unlock</span><span class="p">();</span>
+</code></pre></div>
+
+<h3 id="6">6. 内存屏障遗漏</h3>
+<p><strong>错误：初始化竞态</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">obj</span><span class="o">-&gt;</span><span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
+<span class="n">published</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">obj</span><span class="p">;</span><span class="w">  </span><span class="c1">// 其他 CPU 可能看到未初始化的 field</span>
+</code></pre></div>
+
+<p><strong>正确版本</strong>：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">obj</span><span class="o">-&gt;</span><span class="n">field</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
+<span class="n">smp_wmb</span><span class="p">();</span><span class="w">  </span><span class="c1">// 或使用 smp_store_release()</span>
+<span class="n">published</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">obj</span><span class="p">;</span>
+</code></pre></div>
+
+<h2 id="_7">最佳实践检查清单</h2>
+<h3 id="_8">设计阶段</h3>
+<ul>
+<li>[ ] <strong>明确并发需求</strong>：是否真的需要并发？能否简化为单线程？</li>
+<li>[ ] <strong>选择合适的同步原语</strong>：</li>
+<li>低竞争：自旋锁</li>
+<li>可能睡眠：互斥锁</li>
+<li>读多写少：RCU 或读写锁</li>
+<li>高频计数：per-CPU 变量</li>
+<li>[ ] <strong>数据结构布局</strong>：</li>
+<li>频繁访问的字段放在结构开头</li>
+<li>并发访问的字段分离到不同缓存行</li>
+<li>只读字段标记为 <code>const</code></li>
+<li>[ ] <strong>NUMA 考虑</strong>：数据本地性、CPU 亲和性设置</li>
+</ul>
+<h3 id="_9">实现阶段</h3>
+<ul>
+<li>[ ] <strong>抢占管理</strong>：</li>
+<li><code>preempt_disable()</code>/<code>preempt_enable()</code> 配对</li>
+<li>临界区尽可能短</li>
+<li>避免在禁用抢占时睡眠</li>
+<li>[ ] <strong>per-CPU 变量</strong>：</li>
+<li>使用 <code>this_cpu_*</code> 操作</li>
+<li>避免跨 CPU 访问</li>
+<li>初始化时考虑 CPU 热插拔</li>
+<li>[ ] <strong>无锁算法</strong>：</li>
+<li>使用 <code>READ_ONCE</code>/<code>WRITE_ONCE</code> 防止编译器优化</li>
+<li>正确放置内存屏障</li>
+<li>处理 ABA 问题</li>
+<li>考虑弱内存序架构</li>
+<li>[ ] <strong>RCU 使用</strong>：</li>
+<li>读端不能睡眠</li>
+<li>正确的 grace period 等待</li>
+<li>避免过度延迟回收</li>
+</ul>
+<h3 id="_10">测试阶段</h3>
+<ul>
+<li>[ ] <strong>并发测试</strong>：</li>
+<li>多 CPU 压力测试</li>
+<li>CPU 热插拔测试</li>
+<li>抢占点注入测试</li>
+<li>[ ] <strong>性能分析</strong>：</li>
+<li>缓存未命中率（<code>perf stat</code>）</li>
+<li>锁竞争分析（<code>lock_stat</code>）</li>
+<li>调度延迟（<code>schedstat</code>）</li>
+<li>[ ] <strong>正确性验证</strong>：</li>
+<li>KCSAN 数据竞争检测</li>
+<li>lockdep 死锁检测</li>
+<li>RCU stall 检测</li>
+</ul>
+<h3 id="_11">优化阶段</h3>
+<ul>
+<li>[ ] <strong>减少锁竞争</strong>：</li>
+<li>细粒度锁</li>
+<li>无锁数据结构</li>
+<li>per-CPU 化</li>
+<li>[ ] <strong>缓存优化</strong>：</li>
+<li>消除伪共享</li>
+<li>数据预取</li>
+<li>批量操作</li>
+<li>[ ] <strong>NUMA 优化</strong>：</li>
+<li>节点本地分配</li>
+<li>减少跨节点访问</li>
+<li>中断亲和性调优</li>
+</ul>
+<h3 id="_12">文档与维护</h3>
+<ul>
+<li>[ ] <strong>并发语义文档化</strong>：</li>
+<li>锁顺序约定</li>
+<li>内存序要求</li>
+<li>RCU 保护范围</li>
+<li>[ ] <strong>性能基准</strong>：</li>
+<li>建立性能基线</li>
+<li>回归测试</li>
+<li>扩展性测试</li>
+<li>[ ] <strong>调试信息</strong>：</li>
+<li>添加 tracepoints</li>
+<li>统计计数器</li>
+<li>debugfs 接口</li>
+</ul>
+            </article>
+            
+            <nav class="page-nav"><a href="chapter10.html" class="nav-link prev">← 第10章：内核同步机制</a><a href="chapter12.html" class="nav-link next">第12章：容器与命名空间 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

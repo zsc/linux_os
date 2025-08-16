@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
+    <title>第3章：内存管理架构</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/highlight.css">
+    <script src="assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors', 'ams']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors', '[tex]/ams']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="sidebar-search-input" placeholder="搜索..." autocomplete="off">
+            </div>
+            <div id="tree-container">
+                <nav class="tree-nav" role="tree">
+                    <div class="tree-item " >
+                        <a href="index.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Linux 内核源代码深度解析</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter1.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第1章：Linux 内核概述与发展史</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter2.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第2章：进程管理与任务调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item active" >
+                        <a href="chapter3.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第3章：内存管理架构</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter4.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第4章：进程间通信机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter5.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第5章：虚拟文件系统（VFS）</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter6.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第6章：具体文件系统实现</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter7.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第7章：块设备层与I/O调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter8.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第8章：设备驱动模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter9.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第9章：网络协议栈</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter10.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第10章：内核同步机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter11.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第11章：并发编程模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter12.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第12章：容器与命名空间</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter13.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第13章：安全子系统</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter14.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第14章：实时Linux</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter15.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第15章：性能分析与调试</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter16.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第16章：引导过程与初始化</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="CLAUDE.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Untitled</span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="3">第3章：内存管理架构</h1>
+<h2 id="_1">本章导读</h2>
+<p>Linux 内核的内存管理是操作系统最复杂也最关键的子系统之一。从物理页框的分配到虚拟地址空间的映射，从高效的内存分配器到智能的页面回收机制，内存管理直接影响着系统的性能、稳定性和可扩展性。本章将深入剖析 Linux 内存管理的核心机制，理解其如何在有限的物理内存上支撑起现代计算的无限可能。</p>
+<p>学习目标：</p>
+<ul>
+<li>掌握物理内存管理的层次结构：节点(node)、区域(zone)、页框(page frame)</li>
+<li>理解虚拟内存的实现机制：页表结构、地址转换、TLB 管理</li>
+<li>深入分析内存分配器的设计：伙伴系统、slab/slub/slob 分配器</li>
+<li>掌握内存回收策略：LRU 算法、页面回收、OOM killer 机制</li>
+<li>理解现代内存管理特性：大页支持、NUMA 优化、内存压缩</li>
+</ul>
+<h2 id="31">3.1 物理内存管理架构</h2>
+<h3 id="311">3.1.1 内存布局与初始化</h3>
+<p>Linux 启动时，内核首先需要建立对物理内存的认知。在 x86_64 架构上，这个过程涉及多个阶段：</p>
+<div class="codehilite"><pre><span></span><code>物理内存布局<span class="w"> </span><span class="p">(</span>典型<span class="w"> </span><span class="n">x86_64</span><span class="w"> </span>系统<span class="p">)</span>：
+
+<span class="mh">0x0000000000000000</span><span class="w"> </span><span class="o">+------------------+</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>实模式中断向量表<span class="w">  </span><span class="o">|</span>
+<span class="mh">0x0000000000001000</span><span class="w"> </span><span class="o">+------------------+</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span><span class="n">BIOS</span><span class="w"> </span>数据区<span class="w">      </span><span class="o">|</span>
+<span class="mh">0x00000000000A0000</span><span class="w"> </span><span class="o">+------------------+</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span><span class="n">VGA</span><span class="w"> </span>显存<span class="w">         </span><span class="o">|</span>
+<span class="mh">0x0000000000100000</span><span class="w"> </span><span class="o">+------------------+</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">1</span><span class="n">MB</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>内核代码段<span class="w">       </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>内核数据段<span class="w">       </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>内核<span class="w"> </span><span class="n">BSS</span><span class="w"> </span>段<span class="w">      </span><span class="o">|</span>
+<span class="mh">0x0000000001000000</span><span class="w"> </span><span class="o">+------------------+</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">16</span><span class="n">MB</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>可用物理内存<span class="w">     </span><span class="o">|</span>
+
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>可用物理内存<span class="w">     </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w">                  </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span><span class="p">(</span>主要内存区域<span class="p">)</span><span class="w">   </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w">                  </span><span class="o">|</span>
+
+<span class="mh">0x00000000</span><span class="n">XXXX0000</span><span class="w"> </span><span class="o">+------------------+</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span><span class="n">ACPI</span><span class="w"> </span>表<span class="w">          </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>设备保留内存<span class="w">     </span><span class="o">|</span>
+<span class="mh">0x00000000FFFF0000</span><span class="w"> </span><span class="o">+------------------+</span>
+</code></pre></div>
+
+<p>内核通过 E820 内存映射（或 UEFI 的内存描述符）获取可用内存信息。这些信息存储在 <code>struct e820_table</code> 中，包含每个内存区域的起始地址、大小和类型（可用、保留、ACPI 等）。</p>
+<h3 id="312-numa">3.1.2 NUMA 架构与内存节点</h3>
+<p>现代服务器普遍采用 NUMA（Non-Uniform Memory Access）架构，内存访问延迟取决于 CPU 与内存的物理距离：</p>
+<div class="codehilite"><pre><span></span><code><span class="c">NUMA 拓扑示例（双路服务器）：</span>
+
+<span class="c">    Node 0                          Node 1</span>
+<span class="nb">+-------------+</span><span class="c">                 </span><span class="nb">+-------------+</span>
+<span class="c">|   CPU 0</span><span class="nb">-</span><span class="c">7   |</span><span class="nv">&lt;</span><span class="nb">---</span><span class="c">QPI/UPI</span><span class="nb">----</span><span class="nv">&gt;</span><span class="c">|  CPU 8</span><span class="nb">-</span><span class="c">15   |</span>
+<span class="nb">+-------------+</span><span class="c">                 </span><span class="nb">+-------------+</span>
+<span class="c">      |                               |</span>
+<span class="nb">+-------------+</span><span class="c">                 </span><span class="nb">+-------------+</span>
+<span class="c">| Local Memory|                 | Local Memory|</span>
+<span class="c">|   (64GB)    |                 |   (64GB)    |</span>
+<span class="nb">+-------------+</span><span class="c">                 </span><span class="nb">+-------------+</span>
+
+<span class="c">访问延迟：</span>
+
+<span class="nb">-</span><span class="c"> 本地内存访问：~60ns</span>
+<span class="nb">-</span><span class="c"> 远程内存访问：~100</span><span class="nb">-</span><span class="c">120ns</span>
+</code></pre></div>
+
+<p>内核使用 <code>struct pglist_data</code>（通常称为 <code>pg_data_t</code>）表示一个 NUMA 节点：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">pglist_data</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">zone</span><span class="w"> </span><span class="n">node_zones</span><span class="p">[</span><span class="n">MAX_NR_ZONES</span><span class="p">];</span><span class="w">  </span><span class="c1">// 该节点的内存区域</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">zonelist</span><span class="w"> </span><span class="n">node_zonelists</span><span class="p">[</span><span class="n">MAX_ZONELISTS</span><span class="p">];</span><span class="w"> </span><span class="c1">// 内存分配备选列表</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">nr_zones</span><span class="p">;</span><span class="w">                          </span><span class="c1">// 区域数量</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">node_start_pfn</span><span class="p">;</span><span class="w">          </span><span class="c1">// 起始页框号</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">node_present_pages</span><span class="p">;</span><span class="w">      </span><span class="c1">// 物理页面总数</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">node_spanned_pages</span><span class="p">;</span><span class="w">      </span><span class="c1">// 跨度页面数（包含空洞）</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">node_id</span><span class="p">;</span><span class="w">                           </span><span class="c1">// 节点 ID</span>
+<span class="w">    </span><span class="n">wait_queue_head_t</span><span class="w"> </span><span class="n">kswapd_wait</span><span class="p">;</span><span class="w">         </span><span class="c1">// kswapd 等待队列</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">kswapd</span><span class="p">;</span><span class="w">            </span><span class="c1">// 页面回收线程</span>
+<span class="w">    </span><span class="c1">// ... 更多字段</span>
+<span class="p">}</span><span class="w"> </span><span class="n">pg_data_t</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="313-zone">3.1.3 内存区域（Zone）管理</h3>
+<p>每个 NUMA 节点的内存被划分为多个区域（zone），反映不同的硬件限制：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">enum</span><span class="w"> </span><span class="n">zone_type</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ZONE_DMA</span><span class="p">,</span><span class="w">      </span><span class="c1">// 0-16MB，ISA 设备 DMA</span>
+<span class="w">    </span><span class="n">ZONE_DMA32</span><span class="p">,</span><span class="w">    </span><span class="c1">// 0-4GB，32位设备 DMA</span>
+<span class="w">    </span><span class="n">ZONE_NORMAL</span><span class="p">,</span><span class="w">   </span><span class="c1">// 常规内存，直接映射</span>
+<span class="w">    </span><span class="n">ZONE_HIGHMEM</span><span class="p">,</span><span class="w">  </span><span class="c1">// 高端内存（仅32位系统）</span>
+<span class="w">    </span><span class="n">ZONE_MOVABLE</span><span class="p">,</span><span class="w">  </span><span class="c1">// 可迁移页面，支持内存热插拔</span>
+<span class="w">    </span><span class="n">ZONE_DEVICE</span><span class="p">,</span><span class="w">   </span><span class="c1">// 设备内存（如 GPU、持久内存）</span>
+<span class="w">    </span><span class="n">__MAX_NR_ZONES</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>每个区域由 <code>struct zone</code> 结构管理：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">zone</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">_watermark</span><span class="p">[</span><span class="n">NR_WMARK</span><span class="p">];</span><span class="w">    </span><span class="c1">// 水位线：min、low、high</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">watermark_boost</span><span class="p">;</span><span class="w">          </span><span class="c1">// 动态水位提升</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">lowmem_reserve</span><span class="p">[</span><span class="n">MAX_NR_ZONES</span><span class="p">];</span><span class="w">     </span><span class="c1">// 为高优先级预留</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">pglist_data</span><span class="w"> </span><span class="o">*</span><span class="n">zone_pgdat</span><span class="p">;</span><span class="w">        </span><span class="c1">// 所属节点</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">per_cpu_pages</span><span class="w"> </span><span class="n">__percpu</span><span class="w"> </span><span class="o">*</span><span class="n">per_cpu_pageset</span><span class="p">;</span><span class="w"> </span><span class="c1">// Per-CPU 页面缓存</span>
+
+<span class="w">    </span><span class="c1">// 空闲页面管理（伙伴系统）</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">free_area</span><span class="w"> </span><span class="n">free_area</span><span class="p">[</span><span class="n">MAX_ORDER</span><span class="p">];</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">managed_pages</span><span class="p">;</span><span class="w">           </span><span class="c1">// 被伙伴系统管理的页面</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">spanned_pages</span><span class="p">;</span><span class="w">           </span><span class="c1">// 总跨度</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">present_pages</span><span class="p">;</span><span class="w">           </span><span class="c1">// 实际存在的页面</span>
+
+<span class="w">    </span><span class="c1">// 内存压缩</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">compact_cached_free_pfn</span><span class="p">;</span><span class="w"> </span><span class="c1">// 压缩扫描位置</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">compact_init_free_pfn</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// LRU 链表（页面回收）</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">lruvec</span><span class="w"> </span><span class="n">lruvec</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">pages_scanned</span><span class="p">;</span><span class="w">           </span><span class="c1">// 已扫描页面数</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span><span class="w">                   </span><span class="c1">// 区域状态标志</span>
+
+<span class="w">    </span><span class="c1">// 统计信息</span>
+<span class="w">    </span><span class="n">atomic_long_t</span><span class="w"> </span><span class="n">vm_stat</span><span class="p">[</span><span class="n">NR_VM_ZONE_STAT_ITEMS</span><span class="p">];</span>
+<span class="w">    </span><span class="n">atomic_long_t</span><span class="w"> </span><span class="n">vm_numa_stat</span><span class="p">[</span><span class="n">NR_VM_NUMA_STAT_ITEMS</span><span class="p">];</span>
+<span class="p">}</span><span class="w"> </span><span class="n">____cacheline_internodealigned_in_smp</span><span class="p">;</span>
+</code></pre></div>
+
+<h3 id="314-page-frame-struct-page">3.1.4 页框（Page Frame）与 struct page</h3>
+<p>物理内存以页框（通常 4KB）为单位管理。每个页框对应一个 <code>struct page</code> 结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span><span class="w">    </span><span class="c1">// 页面状态标志（PG_locked, PG_dirty, PG_lru 等）</span>
+
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 多种用途的联合体，节省内存</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">    </span><span class="c1">// 页面缓存和匿名页面</span>
+<span class="w">            </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">lru</span><span class="p">;</span><span class="w">       </span><span class="c1">// LRU 链表</span>
+<span class="w">            </span><span class="k">struct</span><span class="w"> </span><span class="nc">address_space</span><span class="w"> </span><span class="o">*</span><span class="n">mapping</span><span class="p">;</span><span class="w"> </span><span class="c1">// 所属地址空间</span>
+<span class="w">            </span><span class="n">pgoff_t</span><span class="w"> </span><span class="n">index</span><span class="p">;</span><span class="w">              </span><span class="c1">// 在映射中的偏移</span>
+<span class="w">            </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">private</span><span class="p">;</span><span class="w">      </span><span class="c1">// 文件系统私有数据</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">    </span><span class="c1">// slab 分配器</span>
+<span class="w">            </span><span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache</span><span class="w"> </span><span class="o">*</span><span class="n">slab_cache</span><span class="p">;</span>
+<span class="w">            </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">freelist</span><span class="p">;</span><span class="w">             </span><span class="c1">// 空闲对象链表</span>
+<span class="w">            </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">s_mem</span><span class="p">;</span><span class="w">                </span><span class="c1">// slab 首个对象</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w">    </span><span class="c1">// 复合页（大页）</span>
+<span class="w">            </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">compound_head</span><span class="p">;</span>
+<span class="w">            </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">compound_dtor</span><span class="p">;</span>
+<span class="w">            </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">compound_order</span><span class="p">;</span>
+<span class="w">            </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">compound_mapcount</span><span class="p">;</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">_mapcount</span><span class="p">;</span><span class="w">     </span><span class="c1">// 页表映射计数</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">page_type</span><span class="p">;</span><span class="w"> </span><span class="c1">// 页面类型（如 buddy、slab）</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">_refcount</span><span class="p">;</span><span class="w">         </span><span class="c1">// 引用计数</span>
+
+<span class="cp">#ifdef CONFIG_MEMCG</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mem_cgroup</span><span class="w"> </span><span class="o">*</span><span class="n">mem_cgroup</span><span class="p">;</span><span class="w"> </span><span class="c1">// 内存控制组</span>
+<span class="cp">#endif</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>关键概念：</p>
+<ul>
+<li><strong>页面标志（flags）</strong>：记录页面状态，如脏页、锁定、正在回收等</li>
+<li><strong>引用计数（_refcount）</strong>：追踪页面使用者数量</li>
+<li><strong>映射计数（_mapcount）</strong>：记录页面被多少个页表映射</li>
+<li><strong>LRU 链表</strong>：用于页面回收算法</li>
+</ul>
+<h3 id="315-buddy-system">3.1.5 伙伴系统（Buddy System）</h3>
+<p>伙伴系统是 Linux 物理内存分配的核心算法，通过将内存块组织成 2^n 页面的块来减少外部碎片：</p>
+<div class="codehilite"><pre><span></span><code><span class="err">伙伴系统原理：</span>
+
+<span class="n">Order</span><span class="w"> </span><span class="mi">0</span><span class="o">:</span><span class="w">  </span><span class="err">□</span><span class="w"> </span><span class="err">□</span><span class="w"> </span><span class="err">□</span><span class="w"> </span><span class="err">□</span><span class="w"> </span><span class="err">□</span><span class="w"> </span><span class="err">□</span><span class="w"> </span><span class="err">□</span><span class="w"> </span><span class="err">□</span><span class="w">  </span><span class="p">(</span><span class="err">单页，</span><span class="mi">4</span><span class="n">KB</span><span class="p">)</span>
+<span class="n">Order</span><span class="w"> </span><span class="mi">1</span><span class="o">:</span><span class="w">  </span><span class="err">□□</span><span class="w"> </span><span class="err">□□</span><span class="w"> </span><span class="err">□□</span><span class="w"> </span><span class="err">□□</span><span class="w">      </span><span class="p">(</span><span class="mi">2</span><span class="err">页，</span><span class="mi">8</span><span class="n">KB</span><span class="p">)</span>
+<span class="n">Order</span><span class="w"> </span><span class="mi">2</span><span class="o">:</span><span class="w">  </span><span class="err">□□□□</span><span class="w"> </span><span class="err">□□□□</span><span class="w">        </span><span class="p">(</span><span class="mi">4</span><span class="err">页，</span><span class="mi">16</span><span class="n">KB</span><span class="p">)</span>
+<span class="n">Order</span><span class="w"> </span><span class="mi">3</span><span class="o">:</span><span class="w">  </span><span class="err">□□□□□□□□</span><span class="w">          </span><span class="p">(</span><span class="mi">8</span><span class="err">页，</span><span class="mi">32</span><span class="n">KB</span><span class="p">)</span>
+<span class="p">...</span>
+<span class="n">Order</span><span class="w"> </span><span class="mi">10</span><span class="o">:</span><span class="w"> </span><span class="err">□□□□□□□□</span><span class="p">...</span><span class="w">       </span><span class="p">(</span><span class="mi">1024</span><span class="err">页，</span><span class="mi">4</span><span class="n">MB</span><span class="p">)</span>
+
+<span class="err">分配过程（申请</span><span class="w"> </span><span class="mi">8</span><span class="n">KB</span><span class="err">）：</span>
+
+<span class="mf">1.</span><span class="w"> </span><span class="err">检查</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">是否有空闲块</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="err">无</span>
+<span class="mf">2.</span><span class="w"> </span><span class="err">检查</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="err">是否有空闲块</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="err">有</span>
+<span class="mf">3.</span><span class="w"> </span><span class="err">分裂</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="err">块：</span>
+<span class="w">   </span><span class="o">-</span><span class="w"> </span><span class="err">取一半（</span><span class="mi">8</span><span class="n">KB</span><span class="err">）满足请求</span>
+<span class="w">   </span><span class="o">-</span><span class="w"> </span><span class="err">另一半放入</span><span class="w"> </span><span class="n">Order</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="err">空闲链表</span>
+</code></pre></div>
+
+<p>伙伴系统的核心数据结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">free_area</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">free_list</span><span class="p">[</span><span class="n">MIGRATE_TYPES</span><span class="p">];</span><span class="w"> </span><span class="c1">// 按迁移类型分类的空闲链表</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nr_free</span><span class="p">;</span><span class="w">                     </span><span class="c1">// 空闲块数量</span>
+<span class="p">};</span>
+
+<span class="c1">// 页面迁移类型（减少碎片化）</span>
+<span class="k">enum</span><span class="w"> </span><span class="n">migratetype</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">MIGRATE_UNMOVABLE</span><span class="p">,</span><span class="w">     </span><span class="c1">// 不可迁移（内核数据结构）</span>
+<span class="w">    </span><span class="n">MIGRATE_MOVABLE</span><span class="p">,</span><span class="w">       </span><span class="c1">// 可迁移（用户页面）</span>
+<span class="w">    </span><span class="n">MIGRATE_RECLAIMABLE</span><span class="p">,</span><span class="w">   </span><span class="c1">// 可回收（文件缓存）</span>
+<span class="w">    </span><span class="n">MIGRATE_PCPTYPES</span><span class="p">,</span><span class="w">      </span><span class="c1">// Per-CPU 页面类型数</span>
+<span class="w">    </span><span class="n">MIGRATE_HIGHATOMIC</span><span class="p">,</span><span class="w">    </span><span class="c1">// 高优先级原子分配</span>
+<span class="w">    </span><span class="n">MIGRATE_CMA</span><span class="p">,</span><span class="w">           </span><span class="c1">// 连续内存分配器</span>
+<span class="w">    </span><span class="n">MIGRATE_ISOLATE</span><span class="p">,</span><span class="w">       </span><span class="c1">// 隔离页面（内存热插拔）</span>
+<span class="w">    </span><span class="n">MIGRATE_TYPES</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>分配函数调用链：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">alloc_pages</span><span class="p">()</span>
+<span class="w">  </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">alloc_pages_current</span><span class="p">()</span><span class="w">  </span><span class="c1">// NUMA 策略</span>
+<span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">__alloc_pages_nodemask</span><span class="p">()</span><span class="w">  </span><span class="c1">// 核心分配函数</span>
+<span class="w">      </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">get_page_from_freelist</span><span class="p">()</span><span class="w">  </span><span class="c1">// 快速路径</span>
+<span class="w">        </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">rmqueue</span><span class="p">()</span><span class="w">  </span><span class="c1">// 从伙伴系统取页</span>
+<span class="w">          </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">__rmqueue</span><span class="p">()</span><span class="w">  </span><span class="c1">// 实际分配</span>
+<span class="w">      </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">__alloc_pages_slowpath</span><span class="p">()</span><span class="w">  </span><span class="c1">// 慢速路径（内存紧张）</span>
+<span class="w">        </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">__alloc_pages_direct_reclaim</span><span class="p">()</span><span class="w">  </span><span class="c1">// 直接回收</span>
+<span class="w">        </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">__alloc_pages_direct_compact</span><span class="p">()</span><span class="w">  </span><span class="c1">// 内存压缩</span>
+<span class="w">        </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">oom_kill_process</span><span class="p">()</span><span class="w">  </span><span class="c1">// OOM killer</span>
+</code></pre></div>
+
+<h2 id="32">3.2 虚拟内存机制</h2>
+<h3 id="321">3.2.1 虚拟地址空间布局</h3>
+<p>Linux 为每个进程提供独立的虚拟地址空间。在 x86_64 架构上，虽然硬件支持 48 位虚拟地址（256TB），但内核采用了分割式布局：</p>
+<div class="codehilite"><pre><span></span><code><span class="n">x86_64</span><span class="w"> </span>虚拟地址空间布局（<span class="m">5</span>级页表，<span class="m">57</span>位地址）：
+
+<span class="mh">0x0000000000000000</span><span class="w"> </span><span class="o">+------------------+</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span>用户空间开始
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>程序代码段<span class="p">(</span><span class="n">.text</span><span class="p">)</span><span class="w"> </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>程序数据段<span class="p">(</span><span class="n">.data</span><span class="p">)</span><span class="w"> </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span><span class="n">BSS</span><span class="w"> </span>段<span class="p">(</span><span class="n">.bss</span><span class="p">)</span><span class="w">      </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>堆（向上增长）↓<span class="w">    </span><span class="o">|</span>
+
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>堆（向上增长）↓<span class="w">    </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w">                   </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>↓<span class="w"> </span><span class="n">MMAP</span><span class="w"> </span>区域<span class="w"> </span>↓<span class="w">     </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w">                   </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>↑<span class="w"> </span>栈（向下增长）<span class="w">   </span><span class="o">|</span>
+
+<span class="mh">0x00007FFFFFFFFFFF</span><span class="w"> </span><span class="o">+------------------+</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span>用户空间结束<span class="w"> </span><span class="p">(</span><span class="m">128</span><span class="n">TB</span><span class="p">)</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>不可访问区域<span class="w">       </span><span class="o">|</span>
+<span class="mh">0xFFFF800000000000</span><span class="w"> </span><span class="o">+------------------+</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span>内核空间开始
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span><span class="n">vmalloc</span><span class="w"> </span>区域<span class="w">      </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>持久映射区<span class="w">         </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>固定映射区<span class="w">         </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>模块区域<span class="w">          </span><span class="o">|</span>
+<span class="mh">0xFFFF888000000000</span><span class="w"> </span><span class="o">+------------------+</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span>直接映射区<span class="w">        </span><span class="o">|</span>
+<span class="w">                   </span><span class="o">|</span><span class="w"> </span><span class="p">(</span>所有物理内存<span class="p">)</span><span class="w">     </span><span class="o">|</span>
+<span class="mh">0xFFFFFFFFFFFFFFFF</span><span class="w"> </span><span class="o">+------------------+</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span>内核空间结束
+</code></pre></div>
+
+<p>用户进程的虚拟地址空间由 <code>struct mm_struct</code> 管理：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">mm_struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">vm_area_struct</span><span class="w"> </span><span class="o">*</span><span class="n">mmap</span><span class="p">;</span><span class="w">       </span><span class="c1">// VMA 链表</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rb_root</span><span class="w"> </span><span class="n">mm_rb</span><span class="p">;</span><span class="w">               </span><span class="c1">// VMA 红黑树（快速查找）</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">mmap_base</span><span class="p">;</span><span class="w">            </span><span class="c1">// mmap 区域基地址</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">task_size</span><span class="p">;</span><span class="w">            </span><span class="c1">// 用户空间大小</span>
+
+<span class="w">    </span><span class="n">pgd_t</span><span class="w"> </span><span class="o">*</span><span class="n">pgd</span><span class="p">;</span><span class="w">                         </span><span class="c1">// 页全局目录</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">mm_users</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 用户计数（线程数）</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">mm_count</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 引用计数</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">total_vm</span><span class="p">;</span><span class="w">             </span><span class="c1">// 总虚拟内存页数</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">locked_vm</span><span class="p">;</span><span class="w">            </span><span class="c1">// 锁定页数</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">pinned_vm</span><span class="p">;</span><span class="w">            </span><span class="c1">// 固定页数</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">data_vm</span><span class="p">;</span><span class="w">              </span><span class="c1">// 数据段页数</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">exec_vm</span><span class="p">;</span><span class="w">              </span><span class="c1">// 可执行页数</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">stack_vm</span><span class="p">;</span><span class="w">             </span><span class="c1">// 栈页数</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">start_code</span><span class="p">,</span><span class="w"> </span><span class="n">end_code</span><span class="p">;</span><span class="w">     </span><span class="c1">// 代码段范围</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">start_data</span><span class="p">,</span><span class="w"> </span><span class="n">end_data</span><span class="p">;</span><span class="w">     </span><span class="c1">// 数据段范围</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">start_brk</span><span class="p">,</span><span class="w"> </span><span class="n">brk</span><span class="p">;</span><span class="w">           </span><span class="c1">// 堆范围</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">start_stack</span><span class="p">;</span><span class="w">              </span><span class="c1">// 栈起始地址</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">arg_start</span><span class="p">,</span><span class="w"> </span><span class="n">arg_end</span><span class="p">;</span><span class="w">       </span><span class="c1">// 参数范围</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">env_start</span><span class="p">,</span><span class="w"> </span><span class="n">env_end</span><span class="p">;</span><span class="w">       </span><span class="c1">// 环境变量范围</span>
+
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">page_table_lock</span><span class="p">;</span><span class="w">        </span><span class="c1">// 页表锁</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rw_semaphore</span><span class="w"> </span><span class="n">mmap_sem</span><span class="p">;</span><span class="w">       </span><span class="c1">// mmap 信号量</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">mmlist</span><span class="p">;</span><span class="w">            </span><span class="c1">// 所有 mm_struct 链表</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">hiwater_rss</span><span class="p">;</span><span class="w">          </span><span class="c1">// RSS 高水位</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">hiwater_vm</span><span class="p">;</span><span class="w">           </span><span class="c1">// 虚拟内存高水位</span>
+
+<span class="w">    </span><span class="c1">// 更多字段...</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="322-vma">3.2.2 虚拟内存区域（VMA）</h3>
+<p>虚拟地址空间被划分为多个虚拟内存区域（VMA），每个 VMA 代表一段连续的虚拟地址范围：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">vm_area_struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">vm_start</span><span class="p">;</span><span class="w">             </span><span class="c1">// VMA 起始地址</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">vm_end</span><span class="p">;</span><span class="w">               </span><span class="c1">// VMA 结束地址</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">vm_area_struct</span><span class="w"> </span><span class="o">*</span><span class="n">vm_next</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">vm_prev</span><span class="p">;</span><span class="w">  </span><span class="c1">// 链表指针</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rb_node</span><span class="w"> </span><span class="n">vm_rb</span><span class="p">;</span><span class="w">               </span><span class="c1">// 红黑树节点</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mm_struct</span><span class="w"> </span><span class="o">*</span><span class="n">vm_mm</span><span class="p">;</span><span class="w">            </span><span class="c1">// 所属的 mm_struct</span>
+<span class="w">    </span><span class="n">pgprot_t</span><span class="w"> </span><span class="n">vm_page_prot</span><span class="p">;</span><span class="w">              </span><span class="c1">// 页面保护标志</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">vm_flags</span><span class="p">;</span><span class="w">             </span><span class="c1">// VMA 标志</span>
+
+<span class="w">    </span><span class="c1">// 共享映射</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">rb_node</span><span class="w"> </span><span class="n">rb</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">rb_subtree_last</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">shared</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">anon_vma_chain</span><span class="p">;</span><span class="w">    </span><span class="c1">// 匿名 VMA 链</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">anon_vma</span><span class="w"> </span><span class="o">*</span><span class="n">anon_vma</span><span class="p">;</span><span class="w">          </span><span class="c1">// 反向映射</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">vm_operations_struct</span><span class="w"> </span><span class="o">*</span><span class="n">vm_ops</span><span class="p">;</span><span class="w">  </span><span class="c1">// VMA 操作</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">vm_pgoff</span><span class="p">;</span><span class="w">             </span><span class="c1">// 文件偏移（页单位）</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">file</span><span class="w"> </span><span class="o">*</span><span class="n">vm_file</span><span class="p">;</span><span class="w">               </span><span class="c1">// 映射的文件</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">vm_private_data</span><span class="p">;</span><span class="w">              </span><span class="c1">// 私有数据</span>
+
+<span class="w">    </span><span class="c1">// NUMA 策略</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mempolicy</span><span class="w"> </span><span class="o">*</span><span class="n">vm_policy</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">vm_userfaultfd_ctx</span><span class="w"> </span><span class="n">vm_userfaultfd_ctx</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// VMA 标志</span>
+<span class="cp">#define VM_READ     0x00000001  </span><span class="c1">// 可读</span>
+<span class="cp">#define VM_WRITE    0x00000002  </span><span class="c1">// 可写</span>
+<span class="cp">#define VM_EXEC     0x00000004  </span><span class="c1">// 可执行</span>
+<span class="cp">#define VM_SHARED   0x00000008  </span><span class="c1">// 共享映射</span>
+<span class="cp">#define VM_MAYREAD  0x00000010  </span><span class="c1">// 可能可读</span>
+<span class="cp">#define VM_MAYWRITE 0x00000020  </span><span class="c1">// 可能可写</span>
+<span class="cp">#define VM_MAYEXEC  0x00000040  </span><span class="c1">// 可能可执行</span>
+<span class="cp">#define VM_GROWSDOWN 0x00000100 </span><span class="c1">// 向下增长（栈）</span>
+<span class="cp">#define VM_LOCKED   0x00002000  </span><span class="c1">// 页面锁定在内存</span>
+<span class="cp">#define VM_HUGETLB  0x00400000  </span><span class="c1">// 大页映射</span>
+</code></pre></div>
+
+<h3 id="323">3.2.3 多级页表机制</h3>
+<p>x86_64 使用 4 级或 5 级页表实现虚拟到物理地址转换：</p>
+<div class="codehilite"><pre><span></span><code><span class="mi">4</span><span class="n">级页表地址转换</span><span class="err">（</span><span class="mi">48</span><span class="n">位虚拟地址</span><span class="err">）：</span>
+
+<span class="n">虚拟地址</span><span class="err">：</span>
+<span class="o">+--------+--------+--------+--------+--------+------------+</span>
+<span class="o">|</span><span class="w"> </span><span class="nf">Sign</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="n">PGD</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">PUD</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">PMD</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">PTE</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Offset</span><span class="w">     </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="n">Extend</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="k">Index</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="k">Index</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="k">Index</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="k">Index</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="mi">12</span><span class="w"> </span><span class="n">bits</span><span class="p">)</span><span class="w">  </span><span class="o">|</span>
+<span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="mi">16</span><span class="p">)</span><span class="w">   </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="mi">9</span><span class="p">)</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="mi">9</span><span class="p">)</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="mi">9</span><span class="p">)</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="mi">9</span><span class="p">)</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="mi">4</span><span class="n">KB</span><span class="w"> </span><span class="n">page</span><span class="w">   </span><span class="o">|</span>
+<span class="o">+--------+--------+--------+--------+--------+------------+</span>
+
+<span class="n">转换过程</span><span class="err">：</span>
+<span class="n">CR3</span><span class="w"> </span><span class="n">寄存器</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">PGD</span><span class="w"> </span><span class="n">基地址</span>
+<span class="w">    </span><span class="o">|</span>
+<span class="w">    </span><span class="n">v</span>
+<span class="n">PGD</span><span class="o">[</span><span class="n">pgd_index</span><span class="o">]</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">PUD</span><span class="w"> </span><span class="n">基地址</span>
+<span class="w">    </span><span class="o">|</span>
+<span class="w">    </span><span class="n">v</span>
+<span class="n">PUD</span><span class="o">[</span><span class="n">pud_index</span><span class="o">]</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">PMD</span><span class="w"> </span><span class="n">基地址</span>
+<span class="w">    </span><span class="o">|</span>
+<span class="w">    </span><span class="n">v</span>
+<span class="n">PMD</span><span class="o">[</span><span class="n">pmd_index</span><span class="o">]</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">PT</span><span class="w"> </span><span class="n">基地址</span>
+<span class="w">    </span><span class="o">|</span>
+<span class="w">    </span><span class="n">v</span>
+<span class="n">PTE</span><span class="o">[</span><span class="n">pte_index</span><span class="o">]</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">物理页框</span>
+<span class="w">    </span><span class="o">|</span>
+<span class="w">    </span><span class="n">v</span>
+<span class="n">物理地址</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">页框地址</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset</span>
+</code></pre></div>
+
+<p>页表项格式（x86_64 PTE）：</p>
+<div class="codehilite"><pre><span></span><code><span class="mf">63</span><span class="w">                                                             </span><span class="mf">0</span>
+<span class="o">+---+---+---+-----+---+---+---+---+---+---+---+---+-----------+</span>
+<span class="err">|</span><span class="n">NX</span><span class="w"> </span><span class="err">|</span><span class="w">   </span><span class="err">|</span><span class="w"> </span><span class="n">Reserved</span><span class="w"> </span><span class="err">|</span><span class="w">   </span><span class="n">Physical</span><span class="w"> </span><span class="n">Page</span><span class="w"> </span><span class="n">Frame</span><span class="w"> </span><span class="n">Number</span><span class="w">   </span><span class="err">|</span><span class="w"> </span><span class="n">Flags</span><span class="w">    </span><span class="err">|</span>
+<span class="o">+---+---+---+-----+---+---+---+---+---+---+---+---+-----------+</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="err">|</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">P</span><span class="p">(</span><span class="n">resent</span><span class="p">)</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">R</span><span class="o">/</span><span class="n">W</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">U</span><span class="o">/</span><span class="n">S</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">PWT</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">PCD</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">ccessed</span><span class="p">)</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="n">irty</span><span class="p">)</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">PAT</span>
+<span class="w">  </span><span class="err">|</span><span class="w">                                                      </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">G</span><span class="p">(</span><span class="n">lobal</span><span class="p">)</span>
+<span class="w">  </span><span class="o">+-&gt;</span><span class="w"> </span><span class="n">No</span><span class="w"> </span><span class="n">eXecute</span>
+</code></pre></div>
+
+<p>内核页表操作宏：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 页表级别定义</span>
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">pgd</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="n">pgd_t</span><span class="p">;</span>
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">pud</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="n">pud_t</span><span class="p">;</span>
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">pmd</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="n">pmd_t</span><span class="p">;</span>
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">pte</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="n">pte_t</span><span class="p">;</span>
+
+<span class="c1">// 地址转换辅助函数</span>
+<span class="cp">#define pgd_index(addr) (((addr) &gt;&gt; PGDIR_SHIFT) &amp; (PTRS_PER_PGD - 1))</span>
+<span class="cp">#define pud_index(addr) (((addr) &gt;&gt; PUD_SHIFT) &amp; (PTRS_PER_PUD - 1))</span>
+<span class="cp">#define pmd_index(addr) (((addr) &gt;&gt; PMD_SHIFT) &amp; (PTRS_PER_PMD - 1))</span>
+<span class="cp">#define pte_index(addr) (((addr) &gt;&gt; PAGE_SHIFT) &amp; (PTRS_PER_PTE - 1))</span>
+
+<span class="c1">// 页表遍历</span>
+<span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="n">pud_t</span><span class="w"> </span><span class="o">*</span><span class="nf">pud_offset</span><span class="p">(</span><span class="n">pgd_t</span><span class="w"> </span><span class="o">*</span><span class="n">pgd</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">address</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">pud_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">pgd_page_vaddr</span><span class="p">(</span><span class="o">*</span><span class="n">pgd</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">pud_index</span><span class="p">(</span><span class="n">address</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="n">pmd_t</span><span class="w"> </span><span class="o">*</span><span class="nf">pmd_offset</span><span class="p">(</span><span class="n">pud_t</span><span class="w"> </span><span class="o">*</span><span class="n">pud</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">address</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">pmd_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">pud_page_vaddr</span><span class="p">(</span><span class="o">*</span><span class="n">pud</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">pmd_index</span><span class="p">(</span><span class="n">address</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="n">pte_t</span><span class="w"> </span><span class="o">*</span><span class="nf">pte_offset_kernel</span><span class="p">(</span><span class="n">pmd_t</span><span class="w"> </span><span class="o">*</span><span class="n">pmd</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">address</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">pte_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="n">pmd_page_vaddr</span><span class="p">(</span><span class="o">*</span><span class="n">pmd</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">pte_index</span><span class="p">(</span><span class="n">address</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="324-tlb">3.2.4 TLB 管理</h3>
+<p>TLB（Translation Lookaside Buffer）缓存虚拟到物理地址的映射，避免每次访问内存都要遍历页表：</p>
+<div class="codehilite"><pre><span></span><code><span class="c">TLB 结构示例：</span>
+
+<span class="nb">+----------+----------+--------+-------+-------+</span>
+<span class="c">| Valid    | ASID/PCID| VPN    | PFN   | Flags |</span>
+<span class="nb">+----------+----------+--------+-------+-------+</span>
+<span class="c">| 1        | 0x123    | 0x7fff | 0x5432| RWX   |</span>
+<span class="c">| 1        | 0x123    | 0x8000 | 0x6789| R</span><span class="nb">-</span><span class="c">X   |</span>
+<span class="c">| 0        | </span><span class="nb">-</span><span class="c">        | </span><span class="nb">-</span><span class="c">      | </span><span class="nb">-</span><span class="c">     | </span><span class="nb">-</span><span class="c">     |</span>
+<span class="nb">+----------+----------+--------+-------+-------+</span>
+
+<span class="c">TLB 命中率对性能的影响：</span>
+
+<span class="nb">-</span><span class="c"> TLB 命中：~1 CPU 周期</span>
+<span class="nb">-</span><span class="c"> TLB 未命中：~100</span><span class="nb">-</span><span class="c">200 CPU 周期（4级页表遍历）</span>
+</code></pre></div>
+
+<p>Linux TLB 刷新策略：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// TLB 刷新接口</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">flush_tlb_all</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span><span class="w">                    </span><span class="c1">// 刷新所有 TLB 项</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">flush_tlb_mm</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">mm_struct</span><span class="w"> </span><span class="o">*</span><span class="n">mm</span><span class="p">);</span><span class="w">     </span><span class="c1">// 刷新特定进程的 TLB</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">flush_tlb_page</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">vm_area_struct</span><span class="w"> </span><span class="o">*</span><span class="n">vma</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">addr</span><span class="p">);</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">flush_tlb_range</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">vm_area_struct</span><span class="w"> </span><span class="o">*</span><span class="n">vma</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                     </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">start</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">end</span><span class="p">);</span>
+
+<span class="c1">// 懒惰 TLB 模式（内核线程优化）</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">mm_struct</span><span class="w"> </span><span class="n">init_mm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">.</span><span class="n">mm_rb</span><span class="w">      </span><span class="o">=</span><span class="w"> </span><span class="n">RB_ROOT</span><span class="p">,</span>
+<span class="w">    </span><span class="p">.</span><span class="n">pgd</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="n">swapper_pg_dir</span><span class="p">,</span><span class="w">  </span><span class="c1">// 内核页表</span>
+<span class="w">    </span><span class="p">.</span><span class="n">mm_users</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">ATOMIC_INIT</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>
+<span class="w">    </span><span class="p">.</span><span class="n">mm_count</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">ATOMIC_INIT</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+<span class="w">    </span><span class="p">.</span><span class="n">mmap_sem</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">__RWSEM_INITIALIZER</span><span class="p">(</span><span class="n">init_mm</span><span class="p">.</span><span class="n">mmap_sem</span><span class="p">),</span>
+<span class="w">    </span><span class="p">.</span><span class="n">page_table_lock</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__SPIN_LOCK_UNLOCKED</span><span class="p">(</span><span class="n">init_mm</span><span class="p">.</span><span class="n">page_table_lock</span><span class="p">),</span>
+<span class="w">    </span><span class="p">.</span><span class="n">mmlist</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="n">LIST_HEAD_INIT</span><span class="p">(</span><span class="n">init_mm</span><span class="p">.</span><span class="n">mmlist</span><span class="p">),</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="325">3.2.5 缺页异常处理</h3>
+<p>当访问的虚拟地址没有对应的物理页面时，CPU 触发缺页异常：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// x86_64 缺页异常处理入口</span>
+<span class="n">dotraplinkage</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">do_page_fault</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">pt_regs</span><span class="w"> </span><span class="o">*</span><span class="n">regs</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">error_code</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">address</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">read_cr2</span><span class="p">();</span><span class="w">  </span><span class="c1">// 获取引起异常的地址</span>
+
+<span class="w">    </span><span class="c1">// 错误码解析</span>
+<span class="w">    </span><span class="c1">// bit 0: 0=页不存在, 1=保护违例</span>
+<span class="w">    </span><span class="c1">// bit 1: 0=读访问, 1=写访问</span>
+<span class="w">    </span><span class="c1">// bit 2: 0=内核模式, 1=用户模式</span>
+<span class="w">    </span><span class="c1">// bit 3: 1=使用保留位</span>
+<span class="w">    </span><span class="c1">// bit 4: 1=指令获取</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="n">kmmio_fault</span><span class="p">(</span><span class="n">regs</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">)))</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="n">fault_in_kernel_space</span><span class="p">(</span><span class="n">address</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 内核空间缺页</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">vmalloc_fault</span><span class="p">(</span><span class="n">address</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 用户空间缺页</span>
+<span class="w">    </span><span class="n">__do_page_fault</span><span class="p">(</span><span class="n">regs</span><span class="p">,</span><span class="w"> </span><span class="n">error_code</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// 缺页处理核心逻辑</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">handle_mm_fault</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">vm_area_struct</span><span class="w"> </span><span class="o">*</span><span class="n">vma</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">address</span><span class="p">,</span>
+<span class="w">                          </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">flags</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="n">is_vm_hugetlb_page</span><span class="p">(</span><span class="n">vma</span><span class="p">)))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">hugetlb_fault</span><span class="p">(</span><span class="n">vma</span><span class="o">-&gt;</span><span class="n">vm_mm</span><span class="p">,</span><span class="w"> </span><span class="n">vma</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">pgd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pgd_offset</span><span class="p">(</span><span class="n">mm</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">);</span>
+<span class="w">    </span><span class="n">pud</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pud_alloc</span><span class="p">(</span><span class="n">mm</span><span class="p">,</span><span class="w"> </span><span class="n">pgd</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">);</span>
+<span class="w">    </span><span class="n">pmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pmd_alloc</span><span class="p">(</span><span class="n">mm</span><span class="p">,</span><span class="w"> </span><span class="n">pud</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">handle_pte_fault</span><span class="p">(</span><span class="n">mm</span><span class="p">,</span><span class="w"> </span><span class="n">vma</span><span class="p">,</span><span class="w"> </span><span class="n">address</span><span class="p">,</span><span class="w"> </span><span class="n">pte</span><span class="p">,</span><span class="w"> </span><span class="n">pmd</span><span class="p">,</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>缺页异常类型：</p>
+<ol>
+<li><strong>次要缺页（Minor Fault）</strong>：页面在内存中但未映射</li>
+<li><strong>主要缺页（Major Fault）</strong>：需要从磁盘读取</li>
+<li><strong>写时复制（COW）</strong>：写入共享页面时复制</li>
+<li><strong>需求分页（Demand Paging）</strong>：首次访问时分配</li>
+</ol>
+<h2 id="33">3.3 内存分配器</h2>
+<h3 id="331-slab">3.3.1 Slab 分配器架构</h3>
+<p>Slab 分配器是建立在伙伴系统之上的高效小对象分配器，解决了内部碎片问题：</p>
+<div class="codehilite"><pre><span></span><code>Slab 分配器层次结构：
+
+    kmem_cache (缓存描述符)
+         |
+    +----|----+----+
+
+    +----|----+----+
+    |    |    |    |
+
+  slab slab slab slab  (每个 slab 包含多个对象)
+    |
+  +---+---+---+---+
+  |obj|obj|obj|obj|  (相同大小的对象)
+  +---+---+---+---+
+
+特点：
+
+<span class="k">-</span> 对象重用：避免频繁初始化/销毁
+<span class="k">-</span> CPU 缓存友好：热对象保持在缓存中
+<span class="k">-</span> 减少碎片：相同大小对象聚集
+<span class="k">-</span> 着色优化：避免缓存行冲突
+</code></pre></div>
+
+<p>核心数据结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache_cpu</span><span class="w"> </span><span class="n">__percpu</span><span class="w"> </span><span class="o">*</span><span class="n">cpu_slab</span><span class="p">;</span><span class="w">  </span><span class="c1">// Per-CPU 缓存</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span><span class="w">                       </span><span class="c1">// 缓存标志</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">min_partial</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 最小部分空闲 slab 数</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="p">;</span><span class="w">                         </span><span class="c1">// 对象大小</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">object_size</span><span class="p">;</span><span class="w">                  </span><span class="c1">// 用户请求的大小</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">offset</span><span class="p">;</span><span class="w">                       </span><span class="c1">// 空闲指针偏移</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache_order_objects</span><span class="w"> </span><span class="n">oo</span><span class="p">;</span><span class="w">        </span><span class="c1">// slab 大小和对象数</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache_order_objects</span><span class="w"> </span><span class="n">max</span><span class="p">;</span><span class="w">       </span><span class="c1">// 最大 slab 配置</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache_order_objects</span><span class="w"> </span><span class="n">min</span><span class="p">;</span><span class="w">       </span><span class="c1">// 最小 slab 配置</span>
+
+<span class="w">    </span><span class="n">gfp_t</span><span class="w"> </span><span class="n">allocflags</span><span class="p">;</span><span class="w">                          </span><span class="c1">// 分配标志</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">refcount</span><span class="p">;</span><span class="w">                              </span><span class="c1">// 引用计数</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">ctor</span><span class="p">)(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="p">);</span><span class="w">                      </span><span class="c1">// 构造函数</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">;</span><span class="w">                          </span><span class="c1">// 缓存名称</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span><span class="w">                     </span><span class="c1">// 全局缓存链表</span>
+
+<span class="w">    </span><span class="c1">// SLUB 特有字段</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache_node</span><span class="w"> </span><span class="o">*</span><span class="n">node</span><span class="p">[</span><span class="n">MAX_NUMNODES</span><span class="p">];</span><span class="w"> </span><span class="c1">// 节点数据</span>
+
+<span class="cp">#ifdef CONFIG_SLAB_FREELIST_HARDENED</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">random</span><span class="p">;</span><span class="w">                      </span><span class="c1">// 随机化种子（安全）</span>
+<span class="cp">#endif</span>
+<span class="p">};</span>
+
+<span class="c1">// Per-CPU slab 缓存</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache_cpu</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="n">freelist</span><span class="p">;</span><span class="w">        </span><span class="c1">// 本地空闲对象链表</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">tid</span><span class="p">;</span><span class="w">      </span><span class="c1">// 事务 ID（无锁操作）</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">page</span><span class="p">;</span><span class="w">      </span><span class="c1">// 当前 slab 页</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">partial</span><span class="p">;</span><span class="w">   </span><span class="c1">// 部分空闲 slab 链表</span>
+<span class="cp">#ifdef CONFIG_SLUB_STATS</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">stat</span><span class="p">[</span><span class="n">NR_SLUB_STAT_ITEMS</span><span class="p">];</span><span class="w">  </span><span class="c1">// 统计信息</span>
+<span class="cp">#endif</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="332-slub">3.3.2 SLUB 分配器优化</h3>
+<p>SLUB 是 Slab 的简化版本，成为现代 Linux 的默认分配器：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// SLUB 分配快速路径（无锁）</span>
+<span class="k">static</span><span class="w"> </span><span class="n">__always_inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">slab_alloc_node</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache</span><span class="w"> </span><span class="o">*</span><span class="n">s</span><span class="p">,</span>
+<span class="w">        </span><span class="n">gfp_t</span><span class="w"> </span><span class="n">gfpflags</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">addr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">object</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache_cpu</span><span class="w"> </span><span class="o">*</span><span class="n">c</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">page</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">tid</span><span class="p">;</span>
+
+<span class="nl">redo</span><span class="p">:</span>
+<span class="w">    </span><span class="c1">// 禁用抢占，获取 Per-CPU 数据</span>
+<span class="w">    </span><span class="n">preempt_disable</span><span class="p">();</span>
+<span class="w">    </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">this_cpu_ptr</span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">cpu_slab</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 事务开始</span>
+<span class="w">    </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">READ_ONCE</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">tid</span><span class="p">);</span>
+<span class="w">    </span><span class="n">barrier</span><span class="p">();</span>
+
+<span class="w">    </span><span class="n">object</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">freelist</span><span class="p">;</span>
+<span class="w">    </span><span class="n">page</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c</span><span class="o">-&gt;</span><span class="n">page</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">object</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="n">node_match</span><span class="p">(</span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 慢速路径：需要新的 slab</span>
+<span class="w">        </span><span class="n">object</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__slab_alloc</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">gfpflags</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">addr</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 快速路径：从 freelist 取对象</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">next_object</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_freepointer</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">object</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// 无锁更新（使用 cmpxchg）</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">this_cpu_cmpxchg_double</span><span class="p">(</span>
+<span class="w">                </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">cpu_slab</span><span class="o">-&gt;</span><span class="n">freelist</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">cpu_slab</span><span class="o">-&gt;</span><span class="n">tid</span><span class="p">,</span>
+<span class="w">                </span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">tid</span><span class="p">,</span>
+<span class="w">                </span><span class="n">next_object</span><span class="p">,</span><span class="w"> </span><span class="n">next_tid</span><span class="p">(</span><span class="n">tid</span><span class="p">))))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">redo</span><span class="p">;</span><span class="w">  </span><span class="c1">// CAS 失败，重试</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="n">stat</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">ALLOC_FASTPATH</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">preempt_enable</span><span class="p">();</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">object</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>SLUB 与 SLAB 的对比：</p>
+<p>| 特性 | SLAB | SLUB | SLOB |</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>SLAB</th>
+<th>SLUB</th>
+<th>SLOB</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>复杂度</td>
+<td>高</td>
+<td>中</td>
+<td>低</td>
+</tr>
+<tr>
+<td>内存开销</td>
+<td>较大</td>
+<td>中等</td>
+<td>最小</td>
+</tr>
+<tr>
+<td>Per-CPU 缓存</td>
+<td>复杂</td>
+<td>简单</td>
+<td>无</td>
+</tr>
+<tr>
+<td>调试支持</td>
+<td>有限</td>
+<td>丰富</td>
+<td>基本</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>大型系统</td>
+<td>通用</td>
+<td>嵌入式</td>
+</tr>
+<tr>
+<td>碎片控制</td>
+<td>最好</td>
+<td>好</td>
+<td>一般</td>
+</tr>
+</tbody>
+</table>
+<h3 id="333-kmalloc">3.3.3 kmalloc 和通用缓存</h3>
+<p>kmalloc 是内核最常用的内存分配接口，基于预定义的通用缓存：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 通用缓存大小（2^n 字节）</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">kmem_cache</span><span class="w"> </span><span class="o">*</span><span class="n">kmalloc_caches</span><span class="p">[</span><span class="n">KMALLOC_SHIFT_HIGH</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">];</span>
+
+<span class="c1">// kmalloc 实现</span>
+<span class="k">static</span><span class="w"> </span><span class="n">__always_inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">kmalloc</span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">gfp_t</span><span class="w"> </span><span class="n">flags</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">__builtin_constant_p</span><span class="p">(</span><span class="n">size</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 编译时常量大小，优化路径</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">KMALLOC_MAX_CACHE_SIZE</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">kmalloc_large</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kmalloc_index</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">kmem_cache_alloc_trace</span><span class="p">(</span><span class="n">kmalloc_caches</span><span class="p">[</span><span class="n">index</span><span class="p">],</span><span class="w"> </span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">__kmalloc</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">flags</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// 大小到索引的映射</span>
+<span class="k">static</span><span class="w"> </span><span class="n">__always_inline</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">kmalloc_index</span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">8</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w">       </span><span class="c1">// kmalloc-8</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">16</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w">      </span><span class="c1">// kmalloc-16</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">32</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span><span class="w">      </span><span class="c1">// kmalloc-32</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">64</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">6</span><span class="p">;</span><span class="w">      </span><span class="c1">// kmalloc-64</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">128</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span><span class="w">     </span><span class="c1">// kmalloc-128</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">256</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span><span class="w">     </span><span class="c1">// kmalloc-256</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">512</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">9</span><span class="p">;</span><span class="w">     </span><span class="c1">// kmalloc-512</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">1024</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w">   </span><span class="c1">// kmalloc-1024</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">2048</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">11</span><span class="p">;</span><span class="w">   </span><span class="c1">// kmalloc-2048</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">4096</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">12</span><span class="p">;</span><span class="w">   </span><span class="c1">// kmalloc-4096</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">8192</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="mi">13</span><span class="p">;</span><span class="w">   </span><span class="c1">// kmalloc-8192</span>
+<span class="w">    </span><span class="c1">// ... 更大的尺寸</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="334-vmalloc">3.3.4 vmalloc 虚拟连续分配</h3>
+<p>vmalloc 分配虚拟地址连续但物理不连续的内存，适合大块分配：</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="nf">vmalloc</span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">__vmalloc_node</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">,</span><span class="w"> </span><span class="n">PAGE_KERNEL</span><span class="p">,</span>
+<span class="w">                         </span><span class="n">NUMA_NO_NODE</span><span class="p">,</span><span class="w"> </span><span class="n">__builtin_return_address</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="nf">__vmalloc_area_node</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">vm_struct</span><span class="w"> </span><span class="o">*</span><span class="n">area</span><span class="p">,</span><span class="w"> </span><span class="n">gfp_t</span><span class="w"> </span><span class="n">gfp_mask</span><span class="p">,</span>
+<span class="w">                                 </span><span class="n">pgprot_t</span><span class="w"> </span><span class="n">prot</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">node</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_vm_area_size</span><span class="p">(</span><span class="n">area</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">addr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">area</span><span class="o">-&gt;</span><span class="n">addr</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">addr</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">size</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nr_pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">PAGE_SHIFT</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">**</span><span class="n">pages</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 分配页面指针数组</span>
+<span class="w">    </span><span class="n">pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kvmalloc_array</span><span class="p">(</span><span class="n">nr_pages</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 分配物理页面</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">nr_pages</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_page</span><span class="p">(</span><span class="n">gfp_mask</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">__GFP_HIGHMEM</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">pages</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+<span class="w">            </span><span class="k">goto</span><span class="w"> </span><span class="n">fail</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 建立页表映射</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">map_vm_area</span><span class="p">(</span><span class="n">area</span><span class="p">,</span><span class="w"> </span><span class="n">prot</span><span class="p">,</span><span class="w"> </span><span class="n">pages</span><span class="p">))</span>
+<span class="w">        </span><span class="k">goto</span><span class="w"> </span><span class="n">fail</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">area</span><span class="o">-&gt;</span><span class="n">addr</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>vmalloc vs kmalloc：</p>
+<div class="codehilite"><pre><span></span><code>kmalloc:
+
+- 物理连续
+- 直接映射区
+- 快速（无需修改页表）
+- 适合小分配（&lt;128KB）
+- DMA 友好
+
+vmalloc:
+
+- 仅虚拟连续
+- vmalloc 区域
+- 较慢（需要修改页表）
+- 适合大分配
+- 可能跨 NUMA 节点
+</code></pre></div>
+
+<h3 id="335-per-cpu">3.3.5 Per-CPU 内存分配</h3>
+<p>Per-CPU 变量避免缓存竞争，提高多核性能：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 静态 Per-CPU 变量</span>
+<span class="n">DEFINE_PER_CPU</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="n">my_counter</span><span class="p">);</span>
+
+<span class="c1">// 动态 Per-CPU 分配</span>
+<span class="kt">void</span><span class="w"> </span><span class="n">__percpu</span><span class="w"> </span><span class="o">*</span><span class="nf">__alloc_percpu</span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">align</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">pcpu_alloc</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">align</span><span class="p">,</span><span class="w"> </span><span class="nb">false</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Per-CPU 内存布局</span>
+<span class="cm">/*</span>
+
+<span class="cm"> * CPU0: [---- unit 0 ----]</span>
+<span class="cm"> * CPU1: [---- unit 1 ----]</span>
+<span class="cm"> * CPU2: [---- unit 2 ----]</span>
+<span class="cm"> * CPU3: [---- unit 3 ----]</span>
+<span class="cm"> * </span>
+<span class="cm"> * 每个 unit 包含相同的变量副本</span>
+<span class="cm"> */</span>
+
+<span class="c1">// 访问 Per-CPU 变量</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_cpu</span><span class="p">();</span><span class="w">  </span><span class="c1">// 禁用抢占</span>
+<span class="n">per_cpu</span><span class="p">(</span><span class="n">my_counter</span><span class="p">,</span><span class="w"> </span><span class="n">cpu</span><span class="p">)</span><span class="o">++</span><span class="p">;</span>
+<span class="n">put_cpu</span><span class="p">();</span><span class="w">  </span><span class="c1">// 恢复抢占</span>
+
+<span class="c1">// 或使用便捷宏</span>
+<span class="n">this_cpu_inc</span><span class="p">(</span><span class="n">my_counter</span><span class="p">);</span><span class="w">  </span><span class="c1">// 原子操作，无需禁用抢占</span>
+</code></pre></div>
+
+<h2 id="34">3.4 内存回收机制</h2>
+<h3 id="341-lru">3.4.1 LRU 算法实现</h3>
+<p>Linux 使用近似 LRU（Least Recently Used）算法管理页面回收：</p>
+<div class="codehilite"><pre><span></span><code>LRU 链表组织：
+
+         活跃链表                    非活跃链表
+    (Active LRU Lists)          (Inactive LRU Lists)
+
+    +-------------+              +-------------+
+    | Active Anon |              |Inactive Anon|
+    | (匿名页面)   |              | (匿名页面)   |
+    +-------------+              +-------------+
+         |                            |
+    频繁访问的                    较少访问的
+    进程内存页                    进程内存页
+
+    +-------------+              +-------------+
+    | Active File |              |Inactive File|
+    | (文件页面)   |              | (文件页面)   |
+    +-------------+              +-------------+
+         |                            |
+    热点文件缓存                  冷文件缓存
+</code></pre></div>
+
+<p>LRU 链表管理结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">lruvec</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">lists</span><span class="p">[</span><span class="n">NR_LRU_LISTS</span><span class="p">];</span><span class="w">  </span><span class="c1">// LRU 链表数组</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">zone_reclaim_stat</span><span class="w"> </span><span class="n">reclaim_stat</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// LRU 链表类型</span>
+<span class="w">    </span><span class="k">enum</span><span class="w"> </span><span class="n">lru_list</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">LRU_INACTIVE_ANON</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LRU_BASE</span><span class="p">,</span><span class="w">      </span><span class="c1">// 非活跃匿名页</span>
+<span class="w">        </span><span class="n">LRU_ACTIVE_ANON</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LRU_BASE</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">LRU_ACTIVE</span><span class="p">,</span><span class="w">    </span><span class="c1">// 活跃匿名页</span>
+<span class="w">        </span><span class="n">LRU_INACTIVE_FILE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LRU_BASE</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">LRU_FILE</span><span class="p">,</span><span class="w">    </span><span class="c1">// 非活跃文件页</span>
+<span class="w">        </span><span class="n">LRU_ACTIVE_FILE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LRU_BASE</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">LRU_FILE</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">LRU_ACTIVE</span><span class="p">,</span><span class="w">  </span><span class="c1">// 活跃文件页</span>
+<span class="w">        </span><span class="n">LRU_UNEVICTABLE</span><span class="p">,</span><span class="w">                    </span><span class="c1">// 不可回收页</span>
+<span class="w">        </span><span class="n">NR_LRU_LISTS</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="n">atomic_long_t</span><span class="w"> </span><span class="n">nr_zone_inactive_anon</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_long_t</span><span class="w"> </span><span class="n">nr_zone_active_anon</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_long_t</span><span class="w"> </span><span class="n">nr_zone_inactive_file</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_long_t</span><span class="w"> </span><span class="n">nr_zone_active_file</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_long_t</span><span class="w"> </span><span class="n">nr_zone_unevictable</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">lru_lock</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// 页面在 LRU 链表间的移动</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">activate_page</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">page</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">PageLRU</span><span class="p">(</span><span class="n">page</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">PageActive</span><span class="p">(</span><span class="n">page</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">PageUnevictable</span><span class="p">(</span><span class="n">page</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">lruvec</span><span class="w"> </span><span class="o">*</span><span class="n">lruvec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mem_cgroup_page_lruvec</span><span class="p">(</span><span class="n">page</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">del_page_from_lru_list</span><span class="p">(</span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="n">lruvec</span><span class="p">,</span><span class="w"> </span><span class="n">page_lru</span><span class="p">(</span><span class="n">page</span><span class="p">));</span>
+<span class="w">        </span><span class="n">SetPageActive</span><span class="p">(</span><span class="n">page</span><span class="p">);</span>
+<span class="w">        </span><span class="n">add_page_to_lru_list</span><span class="p">(</span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="n">lruvec</span><span class="p">,</span><span class="w"> </span><span class="n">page_lru</span><span class="p">(</span><span class="n">page</span><span class="p">));</span>
+
+<span class="w">        </span><span class="n">__count_vm_event</span><span class="p">(</span><span class="n">PGACTIVATE</span><span class="p">);</span>
+<span class="w">        </span><span class="n">update_page_reclaim_stat</span><span class="p">(</span><span class="n">lruvec</span><span class="p">,</span><span class="w"> </span><span class="n">page</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="342">3.4.2 页面回收流程</h3>
+<p>内存压力触发页面回收，kswapd 守护进程负责后台回收：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// kswapd 主循环</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">kswapd</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">pg_data_t</span><span class="w"> </span><span class="o">*</span><span class="n">pgdat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">pg_data_t</span><span class="o">*</span><span class="p">)</span><span class="n">p</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">tsk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">current</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">set_freezable</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="p">;</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">bool</span><span class="w"> </span><span class="n">ret</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 等待内存压力事件</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">try_to_freeze</span><span class="p">();</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">kthread_should_stop</span><span class="p">())</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 检查水位线</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">prepare_kswapd_sleep</span><span class="p">(</span><span class="n">pgdat</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="p">,</span><span class="w"> </span><span class="n">classzone_idx</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// 睡眠等待唤醒</span>
+<span class="w">            </span><span class="n">schedule</span><span class="p">();</span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="c1">// 执行页面回收</span>
+<span class="w">        </span><span class="n">balance_pgdat</span><span class="p">(</span><span class="n">pgdat</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="p">,</span><span class="w"> </span><span class="n">classzone_idx</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 页面回收核心函数</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">shrink_node</span><span class="p">(</span><span class="n">pg_data_t</span><span class="w"> </span><span class="o">*</span><span class="n">pgdat</span><span class="p">,</span>
+<span class="w">                                 </span><span class="k">struct</span><span class="w"> </span><span class="nc">scan_control</span><span class="w"> </span><span class="o">*</span><span class="n">sc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">lruvec</span><span class="w"> </span><span class="o">*</span><span class="n">lruvec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node_lruvec</span><span class="p">(</span><span class="n">pgdat</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nr_reclaimed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 扫描控制参数</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">scan_control</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nr_to_reclaim</span><span class="p">;</span><span class="w">   </span><span class="c1">// 目标回收页数</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nr_scanned</span><span class="p">;</span><span class="w">      </span><span class="c1">// 已扫描页数</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">priority</span><span class="p">;</span><span class="w">         </span><span class="c1">// 扫描优先级（0-12）</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">may_writepage</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">  </span><span class="c1">// 是否可写回脏页</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">may_unmap</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">      </span><span class="c1">// 是否可解除映射</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">may_swap</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span><span class="w">       </span><span class="c1">// 是否可换出</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">hibernation_mode</span><span class="o">:</span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+
+<span class="w">    </span><span class="c1">// 1. 回收文件页缓存</span>
+<span class="w">    </span><span class="n">nr_reclaimed</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">shrink_list</span><span class="p">(</span><span class="n">LRU_INACTIVE_FILE</span><span class="p">,</span><span class="w"> </span><span class="n">nr_to_scan</span><span class="p">,</span>
+<span class="w">                                </span><span class="n">lruvec</span><span class="p">,</span><span class="w"> </span><span class="n">sc</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 2. 回收匿名页（需要 swap）</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">may_swap</span><span class="p">)</span>
+<span class="w">        </span><span class="n">nr_reclaimed</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">shrink_list</span><span class="p">(</span><span class="n">LRU_INACTIVE_ANON</span><span class="p">,</span><span class="w"> </span><span class="n">nr_to_scan</span><span class="p">,</span>
+<span class="w">                                   </span><span class="n">lruvec</span><span class="p">,</span><span class="w"> </span><span class="n">sc</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 3. 回收 slab 缓存</span>
+<span class="w">    </span><span class="n">nr_reclaimed</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">shrink_slab</span><span class="p">(</span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">gfp_mask</span><span class="p">,</span><span class="w"> </span><span class="n">pgdat</span><span class="o">-&gt;</span><span class="n">node_id</span><span class="p">,</span>
+<span class="w">                               </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">priority</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">nr_reclaimed</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>水位线机制：</p>
+<div class="codehilite"><pre><span></span><code>内存水位线（Watermarks）：
+
+页面数 ^
+      |
+      |............... high (开始后台回收)
+      |
+      |............... low  (唤醒 kswapd)
+      |
+      |............... min  (直接回收，可能 OOM)
+      |___________________________
+                                时间 -&gt;
+
+计算公式：
+min = (内存大小 * 比例) / 10000
+low = min + (min / 4)
+high = min + (min / 2)
+</code></pre></div>
+
+<h3 id="343">3.4.3 直接回收与回写</h3>
+<p>当内存分配失败时，进程直接参与页面回收：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 直接回收路径</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">__perform_reclaim</span><span class="p">(</span><span class="n">gfp_t</span><span class="w"> </span><span class="n">gfp_mask</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">order</span><span class="p">,</span>
+<span class="w">                            </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">alloc_context</span><span class="w"> </span><span class="o">*</span><span class="n">ac</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">reclaim_state</span><span class="w"> </span><span class="n">reclaim_state</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">progress</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">noreclaim_flag</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 避免递归回收</span>
+<span class="w">    </span><span class="n">noreclaim_flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memalloc_noreclaim_save</span><span class="p">();</span>
+<span class="w">    </span><span class="n">reclaim_state</span><span class="p">.</span><span class="n">reclaimed_slab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">current</span><span class="o">-&gt;</span><span class="n">reclaim_state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">reclaim_state</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 执行直接回收</span>
+<span class="w">    </span><span class="n">progress</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">try_to_free_pages</span><span class="p">(</span><span class="n">ac</span><span class="o">-&gt;</span><span class="n">zonelist</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="p">,</span><span class="w"> </span><span class="n">gfp_mask</span><span class="p">,</span>
+<span class="w">                                 </span><span class="n">ac</span><span class="o">-&gt;</span><span class="n">nodemask</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">current</span><span class="o">-&gt;</span><span class="n">reclaim_state</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="n">memalloc_noreclaim_restore</span><span class="p">(</span><span class="n">noreclaim_flag</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">progress</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 页面回写机制</span>
+<span class="k">static</span><span class="w"> </span><span class="n">pageout_t</span><span class="w"> </span><span class="nf">pageout</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">address_space</span><span class="w"> </span><span class="o">*</span><span class="n">mapping</span><span class="p">,</span>
+<span class="w">                         </span><span class="k">struct</span><span class="w"> </span><span class="nc">scan_control</span><span class="w"> </span><span class="o">*</span><span class="n">sc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 检查页面是否脏</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">PageDirty</span><span class="p">(</span><span class="n">page</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PAGE_CLEAN</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 检查是否允许写回</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">may_writepage</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PAGE_KEEP</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 正在回写中</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">PageWriteback</span><span class="p">(</span><span class="n">page</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PAGE_KEEP</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 触发异步回写</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">mapping</span><span class="o">-&gt;</span><span class="n">a_ops</span><span class="o">-&gt;</span><span class="n">writepage</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">PAGE_ACTIVATE</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">SetPageReclaim</span><span class="p">(</span><span class="n">page</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">mapping</span><span class="o">-&gt;</span><span class="n">a_ops</span><span class="o">-&gt;</span><span class="n">writepage</span><span class="p">(</span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wbc</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="344-oom-killer">3.4.4 OOM Killer 机制</h3>
+<p>当内存回收无法满足分配需求时，OOM Killer 选择进程终止：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// OOM 评分算法</span>
+<span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">oom_badness</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">p</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                         </span><span class="k">struct</span><span class="w"> </span><span class="nc">mem_cgroup</span><span class="w"> </span><span class="o">*</span><span class="n">memcg</span><span class="p">,</span>
+<span class="w">                         </span><span class="k">const</span><span class="w"> </span><span class="n">nodemask_t</span><span class="w"> </span><span class="o">*</span><span class="n">nodemask</span><span class="p">,</span>
+<span class="w">                         </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">totalpages</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">points</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">adj</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 获取进程内存使用量</span>
+<span class="w">    </span><span class="n">points</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_mm_rss</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">mm</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">get_mm_counter</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">mm</span><span class="p">,</span><span class="w"> </span><span class="n">MM_SWAPENTS</span><span class="p">)</span><span class="w"> </span><span class="o">+</span>
+<span class="w">            </span><span class="n">mm_pgtables_bytes</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">mm</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">PAGE_SIZE</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 考虑 oom_score_adj 调整值</span>
+<span class="w">    </span><span class="n">adj</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">signal</span><span class="o">-&gt;</span><span class="n">oom_score_adj</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">adj</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OOM_SCORE_ADJ_MIN</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// -1000 表示永不杀死</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// 计算最终分数（0-1000）</span>
+<span class="w">    </span><span class="n">adj</span><span class="w"> </span><span class="o">*=</span><span class="w"> </span><span class="n">totalpages</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1000</span><span class="p">;</span>
+<span class="w">    </span><span class="n">points</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">adj</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 特殊进程保护</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">has_capability_noaudit</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">CAP_SYS_ADMIN</span><span class="p">))</span>
+<span class="w">        </span><span class="n">points</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="p">(</span><span class="n">points</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">100</span><span class="p">;</span><span class="w">  </span><span class="c1">// root 进程降低 3%</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">points</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">points</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// OOM Killer 选择受害者</span>
+<span class="k">static</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">select_bad_process</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">oom_control</span><span class="w"> </span><span class="o">*</span><span class="n">oc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">p</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">chosen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">chosen_points</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">for_each_process</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">points</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 跳过不可杀死的进程</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">oom_unkillable_task</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">oc</span><span class="o">-&gt;</span><span class="n">nodemask</span><span class="p">))</span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 计算 badness 分数</span>
+<span class="w">        </span><span class="n">points</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">oom_badness</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">oc</span><span class="o">-&gt;</span><span class="n">nodemask</span><span class="p">,</span><span class="w"> </span><span class="n">oc</span><span class="o">-&gt;</span><span class="n">totalpages</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">points</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">points</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">chosen_points</span><span class="p">)</span>
+<span class="w">            </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">        </span><span class="n">chosen</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">;</span>
+<span class="w">        </span><span class="n">chosen_points</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">points</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">chosen</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 执行 OOM Kill</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">oom_kill_process</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">oom_control</span><span class="w"> </span><span class="o">*</span><span class="n">oc</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">message</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">victim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">oc</span><span class="o">-&gt;</span><span class="n">chosen</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">task_struct</span><span class="w"> </span><span class="o">*</span><span class="n">p</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 打印 OOM 信息</span>
+<span class="w">    </span><span class="n">pr_err</span><span class="p">(</span><span class="s">&quot;%s: Kill process %d (%s) score %ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<span class="w">           </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="n">task_pid_nr</span><span class="p">(</span><span class="n">victim</span><span class="p">),</span><span class="w"> </span><span class="n">victim</span><span class="o">-&gt;</span><span class="n">comm</span><span class="p">,</span>
+<span class="w">           </span><span class="n">oom_badness</span><span class="p">(</span><span class="n">victim</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">oc</span><span class="o">-&gt;</span><span class="n">nodemask</span><span class="p">,</span><span class="w"> </span><span class="n">oc</span><span class="o">-&gt;</span><span class="n">totalpages</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// 发送 SIGKILL</span>
+<span class="w">    </span><span class="n">do_send_sig_info</span><span class="p">(</span><span class="n">SIGKILL</span><span class="p">,</span><span class="w"> </span><span class="n">SEND_SIG_PRIV</span><span class="p">,</span><span class="w"> </span><span class="n">victim</span><span class="p">,</span><span class="w"> </span><span class="n">PIDTYPE_PID</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 标记为 OOM 受害者</span>
+<span class="w">    </span><span class="n">mark_oom_victim</span><span class="p">(</span><span class="n">victim</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// 尝试回收内存</span>
+<span class="w">    </span><span class="n">try_oom_reaper</span><span class="p">(</span><span class="n">victim</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="345">3.4.5 内存压缩与去碎片化</h3>
+<p>内存压缩通过移动页面来创建连续空闲内存：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 内存压缩算法</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">compact_zone</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">zone</span><span class="w"> </span><span class="o">*</span><span class="n">zone</span><span class="p">,</span><span class="w"> </span>
+<span class="w">                                  </span><span class="k">struct</span><span class="w"> </span><span class="nc">compact_control</span><span class="w"> </span><span class="o">*</span><span class="n">cc</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">migrate_pfn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cc</span><span class="o">-&gt;</span><span class="n">migrate_pfn</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">free_pfn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cc</span><span class="o">-&gt;</span><span class="n">free_pfn</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// 扫描可移动页面（从低地址向高地址）</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">migrate_pfn</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">free_pfn</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="c1">// 隔离可移动页面</span>
+<span class="w">        </span><span class="n">nr_isolated</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">isolate_migratepages</span><span class="p">(</span><span class="n">zone</span><span class="p">,</span><span class="w"> </span><span class="n">cc</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">nr_isolated</span><span class="p">)</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// 迁移页面到空闲位置</span>
+<span class="w">        </span><span class="n">migrate_pages</span><span class="p">(</span><span class="o">&amp;</span><span class="n">cc</span><span class="o">-&gt;</span><span class="n">migratepages</span><span class="p">,</span><span class="w"> </span><span class="n">compaction_alloc</span><span class="p">,</span>
+<span class="w">                     </span><span class="n">compaction_free</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">cc</span><span class="p">,</span>
+<span class="w">                     </span><span class="n">cc</span><span class="o">-&gt;</span><span class="n">mode</span><span class="p">,</span><span class="w"> </span><span class="n">MR_COMPACTION</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">COMPACT_COMPLETE</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 页面迁移类型管理</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">set_pageblock_migratetype</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">migratetype</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="n">page_group_by_mobility_disabled</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<span class="w">                </span><span class="n">migratetype</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">MIGRATE_PCPTYPES</span><span class="p">))</span>
+<span class="w">        </span><span class="n">migratetype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MIGRATE_UNMOVABLE</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">set_pageblock_flags_group</span><span class="p">(</span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">)</span><span class="n">migratetype</span><span class="p">,</span>
+<span class="w">                             </span><span class="n">PB_migrate</span><span class="p">,</span><span class="w"> </span><span class="n">PB_migrate_end</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="35">3.5 本章小结</h2>
+<p>Linux 内存管理是一个复杂而精妙的系统，通过多层次的抽象和优化实现了高效的内存利用：</p>
+<h3 id="_2">核心概念回顾</h3>
+<ol>
+<li>
+<p><strong>物理内存管理层次</strong>：
+   - NUMA 节点 → 内存区域（Zone）→ 页框（Page）
+   - 伙伴系统解决外部碎片，支持大块连续分配
+   - struct page 是物理页面管理的核心数据结构</p>
+</li>
+<li>
+<p><strong>虚拟内存机制</strong>：
+   - 多级页表实现虚拟到物理地址映射
+   - VMA 管理进程地址空间的不同区域
+   - TLB 缓存加速地址转换
+   - 缺页异常实现按需分配</p>
+</li>
+<li>
+<p><strong>内存分配器</strong>：
+   - Slab/SLUB：高效的小对象分配，减少内部碎片
+   - kmalloc：通用内核内存分配接口
+   - vmalloc：虚拟连续的大块内存分配
+   - Per-CPU 分配：避免缓存竞争</p>
+</li>
+<li>
+<p><strong>内存回收机制</strong>：
+   - LRU 算法管理页面老化
+   - kswapd 后台回收与直接回收
+   - OOM Killer 作为最后手段
+   - 内存压缩创建连续空闲空间</p>
+</li>
+</ol>
+<h3 id="_3">关键公式</h3>
+<ol>
+<li>
+<p><strong>页表索引计算</strong>：
+   $$\text{PGD_index} = \frac{\text{VA} \gg 39}{512} \bmod 512$$
+   $$\text{物理地址} = \text{PFN} \times 4096 + \text{offset}$$</p>
+</li>
+<li>
+<p><strong>伙伴系统块大小</strong>：
+$$\text{块大小} = 2^{\text{order}} \times \text{PAGE_SIZE}$$</p>
+</li>
+<li>
+<p><strong>OOM 评分</strong>：
+$$\text{score} = \frac{\text{RSS} + \text{Swap}}{\text{Total}} \times 1000 + \text{oom_score_adj}$$</p>
+</li>
+<li>
+<p><strong>水位线计算</strong>：
+$$\text{min} = \frac{\text{zone_pages} \times \text{min_free_kbytes}}{10000}$$
+   $$\text{low} = \text{min} \times 1.25, \quad \text{high} = \text{min} \times 1.5$$</p>
+</li>
+</ol>
+<h2 id="36">3.6 练习题</h2>
+<h3 id="_4">基础理解题</h3>
+<p><strong>题目 1</strong>：解释为什么 Linux 使用多级页表而不是单级页表？计算 48 位虚拟地址空间使用单级页表需要多少内存。</p>
+<details>
+<summary>提示：考虑页表项大小和虚拟地址空间大小</summary>
+<p>计算单级页表的内存需求，并与多级页表的按需分配特性对比。</p>
+</details>
+<details>
+<summary>参考答案</summary>
+<p>单级页表需要为整个虚拟地址空间预分配页表项：</p>
+<ul>
+<li>48位地址空间 = 2^48 字节 = 256TB</li>
+<li>4KB页面 = 2^12 字节</li>
+<li>需要页表项数 = 2^48 / 2^12 = 2^36 个</li>
+<li>每个PTE 8字节，总需求 = 2^36 × 8 = 512GB</li>
+</ul>
+<p>多级页表优势：</p>
+<ol>
+<li>按需分配：只为实际使用的虚拟地址创建页表</li>
+<li>稀疏地址空间高效：大部分进程只使用很小部分地址空间</li>
+<li>共享页表：内核页表可在进程间共享</li>
+<li>缓存友好：活跃页表项集中，提高TLB命中率</li>
+</ol>
+</details>
+<p><strong>题目 2</strong>：伙伴系统中，如果请求分配 5 个页面，系统会如何处理？说明分配过程和内部碎片。</p>
+<details>
+<summary>提示：伙伴系统只能分配 2^n 大小的块</summary>
+<p>考虑向上取整到最近的 2 的幂次，以及产生的内部碎片。</p>
+</details>
+<details>
+<summary>参考答案</summary>
+<p>分配过程：</p>
+<ol>
+<li>5页面向上取整到 2^3 = 8 页面</li>
+<li>查找 order=3 的空闲块</li>
+<li>如果没有，向更高 order 请求并分裂</li>
+<li>返回 8 页面的块给请求者</li>
+</ol>
+<p>内部碎片：</p>
+<ul>
+<li>请求：5 × 4KB = 20KB</li>
+<li>实际分配：8 × 4KB = 32KB</li>
+<li>内部碎片：12KB (37.5%)</li>
+<li>这是伙伴系统简单高效的代价</li>
+</ul>
+</details>
+<h3 id="_5">代码分析题</h3>
+<p><strong>题目 3</strong>：分析以下代码片段，解释它在内存管理中的作用：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">alloc_pages</span><span class="p">(</span><span class="n">gfp_t</span><span class="w"> </span><span class="n">gfp_mask</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">order</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">alloc_pages_current</span><span class="p">(</span><span class="n">gfp_mask</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cp">#define alloc_page(gfp_mask) alloc_pages(gfp_mask, 0)</span>
+<span class="cp">#define __get_free_page(gfp_mask) \</span>
+<span class="cp">    __get_free_pages((gfp_mask), 0)</span>
+</code></pre></div>
+
+<details>
+<summary>提示：注意 order 参数和宏定义的作用</summary>
+<p>这些是页面分配的不同接口，提供不同级别的抽象。</p>
+</details>
+<details>
+<summary>参考答案</summary>
+<p>代码作用：</p>
+<ol>
+<li><code>alloc_pages()</code>: 核心页面分配函数，分配 2^order 个连续页面</li>
+<li><code>alloc_page()</code>: 分配单个页面的便捷宏（order=0）</li>
+<li><code>__get_free_page()</code>: 分配单页并返回虚拟地址而非 struct page</li>
+</ol>
+<p>设计理念：</p>
+<ul>
+<li>提供多层次 API 满足不同需求</li>
+<li>alloc_pages 返回 struct page*，适合需要页面元数据的场景</li>
+<li>__get_free_page 返回地址，适合直接使用内存的场景</li>
+<li>宏定义避免函数调用开销</li>
+</ul>
+</details>
+<p><strong>题目 4</strong>：以下 SLUB 快速路径代码使用了什么优化技术？为什么这样设计？</p>
+<div class="codehilite"><pre><span></span><code><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">this_cpu_cmpxchg_double</span><span class="p">(</span>
+<span class="w">        </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">cpu_slab</span><span class="o">-&gt;</span><span class="n">freelist</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">cpu_slab</span><span class="o">-&gt;</span><span class="n">tid</span><span class="p">,</span>
+<span class="w">        </span><span class="n">object</span><span class="p">,</span><span class="w"> </span><span class="n">tid</span><span class="p">,</span>
+<span class="w">        </span><span class="n">next_object</span><span class="p">,</span><span class="w"> </span><span class="n">next_tid</span><span class="p">(</span><span class="n">tid</span><span class="p">))))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">goto</span><span class="w"> </span><span class="n">redo</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<details>
+<summary>提示：注意 cmpxchg 和 Per-CPU 变量的使用</summary>
+<p>这是无锁编程技术，使用 CAS 操作实现原子更新。</p>
+</details>
+<details>
+<summary>参考答案</summary>
+<p>优化技术：</p>
+<ol>
+<li><strong>无锁算法</strong>：使用 CAS（Compare-And-Swap）避免锁开销</li>
+<li><strong>Per-CPU 缓存</strong>：每个 CPU 独立的 freelist，避免缓存竞争</li>
+<li><strong>事务 ID (tid)</strong>：检测并发修改，确保一致性</li>
+<li><strong>双字 CAS</strong>：原子更新 freelist 和 tid</li>
+</ol>
+<p>设计原因：</p>
+<ul>
+<li>内存分配是高频操作，锁会成为瓶颈</li>
+<li>Per-CPU 设计利用了 CPU 缓存局部性</li>
+<li>失败重试比等待锁更高效（乐观并发）</li>
+<li>适合分配频繁但竞争较少的场景</li>
+</ul>
+</details>
+<h3 id="_6">设计实现题</h3>
+<p><strong>题目 5</strong>：设计一个简化的 Slab 分配器，支持固定大小对象的分配和释放。要求：</p>
+<ul>
+<li>支持对象缓存和重用</li>
+<li>实现简单的 Per-CPU 缓存</li>
+<li>考虑内存对齐</li>
+</ul>
+<details>
+<summary>提示：使用链表管理空闲对象，考虑批量分配优化</summary>
+<p>关键是维护空闲对象链表和 Per-CPU 缓存的同步。</p>
+</details>
+<details>
+<summary>参考答案</summary>
+<p>设计要点：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">simple_slab</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">freelist</span><span class="p">;</span><span class="w">          </span><span class="c1">// 空闲对象链表</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="p">;</span><span class="w">       </span><span class="c1">// 对象大小</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">align</span><span class="p">;</span><span class="w">      </span><span class="c1">// 对齐要求</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">pages</span><span class="p">;</span><span class="w">      </span><span class="c1">// slab 页面</span>
+
+<span class="w">    </span><span class="c1">// Per-CPU 缓存</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">list</span><span class="p">;</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">__percpu</span><span class="w"> </span><span class="o">*</span><span class="n">cpu_cache</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// 分配逻辑：</span>
+
+<span class="mf">1.</span><span class="w"> </span><span class="n">检查</span><span class="w"> </span><span class="n">Per</span><span class="o">-</span><span class="n">CPU</span><span class="w"> </span><span class="n">缓存</span>
+<span class="mf">2.</span><span class="w"> </span><span class="n">如果为空</span><span class="err">，</span><span class="n">从全局</span><span class="w"> </span><span class="n">freelist</span><span class="w"> </span><span class="n">批量获取</span>
+<span class="mf">3.</span><span class="w"> </span><span class="n">如果全局为空</span><span class="err">，</span><span class="n">分配新</span><span class="w"> </span><span class="n">slab</span>
+<span class="mf">4.</span><span class="w"> </span><span class="n">返回对象给调用者</span>
+
+<span class="c1">// 释放逻辑：</span>
+
+<span class="mf">1.</span><span class="w"> </span><span class="n">放入</span><span class="w"> </span><span class="n">Per</span><span class="o">-</span><span class="n">CPU</span><span class="w"> </span><span class="n">缓存</span>
+<span class="mf">2.</span><span class="w"> </span><span class="n">如果缓存满</span><span class="err">，</span><span class="n">批量返回给全局</span><span class="w"> </span><span class="n">freelist</span>
+<span class="mf">3.</span><span class="w"> </span><span class="n">考虑</span><span class="w"> </span><span class="n">slab</span><span class="w"> </span><span class="n">合并和内存回收</span>
+
+<span class="c1">// 关键优化：</span>
+
+<span class="o">-</span><span class="w"> </span><span class="n">批量传输减少锁竞争</span>
+<span class="o">-</span><span class="w"> </span><span class="n">对象构造函数避免重复初始化</span>
+<span class="o">-</span><span class="w"> </span><span class="n">LIFO</span><span class="w"> </span><span class="n">顺序提高缓存热度</span>
+</code></pre></div>
+
+</details>
+<p><strong>题目 6</strong>：实现一个简单的 LRU 页面置换算法，包括页面老化和回收选择。</p>
+<details>
+<summary>提示：使用双向链表维护 LRU 顺序，考虑活跃/非活跃列表</summary>
+<p>重点是页面在列表间的移动策略和回收victim的选择。</p>
+</details>
+<details>
+<summary>参考答案</summary>
+<p>实现框架：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">lru_list</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">active</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">inactive</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nr_active</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">nr_inactive</span><span class="p">;</span>
+<span class="w">    </span><span class="n">spinlock_t</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// 页面访问时：</span>
+
+<span class="mf">1.</span><span class="w"> </span><span class="n">如果在</span><span class="w"> </span><span class="n">inactive</span><span class="w"> </span><span class="n">列表</span><span class="err">，</span><span class="n">移到</span><span class="w"> </span><span class="n">active</span>
+<span class="mf">2.</span><span class="w"> </span><span class="n">如果在</span><span class="w"> </span><span class="n">active</span><span class="w"> </span><span class="n">列表</span><span class="err">，</span><span class="n">移到列表头部</span>
+<span class="mf">3.</span><span class="w"> </span><span class="n">维护</span><span class="w"> </span><span class="n">active</span><span class="o">:</span><span class="n">inactive</span><span class="w"> </span><span class="n">比例</span><span class="err">（</span><span class="n">如</span><span class="w"> </span><span class="mi">2</span><span class="o">:</span><span class="mi">1</span><span class="err">）</span>
+
+<span class="c1">// 页面老化：</span>
+
+<span class="mf">1.</span><span class="w"> </span><span class="n">定期扫描</span><span class="w"> </span><span class="n">active</span><span class="w"> </span><span class="n">列表尾部</span>
+<span class="mf">2.</span><span class="w"> </span><span class="n">检查页面访问位</span><span class="err">（</span><span class="n">PTE</span><span class="w"> </span><span class="n">的</span><span class="w"> </span><span class="n">Accessed</span><span class="w"> </span><span class="n">位</span><span class="err">）</span>
+<span class="mf">3.</span><span class="w"> </span><span class="n">未访问的页面降级到</span><span class="w"> </span><span class="n">inactive</span>
+
+<span class="c1">// 回收选择：</span>
+
+<span class="mf">1.</span><span class="w"> </span><span class="n">优先从</span><span class="w"> </span><span class="n">inactive</span><span class="w"> </span><span class="n">列表尾部选择</span>
+<span class="mf">2.</span><span class="w"> </span><span class="n">跳过脏页</span><span class="err">（</span><span class="n">需要写回</span><span class="err">）</span>
+<span class="mf">3.</span><span class="w"> </span><span class="n">跳过正在使用的页面</span>
+<span class="mf">4.</span><span class="w"> </span><span class="n">批量回收提高效率</span>
+
+<span class="c1">// 优化考虑：</span>
+
+<span class="o">-</span><span class="w"> </span><span class="n">使用时钟算法近似</span><span class="w"> </span><span class="n">LRU</span>
+<span class="o">-</span><span class="w"> </span><span class="n">分离文件页和匿名页</span>
+<span class="o">-</span><span class="w"> </span><span class="n">Per</span><span class="o">-</span><span class="n">zone</span><span class="w"> </span><span class="n">LRU</span><span class="w"> </span><span class="n">减少锁竞争</span>
+</code></pre></div>
+
+</details>
+<h3 id="_7">开放思考题</h3>
+<p><strong>题目 7</strong>：现代 NVMe SSD 的普及如何影响 Linux 内存管理设计？请讨论至少三个方面的影响。</p>
+<details>
+<summary>提示：考虑延迟、带宽、寿命等特性</summary>
+<p>NVMe 的低延迟改变了内存与存储的传统边界。</p>
+</details>
+<details>
+<summary>参考答案</summary>
+<p>影响分析：</p>
+<ol>
+<li>
+<p><strong>交换策略优化</strong>：
+   - NVMe 延迟接近 DRAM（微秒级）
+   - 可以更积极地使用 swap
+   - zswap/zram 压缩交换更有价值
+   - 考虑分层内存（内存+NVMe+HDD）</p>
+</li>
+<li>
+<p><strong>页面回收算法</strong>：
+   - 主要/次要缺页的代价差距缩小
+   - 可以容忍更高的缺页率
+   - 预读算法需要重新调整
+   - 考虑 SSD 寿命的写入均衡</p>
+</li>
+<li>
+<p><strong>持久内存支持</strong>：
+   - DAX（直接访问）绕过页缓存
+   - PMEM 作为内存或存储的双重角色
+   - 新的编程模型（如 Intel Optane）
+   - 崩溃一致性的新挑战</p>
+</li>
+<li>
+<p><strong>I/O 路径优化</strong>：
+   - 减少内核态/用户态切换（io_uring）
+   - 巨页支持减少 TLB 压力
+   - NUMA 感知的设备分配</p>
+</li>
+</ol>
+</details>
+<p><strong>题目 8</strong>：设计一个支持内存 QoS（Quality of Service）的内存管理机制，确保关键应用的内存保障。</p>
+<details>
+<summary>提示：考虑内存预留、优先级和隔离机制</summary>
+<p>参考 cgroups 的内存控制器设计。</p>
+</details>
+<details>
+<summary>参考答案</summary>
+<p>QoS 机制设计：</p>
+<ol>
+<li>
+<p><strong>内存预留机制</strong>：
+   - 最小保障（memory.min）：保护阈值
+   - 软限制（memory.low）：尽力保护
+   - 硬限制（memory.max）：绝对上限
+   - 分层继承：父子 cgroup 约束</p>
+</li>
+<li>
+<p><strong>优先级调度</strong>：
+   - 内存分配优先级队列
+   - 高优先级可抢占低优先级内存
+   - OOM 时按优先级选择受害者
+   - 回收压力按优先级分配</p>
+</li>
+<li>
+<p><strong>性能隔离</strong>：
+   - Per-cgroup LRU 链表
+   - 独立的回收扫描控制
+   - CPU 和内存带宽联合控制
+   - NUMA 节点绑定</p>
+</li>
+<li>
+<p><strong>监控反馈</strong>：
+   - 实时内存压力指标
+   - 分配延迟统计
+   - 缺页率监控
+   - 自适应调整策略</p>
+</li>
+</ol>
+<p>实现考虑：</p>
+<ul>
+<li>避免优先级反转</li>
+<li>防止饿死低优先级</li>
+<li>开销与精度权衡</li>
+<li>与调度器集成</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="o">&lt;/</span><span class="nt">details</span><span class="o">&gt;</span>
+
+<span class="err">##</span><span class="w"> </span><span class="nt">3</span><span class="p">.</span><span class="nc">7</span><span class="w"> </span><span class="nt">常见陷阱与错误</span>
+
+<span class="err">###</span><span class="w"> </span><span class="nt">内存泄漏模式</span>
+
+<span class="nt">1</span><span class="o">.</span><span class="w"> </span><span class="o">**</span><span class="nt">忘记释放内存</span><span class="o">**</span><span class="err">：</span>
+<span class="err">```</span><span class="nt">c</span>
+<span class="o">//</span><span class="w"> </span><span class="nt">错误</span><span class="err">：</span><span class="nt">忘记</span><span class="w"> </span><span class="nt">kfree</span>
+<span class="nt">void</span><span class="w"> </span><span class="o">*</span><span class="nt">buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nt">kmalloc</span><span class="o">(</span><span class="nt">size</span><span class="o">,</span><span class="w"> </span><span class="nt">GFP_KERNEL</span><span class="o">);</span>
+<span class="nt">if</span><span class="w"> </span><span class="o">(!</span><span class="nt">buf</span><span class="o">)</span>
+<span class="w">    </span><span class="nt">return</span><span class="w"> </span><span class="nt">-ENOMEM</span><span class="o">;</span>
+<span class="o">//</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="nt">使用</span><span class="w"> </span><span class="nt">buf</span>
+<span class="nt">return</span><span class="w"> </span><span class="nt">0</span><span class="o">;</span><span class="w">  </span><span class="o">//</span><span class="w"> </span><span class="nt">泄漏</span><span class="err">！</span>
+
+<span class="o">//</span><span class="w"> </span><span class="nt">正确</span><span class="err">：</span><span class="nt">使用</span><span class="w"> </span><span class="nt">goto</span><span class="w"> </span><span class="nt">清理</span>
+<span class="nt">void</span><span class="w"> </span><span class="o">*</span><span class="nt">buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nt">kmalloc</span><span class="o">(</span><span class="nt">size</span><span class="o">,</span><span class="w"> </span><span class="nt">GFP_KERNEL</span><span class="o">);</span>
+<span class="nt">if</span><span class="w"> </span><span class="o">(!</span><span class="nt">buf</span><span class="o">)</span>
+<span class="w">    </span><span class="nt">return</span><span class="w"> </span><span class="nt">-ENOMEM</span><span class="o">;</span>
+<span class="o">//</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="nt">使用</span><span class="w"> </span><span class="nt">buf</span>
+<span class="nt">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nt">do_something</span><span class="o">();</span>
+<span class="nt">if</span><span class="w"> </span><span class="o">(</span><span class="nt">ret</span><span class="o">)</span>
+<span class="w">    </span><span class="nt">goto</span><span class="w"> </span><span class="nt">out_free</span><span class="o">;</span>
+<span class="o">//</span><span class="w"> </span><span class="o">...</span>
+<span class="nt">out_free</span><span class="o">:</span>
+<span class="w">    </span><span class="nt">kfree</span><span class="o">(</span><span class="nt">buf</span><span class="o">);</span>
+<span class="w">    </span><span class="nt">return</span><span class="w"> </span><span class="nt">ret</span><span class="o">;</span>
+</code></pre></div>
+
+<ol start="2">
+<li><strong>重复释放</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：double free</span>
+<span class="n">kfree</span><span class="p">(</span><span class="n">ptr</span><span class="p">);</span>
+<span class="c1">// ... 其他代码</span>
+<span class="n">kfree</span><span class="p">(</span><span class="n">ptr</span><span class="p">);</span><span class="w">  </span><span class="c1">// 崩溃！</span>
+
+<span class="c1">// 正确：释放后置空</span>
+<span class="n">kfree</span><span class="p">(</span><span class="n">ptr</span><span class="p">);</span>
+<span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+</code></pre></div>
+
+<ol start="3">
+<li><strong>释放栈内存</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：释放栈变量</span>
+<span class="kt">char</span><span class="w"> </span><span class="n">buf</span><span class="p">[</span><span class="mi">100</span><span class="p">];</span>
+<span class="n">kfree</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span><span class="w">  </span><span class="c1">// 崩溃！</span>
+
+<span class="c1">// 正确：只释放动态分配的内存</span>
+<span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kmalloc</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span>
+<span class="n">kfree</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="_8">分配标志误用</h3>
+<ol>
+<li><strong>原子上下文使用 GFP_KERNEL</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：中断处理中睡眠</span>
+<span class="n">irqreturn_t</span><span class="w"> </span><span class="nf">my_isr</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">irq</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kmalloc</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span><span class="w">  </span><span class="c1">// 可能睡眠！</span>
+<span class="p">}</span>
+
+<span class="c1">// 正确：使用 GFP_ATOMIC</span>
+<span class="n">irqreturn_t</span><span class="w"> </span><span class="nf">my_isr</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">irq</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kmalloc</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_ATOMIC</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<ol start="2">
+<li><strong>内存回收死锁</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：文件系统回收路径再次分配</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">writepage</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">page</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kmalloc</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_KERNEL</span><span class="p">);</span><span class="w">  </span><span class="c1">// 可能死锁！</span>
+<span class="p">}</span>
+
+<span class="c1">// 正确：使用 GFP_NOFS</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">writepage</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w"> </span><span class="o">*</span><span class="n">page</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">kmalloc</span><span class="p">(</span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_NOFS</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="_9">并发访问错误</h3>
+<ol>
+<li><strong>无保护的页表操作</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：无锁访问页表</span>
+<span class="n">pte_t</span><span class="w"> </span><span class="o">*</span><span class="n">pte</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pte_offset_map</span><span class="p">(</span><span class="n">pmd</span><span class="p">,</span><span class="w"> </span><span class="n">addr</span><span class="p">);</span>
+<span class="o">*</span><span class="n">pte</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_pte</span><span class="p">;</span><span class="w">  </span><span class="c1">// 竞态条件！</span>
+
+<span class="c1">// 正确：持有页表锁</span>
+<span class="n">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mm</span><span class="o">-&gt;</span><span class="n">page_table_lock</span><span class="p">);</span>
+<span class="n">pte_t</span><span class="w"> </span><span class="o">*</span><span class="n">pte</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pte_offset_map</span><span class="p">(</span><span class="n">pmd</span><span class="p">,</span><span class="w"> </span><span class="n">addr</span><span class="p">);</span>
+<span class="o">*</span><span class="n">pte</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_pte</span><span class="p">;</span>
+<span class="n">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mm</span><span class="o">-&gt;</span><span class="n">page_table_lock</span><span class="p">);</span>
+</code></pre></div>
+
+<ol start="2">
+<li><strong>Per-CPU 变量误用</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1">// 错误：未禁用抢占</span>
+<span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">counter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">per_cpu</span><span class="p">(</span><span class="n">my_counter</span><span class="p">,</span><span class="w"> </span><span class="n">smp_processor_id</span><span class="p">());</span>
+<span class="p">(</span><span class="o">*</span><span class="n">counter</span><span class="p">)</span><span class="o">++</span><span class="p">;</span><span class="w">  </span><span class="c1">// 可能被抢占到其他 CPU！</span>
+
+<span class="c1">// 正确：禁用抢占</span>
+<span class="n">preempt_disable</span><span class="p">();</span>
+<span class="n">this_cpu_inc</span><span class="p">(</span><span class="n">my_counter</span><span class="p">);</span>
+<span class="n">preempt_enable</span><span class="p">();</span>
+</code></pre></div>
+
+<h2 id="38">3.8 最佳实践检查清单</h2>
+<h3 id="_10">内存分配决策树</h3>
+<ul>
+<li>[ ] <strong>确定分配大小</strong></li>
+<li>小于 PAGE_SIZE → kmalloc</li>
+<li>大于 128KB → vmalloc</li>
+<li>需要物理连续 → alloc_pages</li>
+<li>
+<p>特定对象类型 → kmem_cache_alloc</p>
+</li>
+<li>
+<p>[ ] <strong>选择正确的 GFP 标志</strong></p>
+</li>
+<li>进程上下文 → GFP_KERNEL</li>
+<li>原子上下文 → GFP_ATOMIC</li>
+<li>文件系统 → GFP_NOFS</li>
+<li>不触发 I/O → GFP_NOIO</li>
+<li>
+<p>用户空间 → GFP_USER</p>
+</li>
+<li>
+<p>[ ] <strong>考虑 NUMA 特性</strong></p>
+</li>
+<li>使用本地节点分配</li>
+<li>设置合适的 NUMA 策略</li>
+<li>
+<p>监控跨节点访问</p>
+</li>
+<li>
+<p>[ ] <strong>实现错误处理</strong></p>
+</li>
+<li>检查分配失败</li>
+<li>提供降级方案</li>
+<li>正确的清理路径</li>
+</ul>
+<h3 id="_11">性能优化要点</h3>
+<ul>
+<li>[ ] <strong>减少分配频率</strong></li>
+<li>对象池和缓存</li>
+<li>批量分配</li>
+<li>
+<p>预分配策略</p>
+</li>
+<li>
+<p>[ ] <strong>优化缓存使用</strong></p>
+</li>
+<li>数据结构对齐</li>
+<li>避免伪共享</li>
+<li>
+<p>Per-CPU 变量</p>
+</li>
+<li>
+<p>[ ] <strong>控制内存碎片</strong></p>
+</li>
+<li>使用合适的分配器</li>
+<li>定期内存压缩</li>
+<li>
+<p>监控碎片指标</p>
+</li>
+<li>
+<p>[ ] <strong>内存回收优化</strong></p>
+</li>
+<li>合理设置水位线</li>
+<li>优化 swappiness</li>
+<li>使用 madvise 提示</li>
+</ul>
+<h3 id="_12">调试与监控</h3>
+<ul>
+<li>[ ] <strong>使用调试工具</strong></li>
+<li>KASAN（地址消毒）</li>
+<li>kmemleak（泄漏检测）</li>
+<li>slub_debug（分配器调试）</li>
+<li>
+<p>ftrace（跟踪分配）</p>
+</li>
+<li>
+<p>[ ] <strong>监控关键指标</strong></p>
+</li>
+<li>/proc/meminfo</li>
+<li>/proc/buddyinfo</li>
+<li>/proc/slabinfo</li>
+<li>
+<p>/proc/pagetypeinfo</p>
+</li>
+<li>
+<p>[ ] <strong>性能分析</strong></p>
+</li>
+<li>perf 内存事件</li>
+<li>缺页率统计</li>
+<li>内存带宽使用</li>
+<li>NUMA 平衡状态</li>
+</ul>
+</details>
+            </article>
+            
+            <nav class="page-nav"><a href="chapter2.html" class="nav-link prev">← 第2章：进程管理与任务调度</a><a href="chapter4.html" class="nav-link next">第4章：进程间通信机制 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

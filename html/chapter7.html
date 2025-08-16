@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="./">
+    <title>第7章：块设备层与I/O调度</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/highlight.css">
+    <script src="assets/script.js" defer></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+                processEscapes: false,
+                packages: {'[+]': ['noerrors', 'ams']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            loader: {
+                load: ['[tex]/noerrors', '[tex]/ams']
+            }
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>目录</h3>
+                <button id="sidebar-toggle" class="sidebar-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <div class="sidebar-search">
+                <input type="text" id="sidebar-search-input" placeholder="搜索..." autocomplete="off">
+            </div>
+            <div id="tree-container">
+                <nav class="tree-nav" role="tree">
+                    <div class="tree-item " >
+                        <a href="index.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Linux 内核源代码深度解析</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter1.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第1章：Linux 内核概述与发展史</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter2.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第2章：进程管理与任务调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter3.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第3章：内存管理架构</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter4.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第4章：进程间通信机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter5.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第5章：虚拟文件系统（VFS）</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter6.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第6章：具体文件系统实现</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item active" >
+                        <a href="chapter7.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第7章：块设备层与I/O调度</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter8.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第8章：设备驱动模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter9.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第9章：网络协议栈</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter10.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第10章：内核同步机制</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter11.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第11章：并发编程模型</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter12.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第12章：容器与命名空间</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter13.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第13章：安全子系统</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter14.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第14章：实时Linux</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter15.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第15章：性能分析与调试</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="chapter16.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">第16章：引导过程与初始化</span>
+                        </a>
+                    </div>
+                
+                    <div class="tree-item " >
+                        <a href="CLAUDE.html" class="tree-link">
+                            <span class="tree-icon">📄</span>
+                            <span class="tree-title">Untitled</span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </nav>
+        
+        <main class="content">
+            <article>
+                <h1 id="7io">第7章：块设备层与I/O调度</h1>
+<h2 id="_1">章节大纲</h2>
+<h3 id="71">7.1 块设备架构</h3>
+<ul>
+<li>7.1.1 块设备层在内核中的位置</li>
+<li>7.1.2 核心数据结构：bio、request、gendisk</li>
+<li>7.1.3 块设备驱动接口</li>
+<li>7.1.4 请求处理流程</li>
+</ul>
+<h3 id="72-io">7.2 I/O调度器演进</h3>
+<ul>
+<li>7.2.1 传统调度器：CFQ、deadline、noop</li>
+<li>7.2.2 多队列调度器：mq-deadline、bfq、kyber</li>
+<li>7.2.3 调度器选择策略</li>
+<li>7.2.4 性能对比与场景适用</li>
+</ul>
+<h3 id="73-blk-mq">7.3 多队列块层（blk-mq）</h3>
+<ul>
+<li>7.3.1 从单队列到多队列的架构变革</li>
+<li>7.3.2 软件队列与硬件队列映射</li>
+<li>7.3.3 请求分发与完成机制</li>
+<li>7.3.4 标签管理与并发控制</li>
+</ul>
+<h3 id="74-device-mapper">7.4 设备映射器（device-mapper）</h3>
+<ul>
+<li>7.4.1 DM架构与目标驱动</li>
+<li>7.4.2 线性映射与条带化</li>
+<li>7.4.3 快照与精简配置</li>
+<li>7.4.4 加密与完整性保护</li>
+</ul>
+<h3 id="75">7.5 性能优化技术</h3>
+<ul>
+<li>7.5.1 I/O合并与请求重排</li>
+<li>7.5.2 预读策略与缓存管理</li>
+<li>7.5.3 写回机制与脏页控制</li>
+<li>7.5.4 I/O统计与性能监控</li>
+</ul>
+<h3 id="76">7.6 本章小结</h3>
+<h3 id="77">7.7 练习题</h3>
+<h3 id="78">7.8 常见陷阱与错误</h3>
+<h3 id="79">7.9 最佳实践检查清单</h3>
+<hr />
+<h2 id="_2">开篇导读</h2>
+<p>块设备层是Linux内核中连接文件系统与物理存储设备的关键桥梁。从早期的简单请求队列到现代的多队列架构，块设备层经历了多次重大变革，每一次都是为了适应存储技术的发展——从机械硬盘到SSD，再到NVMe设备。本章将深入剖析块设备层的架构设计、I/O调度算法、以及如何针对不同存储介质进行性能优化。</p>
+<h2 id="_3">学习目标</h2>
+<p>完成本章学习后，您将能够：</p>
+<ol>
+<li><strong>理解块设备层架构</strong>：掌握bio、request、gendisk等核心数据结构及其相互关系</li>
+<li><strong>分析I/O调度算法</strong>：对比不同调度器的设计理念和适用场景</li>
+<li><strong>掌握blk-mq机制</strong>：理解多队列架构如何充分发挥现代存储设备性能</li>
+<li><strong>运用device-mapper</strong>：实现逻辑卷管理、快照、加密等高级存储功能</li>
+<li><strong>优化存储性能</strong>：通过I/O合并、预读、写回等技术提升系统吞吐量</li>
+</ol>
+<hr />
+<h2 id="71_1">7.1 块设备架构</h2>
+<h3 id="711">7.1.1 块设备层在内核中的位置</h3>
+<p>块设备层位于VFS和实际块设备驱动之间，提供了统一的块I/O处理框架：</p>
+<div class="codehilite"><pre><span></span><code>    用户空间
+        |
+    系统调用 (read/write/mmap)
+        |
+    ┌─────┐
+    │ VFS │ (虚拟文件系统)
+    └──┬──┘
+       │
+    ┌──┴────────┐
+    │ Page Cache│ (页缓存)
+    └──┬────────┘
+       │
+    ┌──┴──────┐
+    │ 文件系统 │ (ext4/xfs/btrfs...)
+    └──┬──────┘
+       │ submit_bio()
+    ┌──┴────────────┐
+    │  块设备层(Block Layer)  │
+    │ ┌──────────┐ │
+    │ │ bio 层   │ │ (块I/O层)
+    │ └──┬───────┘ │
+    │    │make_request
+    │ ┌──┴───────┐ │
+    │ │ 请求队列  │ │ (request queue)
+    │ └──┬───────┘ │
+    │    │         │
+    │ ┌──┴───────┐ │
+    │ │I/O调度器 │ │ (elevator)
+    │ └──┬───────┘ │
+    └────┴──────────┘
+         │
+    ┌────┴──────┐
+    │ 块设备驱动 │ (scsi/nvme/virtio-blk...)
+    └────┬──────┘
+         │
+    ┌────┴──────┐
+    │ 硬件设备  │ (HDD/SSD/NVMe...)
+    └───────────┘
+</code></pre></div>
+
+<h3 id="712">7.1.2 核心数据结构</h3>
+<h4 id="bioblock-io">bio（Block I/O）</h4>
+<p>bio是块I/O操作的基本单位，描述了一次I/O操作的所有信息：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w">        </span><span class="o">*</span><span class="n">bi_next</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 请求链表中的下一个bio */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w">    </span><span class="o">*</span><span class="n">bi_disk</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 目标磁盘 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">      </span><span class="n">bi_opf</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 操作标志(REQ_OP_*) */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">    </span><span class="n">bi_flags</span><span class="p">;</span><span class="w">      </span><span class="cm">/* bio标志 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">    </span><span class="n">bi_ioprio</span><span class="p">;</span><span class="w">     </span><span class="cm">/* I/O优先级 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bvec_iter</span><span class="w">  </span><span class="n">bi_iter</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 当前迭代器位置 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">      </span><span class="n">bi_size</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 剩余I/O字节数 */</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">    </span><span class="n">bi_vcnt</span><span class="p">;</span><span class="w">       </span><span class="cm">/* bio_vec数量 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">short</span><span class="w">    </span><span class="n">bi_max_vecs</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 最大bio_vec数量 */</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w">          </span><span class="n">bi_cnt</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 引用计数 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_vec</span><span class="w">    </span><span class="o">*</span><span class="n">bi_io_vec</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 实际的vec列表 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_set</span><span class="w">    </span><span class="o">*</span><span class="n">bi_pool</span><span class="p">;</span><span class="w">      </span><span class="cm">/* bio内存池 */</span>
+
+<span class="w">    </span><span class="cm">/* 回调和私有数据 */</span>
+<span class="w">    </span><span class="n">bio_end_io_t</span><span class="w">      </span><span class="o">*</span><span class="n">bi_end_io</span><span class="p">;</span><span class="w">    </span><span class="cm">/* I/O完成回调 */</span>
+<span class="w">    </span><span class="kt">void</span><span class="w">              </span><span class="o">*</span><span class="n">bi_private</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 私有数据 */</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">bio_vec</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">page</span><span class="w">     </span><span class="o">*</span><span class="n">bv_page</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 物理页 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">    </span><span class="n">bv_len</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 数据长度 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">    </span><span class="n">bv_offset</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 页内偏移 */</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>bio的关键特性：</p>
+<ul>
+<li><strong>散列聚集支持</strong>：通过bio_vec数组支持非连续内存</li>
+<li><strong>链式结构</strong>：多个bio可以链接描述大块I/O</li>
+<li><strong>零拷贝</strong>：直接引用用户空间页面，避免数据复制</li>
+</ul>
+<h4 id="requestio">request（I/O请求）</h4>
+<p>request是经过合并优化后的I/O请求单位：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">q</span><span class="p">;</span><span class="w">         </span><span class="cm">/* 所属请求队列 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_ctx</span><span class="w">    </span><span class="o">*</span><span class="n">mq_ctx</span><span class="p">;</span><span class="w">    </span><span class="cm">/* blk-mq上下文 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_hw_ctx</span><span class="w"> </span><span class="o">*</span><span class="n">mq_hctx</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 硬件队列上下文 */</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cmd_flags</span><span class="p">;</span><span class="w">          </span><span class="cm">/* 命令标志 */</span>
+<span class="w">    </span><span class="n">req_flags_t</span><span class="w">  </span><span class="n">rq_flags</span><span class="p">;</span><span class="w">           </span><span class="cm">/* 请求标志 */</span>
+
+<span class="w">    </span><span class="n">sector_t</span><span class="w">     </span><span class="n">__sector</span><span class="p">;</span><span class="w">           </span><span class="cm">/* 起始扇区 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">__data_len</span><span class="p">;</span><span class="w">         </span><span class="cm">/* 数据长度 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w">   </span><span class="o">*</span><span class="n">bio</span><span class="p">;</span><span class="w">               </span><span class="cm">/* bio链表头 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w">   </span><span class="o">*</span><span class="n">biotail</span><span class="p">;</span><span class="w">           </span><span class="cm">/* bio链表尾 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">queuelist</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 队列链表 */</span>
+
+<span class="w">    </span><span class="cm">/* 用于I/O统计 */</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">start_time_ns</span><span class="p">;</span><span class="w">              </span><span class="cm">/* 开始时间 */</span>
+<span class="w">    </span><span class="n">u64</span><span class="w"> </span><span class="n">io_start_time_ns</span><span class="p">;</span><span class="w">           </span><span class="cm">/* I/O开始时间 */</span>
+
+<span class="w">    </span><span class="cm">/* 用于超时处理 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">timeout</span><span class="p">;</span><span class="w">            </span><span class="cm">/* 超时时间 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">timer_list</span><span class="w"> </span><span class="n">timeout_timer</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 超时定时器 */</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h4 id="gendisk">gendisk（通用磁盘）</h4>
+<p>gendisk代表一个块设备：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">major</span><span class="p">;</span><span class="w">                      </span><span class="cm">/* 主设备号 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">first_minor</span><span class="p">;</span><span class="w">                </span><span class="cm">/* 起始次设备号 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">minors</span><span class="p">;</span><span class="w">                     </span><span class="cm">/* 次设备号数量 */</span>
+
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">disk_name</span><span class="p">[</span><span class="n">DISK_NAME_LEN</span><span class="p">];</span><span class="w"> </span><span class="cm">/* 磁盘名称(如sda) */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">queue</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 请求队列 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="n">part0</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 整个磁盘的块设备 */</span>
+
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device_operations</span><span class="w"> </span><span class="o">*</span><span class="n">fops</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 块设备操作 */</span>
+
+<span class="w">    </span><span class="cm">/* 分区信息 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">disk_part_tbl</span><span class="w"> </span><span class="n">__rcu</span><span class="w"> </span><span class="o">*</span><span class="n">part_tbl</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 分区表 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">hd_struct</span><span class="w"> </span><span class="n">part0</span><span class="p">;</span><span class="w">                </span><span class="cm">/* 整盘分区 */</span>
+
+<span class="w">    </span><span class="cm">/* 容量信息 */</span>
+<span class="w">    </span><span class="n">sector_t</span><span class="w"> </span><span class="n">capacity</span><span class="p">;</span><span class="w">              </span><span class="cm">/* 磁盘容量(扇区) */</span>
+
+<span class="w">    </span><span class="cm">/* 统计信息 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">disk_stats</span><span class="w"> </span><span class="n">__percpu</span><span class="w"> </span><span class="o">*</span><span class="n">dkstats</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 磁盘统计 */</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="713">7.1.3 块设备驱动接口</h3>
+<p>块设备驱动需要实现block_device_operations接口：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">block_device_operations</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">open</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">release</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">ioctl</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">compat_ioctl</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">fmode_t</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">direct_access</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">sector_t</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">**</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">media_changed</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">revalidate_disk</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">getgeo</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">hd_geometry</span><span class="w"> </span><span class="o">*</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">swap_slot_free_notify</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">block_device</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">module</span><span class="w"> </span><span class="o">*</span><span class="n">owner</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="714">7.1.4 请求处理流程</h3>
+<p>完整的I/O请求处理流程：</p>
+<ol>
+<li><strong>bio提交阶段</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">文件系统</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">submit_bio</span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">generic_make_request</span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">请求队列</span>
+</code></pre></div>
+
+<ol start="2">
+<li><strong>请求合并阶段</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">bio</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">电梯算法合并</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">request</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">插入调度队列</span>
+</code></pre></div>
+
+<ol start="3">
+<li><strong>请求派发阶段</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">调度器</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">blk_mq_dispatch_rq_list</span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">驱动程序</span>
+</code></pre></div>
+
+<ol start="4">
+<li><strong>完成处理阶段</strong>：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="n">中断处理</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">blk_mq_complete_request</span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">bio_endio</span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">唤醒等待进程</span>
+</code></pre></div>
+
+<hr />
+<h2 id="72-io_1">7.2 I/O调度器演进</h2>
+<p>I/O调度器负责对块设备请求进行重排序和合并，以提高磁盘访问效率。Linux内核提供了多种调度算法，适应不同的存储设备和工作负载。</p>
+<h3 id="721">7.2.1 传统调度器</h3>
+<h4 id="cfqcompletely-fair-queuing">CFQ（Completely Fair Queuing）</h4>
+<p>CFQ是Linux长期的默认调度器，为每个进程维护独立的I/O队列：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">cfq_data</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">queue</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 服务树(红黑树)按优先级组织 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cfq_rb_root</span><span class="w"> </span><span class="n">service_trees</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">3</span><span class="p">];</span><span class="w">  </span><span class="cm">/* sync/async, 3个优先级 */</span>
+
+<span class="w">    </span><span class="cm">/* 空闲和忙碌队列 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">idle_list</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">busy_list</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 时间片和配额 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cfq_quantum</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 队列时间片 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cfq_slice</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w">       </span><span class="cm">/* sync/async时间片 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cfq_slice_idle</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 空闲等待时间 */</span>
+
+<span class="w">    </span><span class="cm">/* 统计信息 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">busy_queues</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">cfq_io_context</span><span class="w"> </span><span class="o">*</span><span class="n">active_cic</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>CFQ的核心算法：</p>
+<ul>
+<li><strong>进程公平性</strong>：每个进程获得公平的I/O带宽份额</li>
+<li><strong>同步优先</strong>：同步I/O优先于异步I/O</li>
+<li><strong>时间片轮转</strong>：类似CPU调度的时间片机制</li>
+<li><strong>预期思考时间</strong>：为顺序读预留等待时间</li>
+</ul>
+<h4 id="deadline">Deadline调度器</h4>
+<p>Deadline调度器通过截止时间保证I/O延迟上界：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">deadline_data</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* 请求队列：读写分离，按扇区排序 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rb_root</span><span class="w"> </span><span class="n">sort_list</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w">     </span><span class="cm">/* 读/写红黑树 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">fifo_list</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w">   </span><span class="cm">/* FIFO队列 */</span>
+
+<span class="w">    </span><span class="cm">/* 当前批处理 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">*</span><span class="n">next_rq</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w">      </span><span class="cm">/* 下一个请求 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">batching</span><span class="p">;</span><span class="w">            </span><span class="cm">/* 批处理计数 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">starved</span><span class="p">;</span><span class="w">             </span><span class="cm">/* 饥饿计数 */</span>
+
+<span class="w">    </span><span class="cm">/* 调度参数 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">fifo_expire</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w">              </span><span class="cm">/* 读500ms,写5000ms */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">fifo_batch</span><span class="p">;</span><span class="w">                  </span><span class="cm">/* 批大小16 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">writes_starved</span><span class="p">;</span><span class="w">              </span><span class="cm">/* 写饥饿阈值2 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">front_merges</span><span class="p">;</span><span class="w">                </span><span class="cm">/* 前向合并开关 */</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>Deadline特点：</p>
+<ul>
+<li><strong>双队列机制</strong>：排序队列(红黑树) + FIFO队列</li>
+<li><strong>截止时间保证</strong>：读请求500ms，写请求5s</li>
+<li><strong>防止饥饿</strong>：通过starved计数防止写请求饥饿</li>
+<li><strong>批处理优化</strong>：连续处理多个相邻请求</li>
+</ul>
+<h4 id="noop">NOOP调度器</h4>
+<p>最简单的调度器，仅做基本的请求合并：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">noop_data</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">queue</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 简单FIFO队列 */</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>适用场景：</p>
+<ul>
+<li>SSD等随机访问性能好的设备</li>
+<li>虚拟机中的虚拟磁盘</li>
+<li>需要上层自行控制I/O顺序的场景</li>
+</ul>
+<h3 id="722">7.2.2 多队列调度器</h3>
+<p>随着NVMe等高性能存储设备的普及，传统单队列调度器成为瓶颈。Linux引入了基于blk-mq的新一代调度器。</p>
+<h4 id="mq-deadline">mq-deadline</h4>
+<p>多队列版本的deadline调度器：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">mq_deadline_data</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* per-hardware queue */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">deadline_data</span><span class="w"> </span><span class="o">**</span><span class="n">hq_data</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 全局统计 */</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">dispatched</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+
+<span class="w">    </span><span class="cm">/* 每CPU统计避免缓存行竞争 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mq_deadline_cpu_stats</span><span class="w"> </span><span class="n">__percpu</span><span class="w"> </span><span class="o">*</span><span class="n">stats</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h4 id="bfqbudget-fair-queueing">BFQ（Budget Fair Queueing）</h4>
+<p>BFQ是专为交互式和软实时应用优化的调度器：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">bfq_data</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* 服务树 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">bfq_group</span><span class="w"> </span><span class="o">*</span><span class="n">root_group</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 权重树 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rb_root</span><span class="w"> </span><span class="n">queue_weights_tree</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rb_root</span><span class="w"> </span><span class="n">group_weights_tree</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 预算和时间片 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">bfq_max_budget</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">bfq_timeout</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 交互性检测 */</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">strict_guarantees</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">low_latency</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>BFQ特性：</p>
+<ul>
+<li><strong>预算公平</strong>：基于预算而非时间的公平性</li>
+<li><strong>低延迟保证</strong>：为交互式应用提供响应性保证</li>
+<li><strong>cgroup支持</strong>：与cgroup v2深度集成</li>
+</ul>
+<h4 id="kyber">Kyber</h4>
+<p>Kyber是为快速NVMe设备设计的轻量级调度器：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">kyber_data</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="cm">/* 令牌桶 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kyber_token_bucket</span><span class="w"> </span><span class="n">tb</span><span class="p">[</span><span class="n">KYBER_NUM_DOMAINS</span><span class="p">];</span>
+
+<span class="w">    </span><span class="cm">/* 延迟目标 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">read_lat_nsec</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 2ms */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">write_lat_nsec</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 10ms */</span>
+
+<span class="w">    </span><span class="cm">/* 自适应调整 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">timer_list</span><span class="w"> </span><span class="n">timer</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">samples</span><span class="p">[</span><span class="n">KYBER_NUM_DOMAINS</span><span class="p">];</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>Kyber使用令牌桶算法控制I/O延迟：</p>
+<ul>
+<li><strong>延迟目标</strong>：读2ms，写10ms</li>
+<li><strong>动态调整</strong>：根据实际延迟调整令牌发放速率</li>
+<li><strong>极简设计</strong>：适合高速设备的低开销调度</li>
+</ul>
+<h3 id="723">7.2.3 调度器选择策略</h3>
+<p>不同存储设备和工作负载的最佳调度器选择：</p>
+<p>| 存储类型 | 工作负载 | 推荐调度器 | 理由 |</p>
+<table>
+<thead>
+<tr>
+<th>存储类型</th>
+<th>工作负载</th>
+<th>推荐调度器</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HDD</td>
+<td>服务器混合负载</td>
+<td>mq-deadline</td>
+<td>平衡吞吐量和延迟</td>
+</tr>
+<tr>
+<td>HDD</td>
+<td>桌面应用</td>
+<td>bfq</td>
+<td>优秀的交互性</td>
+</tr>
+<tr>
+<td>SATA SSD</td>
+<td>通用负载</td>
+<td>mq-deadline</td>
+<td>稳定可靠</td>
+</tr>
+<tr>
+<td>NVMe SSD</td>
+<td>高性能服务器</td>
+<td>none/kyber</td>
+<td>最小开销</td>
+</tr>
+<tr>
+<td>虚拟磁盘</td>
+<td>虚拟机</td>
+<td>none</td>
+<td>避免重复调度</td>
+</tr>
+</tbody>
+</table>
+<p>运行时切换调度器：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 查看当前调度器</span>
+cat<span class="w"> </span>/sys/block/sda/queue/scheduler
+
+<span class="c1"># 切换调度器</span>
+<span class="nb">echo</span><span class="w"> </span>mq-deadline<span class="w"> </span>&gt;<span class="w"> </span>/sys/block/sda/queue/scheduler
+</code></pre></div>
+
+<h3 id="724">7.2.4 性能对比与场景适用</h3>
+<p>关键性能指标对比（相对值）：</p>
+<p>| 调度器 | 顺序吞吐量 | 随机IOPS | 平均延迟 | CPU开销 | 公平性 |</p>
+<table>
+<thead>
+<tr>
+<th>调度器</th>
+<th>顺序吞吐量</th>
+<th>随机IOPS</th>
+<th>平均延迟</th>
+<th>CPU开销</th>
+<th>公平性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>noop</td>
+<td>中</td>
+<td>高</td>
+<td>低</td>
+<td>极低</td>
+<td>差</td>
+</tr>
+<tr>
+<td>deadline</td>
+<td>高</td>
+<td>中</td>
+<td>可控</td>
+<td>低</td>
+<td>中</td>
+</tr>
+<tr>
+<td>cfq</td>
+<td>中</td>
+<td>低</td>
+<td>中</td>
+<td>高</td>
+<td>优秀</td>
+</tr>
+<tr>
+<td>mq-deadline</td>
+<td>高</td>
+<td>高</td>
+<td>可控</td>
+<td>低</td>
+<td>中</td>
+</tr>
+<tr>
+<td>bfq</td>
+<td>中</td>
+<td>中</td>
+<td>极低</td>
+<td>较高</td>
+<td>优秀</td>
+</tr>
+<tr>
+<td>kyber</td>
+<td>高</td>
+<td>极高</td>
+<td>可控</td>
+<td>极低</td>
+<td>中</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="73-blk-mq_1">7.3 多队列块层（blk-mq）</h2>
+<h3 id="731">7.3.1 从单队列到多队列的架构变革</h3>
+<p>传统单队列架构的瓶颈：</p>
+<div class="codehilite"><pre><span></span><code>    所有CPU
+        ↓
+    [全局锁]
+        ↓
+   单一请求队列
+        ↓
+    I/O调度器
+        ↓
+     设备驱动
+</code></pre></div>
+
+<p>多队列架构的革新：</p>
+<div class="codehilite"><pre><span></span><code>  CPU0    CPU1    CPU2    CPU3
+    ↓       ↓       ↓       ↓
+  SWQ0    SWQ1    SWQ2    SWQ3  (软件队列)
+    ↓       ↓       ↓       ↓
+    └───────┴───────┴───────┘
+              ↓
+         [映射算法]
+              ↓
+    ┌─────────────────────┐
+    │  HWQ0    HWQ1       │     (硬件队列)
+    └──┬────────┬─────────┘
+       ↓        ↓
+    [标签0]  [标签1]            (标签管理)
+       ↓        ↓
+    ┌──────────────┐
+    │   NVMe设备   │
+    └──────────────┘
+</code></pre></div>
+
+<h3 id="732">7.3.2 软件队列与硬件队列映射</h3>
+<p>blk-mq的核心数据结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_hw_ctx</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">spinlock_t</span><span class="w">      </span><span class="n">lock</span><span class="p">;</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">dispatch</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 派发队列 */</span>
+<span class="w">        </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w">    </span><span class="n">state</span><span class="p">;</span><span class="w">         </span><span class="cm">/* 队列状态 */</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">____cacheline_aligned_in_smp</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">delayed_work</span><span class="w"> </span><span class="n">run_work</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 异步运行 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">delayed_work</span><span class="w"> </span><span class="n">delay_work</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 延迟处理 */</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w">       </span><span class="n">flags</span><span class="p">;</span><span class="w">         </span><span class="cm">/* BLK_MQ_F_* */</span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w">               </span><span class="o">*</span><span class="n">driver_data</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 驱动私有数据 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sbitmap</span><span class="w">      </span><span class="n">ctx_map</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 软件队列位图 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_ctx</span><span class="w">  </span><span class="o">**</span><span class="n">ctxs</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 软件队列数组 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">nr_ctx</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 软件队列数量 */</span>
+
+<span class="w">    </span><span class="n">atomic_t</span><span class="w">            </span><span class="n">wait_index</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 等待索引 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_tags</span><span class="w"> </span><span class="o">*</span><span class="n">tags</span><span class="p">;</span><span class="w">          </span><span class="cm">/* 标签集 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_tags</span><span class="w"> </span><span class="o">*</span><span class="n">sched_tags</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 调度器标签 */</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w">       </span><span class="n">queued</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 排队请求数 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w">       </span><span class="n">run</span><span class="p">;</span><span class="w">           </span><span class="cm">/* 运行次数 */</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">numa_node</span><span class="p">;</span><span class="w">     </span><span class="cm">/* NUMA节点 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">queue_num</span><span class="p">;</span><span class="w">     </span><span class="cm">/* 队列编号 */</span>
+<span class="p">};</span>
+
+<span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_ctx</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">spinlock_t</span><span class="w">      </span><span class="n">lock</span><span class="p">;</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">rq_list</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 请求列表 */</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">____cacheline_aligned_in_smp</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">cpu</span><span class="p">;</span><span class="w">           </span><span class="cm">/* 所属CPU */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">        </span><span class="n">index_hw</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 硬件队列索引 */</span>
+
+<span class="w">    </span><span class="cm">/* 统计信息 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_ctxs</span><span class="w">  </span><span class="o">*</span><span class="n">ctxs</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">kobject</span><span class="w">      </span><span class="n">kobj</span><span class="p">;</span>
+<span class="p">}</span><span class="w"> </span><span class="n">____cacheline_aligned_in_smp</span><span class="p">;</span>
+</code></pre></div>
+
+<p>CPU到硬件队列的映射算法：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 默认映射：轮询分配 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">blk_mq_map_queues</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_tag_set</span><span class="w"> </span><span class="o">*</span><span class="n">set</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="o">*</span><span class="n">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">set</span><span class="o">-&gt;</span><span class="n">mq_map</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nr_queues</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">set</span><span class="o">-&gt;</span><span class="n">nr_hw_queues</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cpu</span><span class="p">,</span><span class="w"> </span><span class="n">queue</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">for_each_possible_cpu</span><span class="p">(</span><span class="n">cpu</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">map</span><span class="p">[</span><span class="n">cpu</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">queue</span><span class="p">;</span>
+<span class="w">        </span><span class="n">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">queue</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">nr_queues</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* NUMA感知映射 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">blk_mq_map_queues_numa</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_tag_set</span><span class="w"> </span><span class="o">*</span><span class="n">set</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">cpumask</span><span class="w"> </span><span class="o">*</span><span class="n">mask</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">queue</span><span class="p">,</span><span class="w"> </span><span class="n">cpu</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">queue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="n">for_each_node_mask</span><span class="p">(</span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">node_possible_map</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cpumask_of_node</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<span class="w">        </span><span class="n">for_each_cpu</span><span class="p">(</span><span class="n">cpu</span><span class="p">,</span><span class="w"> </span><span class="n">mask</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">set</span><span class="o">-&gt;</span><span class="n">mq_map</span><span class="p">[</span><span class="n">cpu</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">queue</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">set</span><span class="o">-&gt;</span><span class="n">nr_hw_queues</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="n">queue</span><span class="o">++</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="733">7.3.3 请求分发与完成机制</h3>
+<p>请求分发流程：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 1. bio提交到软件队列 */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">blk_mq_make_request</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_ctx</span><span class="w"> </span><span class="o">*</span><span class="n">ctx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blk_mq_get_ctx</span><span class="p">(</span><span class="n">q</span><span class="p">);</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">*</span><span class="n">rq</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 分配请求 */</span>
+<span class="w">    </span><span class="n">rq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blk_mq_get_request</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 初始化请求 */</span>
+<span class="w">    </span><span class="n">blk_mq_bio_to_request</span><span class="p">(</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 插入软件队列 */</span>
+<span class="w">    </span><span class="n">blk_mq_insert_request</span><span class="p">(</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">ctx</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 触发运行 */</span>
+<span class="w">    </span><span class="n">blk_mq_run_hw_queue</span><span class="p">(</span><span class="n">hctx</span><span class="p">,</span><span class="w"> </span><span class="n">async</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/* 2. 从软件队列派发到硬件队列 */</span>
+<span class="kt">bool</span><span class="w"> </span><span class="nf">blk_mq_dispatch_rq_list</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_hw_ctx</span><span class="w"> </span><span class="o">*</span><span class="n">hctx</span><span class="p">,</span>
+<span class="w">                             </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="o">*</span><span class="n">list</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">*</span><span class="n">rq</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">errors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">list_empty</span><span class="p">(</span><span class="n">list</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">rq</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">list_first_entry</span><span class="p">(</span><span class="n">list</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="p">,</span><span class="w"> </span><span class="n">queuelist</span><span class="p">);</span>
+<span class="w">        </span><span class="n">list_del_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">queuelist</span><span class="p">);</span>
+
+<span class="w">        </span><span class="cm">/* 调用驱动的queue_rq */</span>
+<span class="w">        </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">q</span><span class="o">-&gt;</span><span class="n">mq_ops</span><span class="o">-&gt;</span><span class="n">queue_rq</span><span class="p">(</span><span class="n">hctx</span><span class="p">,</span><span class="w"> </span><span class="n">rq</span><span class="p">);</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">BLK_STS_OK</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">queued</span><span class="o">++</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ret</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">BLK_STS_RESOURCE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="cm">/* 资源不足，重新入队 */</span>
+<span class="w">            </span><span class="n">blk_mq_requeue_request</span><span class="p">(</span><span class="n">rq</span><span class="p">);</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">queued</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>请求完成处理：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 中断上下文的完成处理 */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">blk_mq_complete_request</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">*</span><span class="n">rq</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_ctx</span><span class="w"> </span><span class="o">*</span><span class="n">ctx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">mq_ctx</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 标记完成 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">blk_mark_rq_complete</span><span class="p">(</span><span class="n">rq</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 本地CPU处理 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">cpu</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">smp_processor_id</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">__blk_mq_complete_request</span><span class="p">(</span><span class="n">rq</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* IPI到目标CPU */</span>
+<span class="w">        </span><span class="n">blk_mq_trigger_softirq</span><span class="p">(</span><span class="n">rq</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="cm">/* 软中断中的处理 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">__blk_mq_complete_request</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">*</span><span class="n">rq</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">q</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 更新统计 */</span>
+<span class="w">    </span><span class="n">blk_account_io_completion</span><span class="p">(</span><span class="n">rq</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 调用完成回调 */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">end_io</span><span class="p">)</span>
+<span class="w">        </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">end_io</span><span class="p">(</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">error</span><span class="p">);</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">        </span><span class="n">blk_mq_free_request</span><span class="p">(</span><span class="n">rq</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="734">7.3.4 标签管理与并发控制</h3>
+<p>标签管理确保请求数量受控：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_tags</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nr_tags</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 标签总数 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nr_reserved</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 保留标签数 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sbitmap_queue</span><span class="w"> </span><span class="n">bitmap_tags</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 普通标签位图 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sbitmap_queue</span><span class="w"> </span><span class="n">breserved_tags</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 保留标签位图 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">**</span><span class="n">rqs</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 请求数组 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">page_list</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 内存页列表 */</span>
+<span class="p">};</span>
+
+<span class="cm">/* 标签分配 */</span>
+<span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">blk_mq_get_tag</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_alloc_data</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_tags</span><span class="w"> </span><span class="o">*</span><span class="n">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data</span><span class="o">-&gt;</span><span class="n">tags</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sbitmap_queue</span><span class="w"> </span><span class="o">*</span><span class="n">bt</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tag</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 选择位图：普通或保留 */</span>
+<span class="w">    </span><span class="n">bt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tags</span><span class="o">-&gt;</span><span class="n">bitmap_tags</span><span class="p">;</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">data</span><span class="o">-&gt;</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">BLK_MQ_REQ_RESERVED</span><span class="p">)</span>
+<span class="w">        </span><span class="n">bt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">tags</span><span class="o">-&gt;</span><span class="n">breserved_tags</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 从位图分配 */</span>
+<span class="w">    </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__sbitmap_queue_get</span><span class="p">(</span><span class="n">bt</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tag</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">-1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="p">(</span><span class="n">data</span><span class="o">-&gt;</span><span class="n">flags</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">BLK_MQ_REQ_NOWAIT</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* 等待标签释放 */</span>
+<span class="w">        </span><span class="n">blk_mq_wait_for_tag</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<span class="w">        </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__sbitmap_queue_get</span><span class="p">(</span><span class="n">bt</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">tag</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>标签等待和唤醒机制：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 等待标签 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">blk_mq_wait_for_tag</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_alloc_data</span><span class="w"> </span><span class="o">*</span><span class="n">data</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">sbq_wait_state</span><span class="w"> </span><span class="o">*</span><span class="n">ws</span><span class="p">;</span>
+<span class="w">    </span><span class="n">DEFINE_WAIT</span><span class="p">(</span><span class="n">wait</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">ws</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bt_wait_ptr</span><span class="p">(</span><span class="n">bt</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="o">-&gt;</span><span class="n">hctx</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">do</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">prepare_to_wait</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ws</span><span class="o">-&gt;</span><span class="n">wait</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait</span><span class="p">,</span><span class="w"> </span><span class="n">TASK_UNINTERRUPTIBLE</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">tag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__sbitmap_queue_get</span><span class="p">(</span><span class="n">bt</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tag</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">-1</span><span class="p">)</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">        </span><span class="n">io_schedule</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">finish_wait</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ws</span><span class="o">-&gt;</span><span class="n">wait</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">wait</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">tag</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* 释放标签并唤醒等待者 */</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">blk_mq_put_tag</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_hw_ctx</span><span class="w"> </span><span class="o">*</span><span class="n">hctx</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tag</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">blk_mq_tags</span><span class="w"> </span><span class="o">*</span><span class="n">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hctx</span><span class="o">-&gt;</span><span class="n">tags</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">sbitmap_queue_clear</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tags</span><span class="o">-&gt;</span><span class="n">bitmap_tags</span><span class="p">,</span><span class="w"> </span><span class="n">tag</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 唤醒等待者 */</span>
+<span class="w">    </span><span class="n">sbitmap_queue_wake_up</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tags</span><span class="o">-&gt;</span><span class="n">bitmap_tags</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<hr />
+<h2 id="74-device-mapper_1">7.4 设备映射器（Device Mapper）</h2>
+<p>Device Mapper是Linux内核中的一个通用框架，用于创建虚拟块设备。它为LVM2、软件RAID、加密等提供底层支持。</p>
+<h3 id="741-dm">7.4.1 DM架构与目标驱动</h3>
+<p>DM的三层架构：</p>
+<div class="codehilite"><pre><span></span><code>    用户空间工具 (lvm2, cryptsetup, dmsetup)
+            ↓ ioctl
+    ┌─────────────────────────┐
+    │    Device Mapper Core    │
+    │  (映射表管理，I/O路由)    │
+    └───────────┬─────────────┘
+                ↓
+    ┌───────────────────────────────┐
+    │       Target Drivers          │
+    │  (linear, striped, mirror,    │
+    │   snapshot, crypt, thin...)   │
+    └───────────┬───────────────────┘
+                ↓
+    ┌───────────────────────────────┐
+    │     Underlying Devices        │
+    │   (物理磁盘、分区、其他DM设备)  │
+    └───────────────────────────────┘
+</code></pre></div>
+
+<p>核心数据结构：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 映射设备 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">mapped_device</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rw_semaphore</span><span class="w"> </span><span class="n">io_lock</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mutex</span><span class="w"> </span><span class="n">suspend_lock</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">queue</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">gendisk</span><span class="w"> </span><span class="o">*</span><span class="n">disk</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">holders</span><span class="p">;</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">open_count</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_table</span><span class="w"> </span><span class="o">*</span><span class="n">map</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* I/O统计 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_stats</span><span class="w"> </span><span class="n">stats</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 事件处理 */</span>
+<span class="w">    </span><span class="n">atomic_t</span><span class="w"> </span><span class="n">event_nr</span><span class="p">;</span>
+<span class="w">    </span><span class="n">wait_queue_head_t</span><span class="w"> </span><span class="n">eventq</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 工作队列 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">workqueue_struct</span><span class="w"> </span><span class="o">*</span><span class="n">wq</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* 映射表 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">dm_table</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">mapped_device</span><span class="w"> </span><span class="o">*</span><span class="n">md</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">type</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 目标设备数组 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">num_targets</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">targets</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 设备限制 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">queue_limits</span><span class="w"> </span><span class="n">limits</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 底层设备列表 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">devices</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* 目标驱动 */</span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">target_type</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">name</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">module</span><span class="w"> </span><span class="o">*</span><span class="n">module</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">version</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+
+<span class="w">    </span><span class="cm">/* 构造和析构 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">ctr</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">dtr</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* I/O处理 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">map</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">end_io</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">error</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 管理操作 */</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">preresume</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">resume</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">presuspend</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">postsuspend</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">);</span>
+
+<span class="w">    </span><span class="cm">/* 状态查询 */</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">status</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="n">status_type_t</span><span class="w"> </span><span class="n">type</span><span class="p">,</span>
+<span class="w">                   </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">maxlen</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">list</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<h3 id="742">7.4.2 线性映射与条带化</h3>
+<h4 id="dm-linear">线性映射（dm-linear）</h4>
+<p>最简单的目标类型，将虚拟设备的连续区域映射到物理设备：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">linear_c</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_dev</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">;</span>
+<span class="w">    </span><span class="n">sector_t</span><span class="w"> </span><span class="n">start</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 物理设备起始扇区 */</span>
+<span class="p">};</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">linear_map</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">linear_c</span><span class="w"> </span><span class="o">*</span><span class="n">lc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ti</span><span class="o">-&gt;</span><span class="n">private</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 重定向到底层设备 */</span>
+<span class="w">    </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_bdev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lc</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">bdev</span><span class="p">;</span>
+<span class="w">    </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_sector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lc</span><span class="o">-&gt;</span><span class="n">start</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">dm_target_offset</span><span class="p">(</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_REMAPPED</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>使用示例：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 创建线性映射：将/dev/sdb1和/dev/sdc1连接</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;0 1000000 linear /dev/sdb1 0&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>dmsetup<span class="w"> </span>create<span class="w"> </span>linear1
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;1000000 1000000 linear /dev/sdc1 0&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>dmsetup<span class="w"> </span>create<span class="w"> </span>linear2
+</code></pre></div>
+
+<h4 id="dm-stripe">条带化（dm-stripe）</h4>
+<p>将I/O分散到多个设备以提高并行性：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">stripe_c</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">stripes</span><span class="p">;</span><span class="w">        </span><span class="cm">/* 条带数量 */</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">stripe_width</span><span class="p">;</span><span class="w">   </span><span class="cm">/* 条带宽度(扇区) */</span>
+
+<span class="w">    </span><span class="cm">/* 条带数组 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">stripe</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_dev</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">;</span>
+<span class="w">        </span><span class="n">sector_t</span><span class="w"> </span><span class="n">physical_start</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="n">stripe</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="p">};</span>
+
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">stripe_map</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">stripe_c</span><span class="w"> </span><span class="o">*</span><span class="n">sc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ti</span><span class="o">-&gt;</span><span class="n">private</span><span class="p">;</span>
+<span class="w">    </span><span class="n">sector_t</span><span class="w"> </span><span class="n">sector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_sector</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">stripe</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 计算条带索引 */</span>
+<span class="w">    </span><span class="n">stripe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sector_div</span><span class="p">(</span><span class="n">sector</span><span class="p">,</span><span class="w"> </span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">stripe_width</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">stripes</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 重定向到对应条带 */</span>
+<span class="w">    </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_bdev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">stripe</span><span class="p">[</span><span class="n">stripe</span><span class="p">].</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">bdev</span><span class="p">;</span>
+<span class="w">    </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_sector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">stripe</span><span class="p">[</span><span class="n">stripe</span><span class="p">].</span><span class="n">physical_start</span><span class="w"> </span><span class="o">+</span>
+<span class="w">                             </span><span class="p">(</span><span class="n">sector</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">stripe_width</span><span class="p">)</span><span class="w"> </span><span class="o">+</span>
+<span class="w">                             </span><span class="p">(</span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_sector</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">sc</span><span class="o">-&gt;</span><span class="n">stripe_width</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_REMAPPED</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="743">7.4.3 快照与精简配置</h3>
+<h4 id="dm-snapshot">快照（dm-snapshot）</h4>
+<p>实现时间点快照功能：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">dm_snapshot</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">rw_semaphore</span><span class="w"> </span><span class="n">lock</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_dev</span><span class="w"> </span><span class="o">*</span><span class="n">origin</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 原始设备 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_dev</span><span class="w"> </span><span class="o">*</span><span class="n">cow</span><span class="p">;</span><span class="w">       </span><span class="cm">/* COW设备 */</span>
+
+<span class="w">    </span><span class="cm">/* 异常存储 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_exception_store</span><span class="w"> </span><span class="o">*</span><span class="n">store</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 异常哈希表 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">exception_table</span><span class="w"> </span><span class="n">complete</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">exception_table</span><span class="w"> </span><span class="n">pending</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 块大小 */</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">chunk_size</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">chunk_shift</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 位图跟踪 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="o">*</span><span class="n">tracked_chunk_bitset</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* COW处理 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">snapshot_map</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_snapshot</span><span class="w"> </span><span class="o">*</span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ti</span><span class="o">-&gt;</span><span class="n">private</span><span class="p">;</span>
+<span class="w">    </span><span class="n">chunk_t</span><span class="w"> </span><span class="n">chunk</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">chunk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_sector</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">chunk_shift</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 查找异常映射 */</span>
+<span class="w">    </span><span class="n">e</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dm_lookup_exception</span><span class="p">(</span><span class="o">&amp;</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">complete</span><span class="p">,</span><span class="w"> </span><span class="n">chunk</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* 已复制，重定向到COW设备 */</span>
+<span class="w">        </span><span class="n">remap_exception</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">,</span><span class="w"> </span><span class="n">chunk</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_REMAPPED</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 首次写入，触发COW */</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">bio_data_dir</span><span class="p">(</span><span class="n">bio</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">WRITE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">pe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">__lookup_pending_exception</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">chunk</span><span class="p">);</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">pe</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="cm">/* 创建挂起异常 */</span>
+<span class="w">            </span><span class="n">pe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alloc_pending_exception</span><span class="p">(</span><span class="n">s</span><span class="p">);</span>
+<span class="w">            </span><span class="n">start_copy</span><span class="p">(</span><span class="n">pe</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="n">bio_list_add</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pe</span><span class="o">-&gt;</span><span class="n">origin_bios</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_SUBMITTED</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="cm">/* 读操作，直接访问原始设备 */</span>
+<span class="w">    </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_bdev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">origin</span><span class="o">-&gt;</span><span class="n">bdev</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_REMAPPED</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="dm-thin">精简配置（dm-thin）</h4>
+<p>实现存储过度分配和高效快照：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">thin_c</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_pool_metadata</span><span class="w"> </span><span class="o">*</span><span class="n">pmd</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 元数据 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_bio_prison</span><span class="w"> </span><span class="o">*</span><span class="n">prison</span><span class="p">;</span><span class="w">    </span><span class="cm">/* bio监狱 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">pool</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio_list</span><span class="w"> </span><span class="n">deferred_bios</span><span class="p">;</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">workqueue_struct</span><span class="w"> </span><span class="o">*</span><span class="n">wq</span><span class="p">;</span>
+
+<span class="w">        </span><span class="cm">/* 数据块分配 */</span>
+<span class="w">        </span><span class="n">dm_block_t</span><span class="w"> </span><span class="n">offset_mask</span><span class="p">;</span>
+<span class="w">        </span><span class="n">dm_block_t</span><span class="w"> </span><span class="n">low_water_blocks</span><span class="p">;</span>
+
+<span class="w">        </span><span class="cm">/* 精简设备列表 */</span>
+<span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">active_thins</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="o">*</span><span class="n">pool</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">dm_thin_id</span><span class="w"> </span><span class="n">dev_id</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_thin_device</span><span class="w"> </span><span class="o">*</span><span class="n">td</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* 精简映射 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">thin_map</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">thin_c</span><span class="w"> </span><span class="o">*</span><span class="n">tc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ti</span><span class="o">-&gt;</span><span class="n">private</span><span class="p">;</span>
+<span class="w">    </span><span class="n">dm_block_t</span><span class="w"> </span><span class="n">block</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_sector</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">tc</span><span class="o">-&gt;</span><span class="n">pool</span><span class="o">-&gt;</span><span class="n">block_shift</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_thin_lookup_result</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 查找映射 */</span>
+<span class="w">    </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dm_thin_find_block</span><span class="p">(</span><span class="n">tc</span><span class="o">-&gt;</span><span class="n">td</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">result</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* 块已分配 */</span>
+<span class="w">        </span><span class="n">remap_to_pool</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">block</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_REMAPPED</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">-</span><span class="n">ENODATA</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* 块未分配 */</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">bio_data_dir</span><span class="p">(</span><span class="n">bio</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">READ</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="cm">/* 读零 */</span>
+<span class="w">            </span><span class="n">zero_fill_bio</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+<span class="w">            </span><span class="n">bio_endio</span><span class="p">(</span><span class="n">bio</span><span class="p">);</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_SUBMITTED</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="cm">/* 写时分配 */</span>
+<span class="w">        </span><span class="n">schedule_zero_fill_copy</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_SUBMITTED</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_KILL</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="744">7.4.4 加密与完整性保护</h3>
+<h4 id="dm-crypt">dm-crypt</h4>
+<p>提供透明的块设备加密：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">crypt_config</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_dev</span><span class="w"> </span><span class="o">*</span><span class="n">dev</span><span class="p">;</span>
+<span class="w">    </span><span class="n">sector_t</span><span class="w"> </span><span class="n">start</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 加密参数 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">crypto_skcipher</span><span class="w"> </span><span class="o">*</span><span class="n">tfm</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">cipher_string</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="n">key_size</span><span class="p">;</span>
+<span class="w">    </span><span class="n">u8</span><span class="w"> </span><span class="o">*</span><span class="n">key</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* IV生成 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">iv_operations</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">ctr</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">crypt_config</span><span class="w"> </span><span class="o">*</span><span class="n">cc</span><span class="p">);</span>
+<span class="w">        </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">dtr</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">crypt_config</span><span class="w"> </span><span class="o">*</span><span class="n">cc</span><span class="p">);</span>
+<span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">generator</span><span class="p">)(</span><span class="k">struct</span><span class="w"> </span><span class="nc">crypt_config</span><span class="w"> </span><span class="o">*</span><span class="n">cc</span><span class="p">,</span><span class="w"> </span><span class="n">u8</span><span class="w"> </span><span class="o">*</span><span class="n">iv</span><span class="p">,</span>
+<span class="w">                        </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_crypt_request</span><span class="w"> </span><span class="o">*</span><span class="n">dmreq</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="o">*</span><span class="n">iv_gen_ops</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 工作队列 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">workqueue_struct</span><span class="w"> </span><span class="o">*</span><span class="n">queue</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">workqueue_struct</span><span class="w"> </span><span class="o">*</span><span class="n">crypt_queue</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 内存池 */</span>
+<span class="w">    </span><span class="n">mempool_t</span><span class="w"> </span><span class="o">*</span><span class="n">req_pool</span><span class="p">;</span>
+<span class="w">    </span><span class="n">mempool_t</span><span class="w"> </span><span class="o">*</span><span class="n">page_pool</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* 加密I/O处理 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="nf">crypt_map</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_target</span><span class="w"> </span><span class="o">*</span><span class="n">ti</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">crypt_config</span><span class="w"> </span><span class="o">*</span><span class="n">cc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ti</span><span class="o">-&gt;</span><span class="n">private</span><span class="p">;</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">dm_crypt_io</span><span class="w"> </span><span class="o">*</span><span class="n">io</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 分配加密I/O上下文 */</span>
+<span class="w">    </span><span class="n">io</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mempool_alloc</span><span class="p">(</span><span class="n">cc</span><span class="o">-&gt;</span><span class="n">io_pool</span><span class="p">,</span><span class="w"> </span><span class="n">GFP_NOIO</span><span class="p">);</span>
+<span class="w">    </span><span class="n">io</span><span class="o">-&gt;</span><span class="n">cc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cc</span><span class="p">;</span>
+<span class="w">    </span><span class="n">io</span><span class="o">-&gt;</span><span class="n">base_bio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="p">;</span>
+<span class="w">    </span><span class="n">io</span><span class="o">-&gt;</span><span class="n">sector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_sector</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">bio_data_dir</span><span class="p">(</span><span class="n">bio</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">READ</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* 读：先读取加密数据，后解密 */</span>
+<span class="w">        </span><span class="n">kcryptd_queue_read</span><span class="p">(</span><span class="n">io</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="cm">/* 写：先加密，后写入 */</span>
+<span class="w">        </span><span class="n">kcryptd_queue_crypt</span><span class="p">(</span><span class="n">io</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">DM_MAPIO_SUBMITTED</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>使用示例：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 创建加密设备</span>
+cryptsetup<span class="w"> </span>luksFormat<span class="w"> </span>/dev/sdb1
+cryptsetup<span class="w"> </span>open<span class="w"> </span>/dev/sdb1<span class="w"> </span>encrypted
+mkfs.ext4<span class="w"> </span>/dev/mapper/encrypted
+</code></pre></div>
+
+<hr />
+<h2 id="75_1">7.5 性能优化技术</h2>
+<h3 id="751-io">7.5.1 I/O合并与请求重排</h3>
+<p>请求合并减少设备访问次数：</p>
+<div class="codehilite"><pre><span></span><code><span class="cm">/* 前向合并：新bio合并到已有request前面 */</span>
+<span class="kt">bool</span><span class="w"> </span><span class="nf">blk_attempt_front_merge</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">q</span><span class="p">,</span>
+<span class="w">                             </span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">*</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">blk_rq_merge_ok</span><span class="p">(</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ll_front_merge_fn</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 更新request */</span>
+<span class="w">    </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">__sector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_sector</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">__data_len</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_size</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 链接bio */</span>
+<span class="w">    </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">bio</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">bio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* 后向合并：新bio合并到已有request后面 */</span>
+<span class="kt">bool</span><span class="w"> </span><span class="nf">blk_attempt_back_merge</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">request_queue</span><span class="w"> </span><span class="o">*</span><span class="n">q</span><span class="p">,</span>
+<span class="w">                            </span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">*</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">blk_rq_merge_ok</span><span class="p">(</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ll_back_merge_fn</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="w"> </span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="n">bio</span><span class="p">))</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 更新request */</span>
+<span class="w">    </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">__data_len</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_size</span><span class="p">;</span>
+
+<span class="w">    </span><span class="cm">/* 链接bio */</span>
+<span class="w">    </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">biotail</span><span class="o">-&gt;</span><span class="n">bi_next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">biotail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="752">7.5.2 预读策略与缓存管理</h3>
+<p>预读机制提高顺序读性能：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">file_ra_state</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">pgoff_t</span><span class="w"> </span><span class="n">start</span><span class="p">;</span><span class="w">          </span><span class="cm">/* 预读窗口起始 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 当前窗口大小 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">async_size</span><span class="p">;</span><span class="cm">/* 异步预读大小 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">ra_pages</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 最大预读页数 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">mmap_miss</span><span class="p">;</span><span class="w"> </span><span class="cm">/* mmap缓存未命中计数 */</span>
+<span class="w">    </span><span class="n">loff_t</span><span class="w"> </span><span class="n">prev_pos</span><span class="p">;</span><span class="w">       </span><span class="cm">/* 上次读取位置 */</span>
+<span class="p">};</span>
+
+<span class="cm">/* 预读算法 */</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">get_next_ra_size</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">file_ra_state</span><span class="w"> </span><span class="o">*</span><span class="n">ra</span><span class="p">,</span>
+<span class="w">                                      </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">max</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">cur</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ra</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">newsize</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cur</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">16</span><span class="p">)</span>
+<span class="w">        </span><span class="n">newsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cur</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 快速增长 */</span>
+<span class="w">    </span><span class="k">else</span>
+<span class="w">        </span><span class="n">newsize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">cur</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 线性增长 */</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">min</span><span class="p">(</span><span class="n">newsize</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h3 id="753">7.5.3 写回机制与脏页控制</h3>
+<p>脏页写回的触发条件：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">bdi_writeback</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">backing_dev_info</span><span class="w"> </span><span class="o">*</span><span class="n">bdi</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">state</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">last_old_flush</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">b_dirty</span><span class="p">;</span><span class="w">      </span><span class="cm">/* 脏inode列表 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">b_io</span><span class="p">;</span><span class="w">         </span><span class="cm">/* 正在写回列表 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">b_more_io</span><span class="p">;</span><span class="w">    </span><span class="cm">/* 需要更多I/O列表 */</span>
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">list_head</span><span class="w"> </span><span class="n">b_dirty_time</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 只有时间戳变化 */</span>
+
+<span class="w">    </span><span class="k">struct</span><span class="w"> </span><span class="nc">percpu_counter</span><span class="w"> </span><span class="n">stat</span><span class="p">[</span><span class="n">NR_WB_STAT_ITEMS</span><span class="p">];</span>
+<span class="p">};</span>
+
+<span class="cm">/* 写回控制参数 */</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">dirty_background_ratio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w">  </span><span class="cm">/* 后台写回阈值10% */</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">dirty_ratio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20</span><span class="p">;</span><span class="w">             </span><span class="cm">/* 前台写回阈值20% */</span>
+<span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">dirty_expire_interval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">30</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">HZ</span><span class="p">;</span><span class="w"> </span><span class="cm">/* 30秒过期 */</span>
+</code></pre></div>
+
+<h3 id="754-io">7.5.4 I/O统计与性能监控</h3>
+<p>块设备统计信息：</p>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">disk_stats</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">sectors</span><span class="p">[</span><span class="n">NR_STAT_GROUPS</span><span class="p">];</span><span class="w">  </span><span class="cm">/* 读写扇区数 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">ios</span><span class="p">[</span><span class="n">NR_STAT_GROUPS</span><span class="p">];</span><span class="w">      </span><span class="cm">/* I/O次数 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">merges</span><span class="p">[</span><span class="n">NR_STAT_GROUPS</span><span class="p">];</span><span class="w">   </span><span class="cm">/* 合并次数 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">ticks</span><span class="p">[</span><span class="n">NR_STAT_GROUPS</span><span class="p">];</span><span class="w">    </span><span class="cm">/* I/O时间 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">io_ticks</span><span class="p">;</span><span class="w">                 </span><span class="cm">/* 总I/O时间 */</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">time_in_queue</span><span class="p">;</span><span class="w">            </span><span class="cm">/* 队列时间 */</span>
+<span class="p">};</span>
+</code></pre></div>
+
+<p>通过/proc/diskstats监控：</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 字段说明：</span>
+<span class="c1"># 1-3: 主次设备号和设备名</span>
+<span class="c1"># 4: 读完成次数</span>
+<span class="c1"># 5: 合并读次数</span>
+<span class="c1"># 6: 读扇区数</span>
+<span class="c1"># 7: 读耗时(ms)</span>
+<span class="c1"># 8-11: 写相关统计</span>
+<span class="c1"># 12: 正在进行的I/O</span>
+<span class="c1"># 13: I/O耗时</span>
+<span class="c1"># 14: 加权I/O耗时</span>
+
+cat<span class="w"> </span>/proc/diskstats
+</code></pre></div>
+
+<hr />
+<h2 id="76_1">7.6 本章小结</h2>
+<p>本章深入探讨了Linux块设备层的设计与实现，主要内容包括：</p>
+<h3 id="_4">核心概念回顾</h3>
+<ol>
+<li>
+<p><strong>块设备架构</strong>：
+   - bio作为基本I/O单位，支持散列聚集
+   - request经过合并优化，减少设备访问
+   - gendisk抽象物理设备，提供统一接口</p>
+</li>
+<li>
+<p><strong>I/O调度演进</strong>：
+   - 传统调度器(CFQ/Deadline)适合机械硬盘
+   - 多队列调度器(mq-deadline/bfq/kyber)为SSD优化
+   - 不同工作负载需要选择合适的调度策略</p>
+</li>
+<li>
+<p><strong>blk-mq革新</strong>：
+   - 软件队列与硬件队列分离，减少锁竞争
+   - 标签管理控制并发度
+   - NUMA感知的队列映射提升性能</p>
+</li>
+<li>
+<p><strong>Device Mapper灵活性</strong>：
+   - 目标驱动架构支持多种虚拟设备
+   - 快照和精简配置实现高级存储功能
+   - 透明加密保护数据安全</p>
+</li>
+</ol>
+<h3 id="_5">关键性能优化</h3>
+<ul>
+<li><strong>I/O合并</strong>：$合并率 = \frac{合并请求数}{总请求数} \times 100\%$</li>
+<li><strong>预读效率</strong>：$命中率 = \frac{预读命中页数}{总预读页数} \times 100\%$</li>
+<li><strong>队列深度</strong>：$平均队列深度 = \frac{\sum 队列长度 \times 时间}{总时间}$</li>
+<li><strong>延迟分析</strong>：$总延迟 = 队列延迟 + 服务延迟$</li>
+</ul>
+<h3 id="_6">发展趋势</h3>
+<ol>
+<li><strong>新硬件支持</strong>：ZNS SSD、持久内存、CXL存储</li>
+<li><strong>智能调度</strong>：机器学习驱动的I/O预测</li>
+<li><strong>容器优化</strong>：cgroup v2的I/O隔离增强</li>
+<li><strong>可编程存储</strong>：eBPF在块层的应用</li>
+</ol>
+<hr />
+<h2 id="77_1">7.7 练习题</h2>
+<h3 id="_7">基础题</h3>
+<ol>
+<li><strong>bio与request的关系</strong>
+分析以下代码片段，解释bio如何转换为request：</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">blk_mq_bio_to_request</span><span class="p">(</span><span class="k">struct</span><span class="w"> </span><span class="nc">request</span><span class="w"> </span><span class="o">*</span><span class="n">rq</span><span class="p">,</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">bio</span><span class="w"> </span><span class="o">*</span><span class="n">bio</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">__sector</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_sector</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">__data_len</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="o">-&gt;</span><span class="n">bi_iter</span><span class="p">.</span><span class="n">bi_size</span><span class="p">;</span>
+<span class="w">    </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">bio</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rq</span><span class="o">-&gt;</span><span class="n">biotail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bio</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<details>
+<summary>提示</summary>
+<p>考虑bio链表结构和request的聚合特性</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>bio是基本I/O单位，request是优化后的请求单位。转换过程：</p>
+<ol>
+<li>单个或多个bio可以组成一个request</li>
+<li>request记录起始扇区和总数据长度</li>
+<li>bio通过链表连接，biotail指向最后一个bio</li>
+<li>相邻的bio可以合并到同一个request中</li>
+</ol>
+</details>
+<ol start="2">
+<li><strong>I/O调度器选择</strong>
+某服务器运行PostgreSQL数据库，存储设备是SATA SSD，应该选择哪种I/O调度器？说明理由。</li>
+</ol>
+<details>
+<summary>提示</summary>
+<p>考虑数据库的I/O特征：随机读写多、延迟敏感</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>推荐使用mq-deadline调度器：</p>
+<ol>
+<li>数据库以随机I/O为主，CFQ的顺序优化效果有限</li>
+<li>mq-deadline保证延迟上界，适合事务处理</li>
+<li>比none调度器提供更好的公平性</li>
+<li>相比bfq开销更小，适合服务器环境</li>
+</ol>
+</details>
+<ol start="3">
+<li><strong>blk-mq队列映射</strong>
+系统有8个CPU，NVMe设备支持4个硬件队列，描述默认的CPU到硬件队列映射。</li>
+</ol>
+<details>
+<summary>提示</summary>
+<p>轮询分配算法：CPU % 硬件队列数</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>默认轮询映射：</p>
+<ul>
+<li>CPU 0, 4 → HWQ 0</li>
+<li>CPU 1, 5 → HWQ 1  </li>
+<li>CPU 2, 6 → HWQ 2</li>
+<li>CPU 3, 7 → HWQ 3</li>
+</ul>
+<p>每个硬件队列服务2个CPU，保证负载均衡。</p>
+</details>
+<h3 id="_8">挑战题</h3>
+<ol start="4">
+<li><strong>设计I/O合并算法</strong>
+设计一个改进的I/O合并算法，同时考虑：</li>
+</ol>
+<ul>
+<li>空间局部性（相邻扇区）</li>
+<li>时间局部性（请求时间接近）</li>
+<li>公平性（防止某些进程饥饿）</li>
+</ul>
+<details>
+<summary>提示</summary>
+<p>可以使用时间窗口和距离阈值的组合策略</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>改进的合并算法设计：</p>
+<ol>
+<li>
+<p><strong>双重阈值策略</strong>：
+   - 距离阈值：扇区距离 &lt; 128KB可合并
+   - 时间阈值：100ms内的请求可合并</p>
+</li>
+<li>
+<p><strong>公平性保证</strong>：
+   - 每个进程维护独立的合并窗口
+   - 设置最大合并次数限制(如16次)
+   - 超时自动派发防止无限等待</p>
+</li>
+<li>
+<p><strong>自适应调整</strong>：
+   - 监测命中率动态调整阈值
+   - 顺序I/O增大窗口，随机I/O减小窗口</p>
+</li>
+<li>
+<p><strong>优先级考虑</strong>：
+   - 高优先级I/O降低合并等待时间
+   - 实时任务直接派发不等待合并</p>
+</li>
+</ol>
+</details>
+<ol start="5">
+<li><strong>实现简单的设备映射目标</strong>
+设计一个mirror（镜像）目标驱动的核心逻辑，要求：</li>
+</ol>
+<ul>
+<li>读操作负载均衡</li>
+<li>写操作同步复制</li>
+<li>处理设备故障</li>
+</ul>
+<details>
+<summary>提示</summary>
+<p>需要考虑读写分离、故障检测和降级模式</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>Mirror目标驱动设计：</p>
+<ol>
+<li>
+<p><strong>数据结构</strong>：
+   - 镜像设备数组
+   - 设备状态标志(正常/故障)
+   - 轮询索引用于负载均衡</p>
+</li>
+<li>
+<p><strong>读操作处理</strong>：
+   - 轮询选择健康设备
+   - 失败时自动切换到备份
+   - 记录读错误用于故障检测</p>
+</li>
+<li>
+<p><strong>写操作处理</strong>：
+   - 克隆bio到所有健康设备
+   - 等待所有写完成
+   - 任一失败则标记设备故障</p>
+</li>
+<li>
+<p><strong>故障恢复</strong>：
+   - 定期尝试恢复故障设备
+   - 支持在线重同步
+   - 维护脏块位图加速恢复</p>
+</li>
+<li>
+<p><strong>性能优化</strong>：
+   - 异步写入提高吞吐量
+   - 读请求NUMA亲和性
+   - 写合并减少开销</p>
+</li>
+</ol>
+</details>
+<ol start="6">
+<li><strong>分析blk-mq性能瓶颈</strong>
+某NVMe设备在高并发场景下性能不及预期，如何分析和优化？</li>
+</ol>
+<details>
+<summary>提示</summary>
+<p>从软硬件队列映射、标签分配、中断亲和性等方面分析</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>性能分析和优化方案：</p>
+<ol>
+<li>
+<p><strong>诊断步骤</strong>：
+   - 检查队列深度是否充分利用
+   - 分析软中断分布是否均衡
+   - 监测标签分配等待时间
+   - 评估NUMA节点访问模式</p>
+</li>
+<li>
+<p><strong>可能的瓶颈</strong>：
+   - 队列映射不当导致热点
+   - 标签数量不足限制并发
+   - 中断处理集中在少数CPU
+   - 跨NUMA访问增加延迟</p>
+</li>
+<li>
+<p><strong>优化措施</strong>：
+   - 调整nr_hw_queues匹配CPU数
+   - 增加queue_depth提高并发度
+   - 设置中断亲和性分散负载
+   - 使用NUMA感知的队列映射</p>
+</li>
+<li>
+<p><strong>参数调优</strong>：</p>
+</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="nb">echo</span><span class="w"> </span><span class="m">256</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/block/nvme0n1/queue/nr_requests
+<span class="nb">echo</span><span class="w"> </span><span class="m">0</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/block/nvme0n1/queue/rq_affinity
+<span class="nb">echo</span><span class="w"> </span><span class="m">2</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/block/nvme0n1/queue/nomerges
+</code></pre></div>
+
+<ol start="5">
+<li><strong>性能验证</strong>：
+   - 使用fio测试不同队列深度
+   - 监控iostat查看利用率
+   - 分析blktrace追踪I/O路径</li>
+</ol>
+</details>
+<ol start="7">
+<li><strong>设计智能I/O调度器</strong>
+基于机器学习设计一个自适应I/O调度器，描述：</li>
+</ol>
+<ul>
+<li>特征提取方案</li>
+<li>模型选择理由</li>
+<li>在线学习机制</li>
+</ul>
+<details>
+<summary>提示</summary>
+<p>考虑I/O模式识别、工作负载分类、参数自动调优</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>智能I/O调度器设计：</p>
+<ol>
+<li>
+<p><strong>特征工程</strong>：
+   - I/O大小分布(4K/64K/1M比例)
+   - 顺序/随机比例
+   - 读写比例
+   - 进程间I/O相关性
+   - 时间模式(周期性/突发性)</p>
+</li>
+<li>
+<p><strong>模型架构</strong>：
+   - 使用决策树进行工作负载分类
+   - LSTM预测未来I/O模式
+   - 强化学习优化调度参数</p>
+</li>
+<li>
+<p><strong>在线学习</strong>：
+   - 滑动窗口收集最近N秒统计
+   - 增量更新模型参数
+   - A/B测试验证改进效果</p>
+</li>
+<li>
+<p><strong>调度策略</strong>：
+   - 数据库负载→优化延迟
+   - 批处理→最大化吞吐量
+   - 混合负载→动态权衡</p>
+</li>
+<li>
+<p><strong>实现考虑</strong>：
+   - eBPF收集特征避免开销
+   - 模型推理使用查找表加速
+   - 降级机制应对异常情况</p>
+</li>
+</ol>
+</details>
+<ol start="8">
+<li><strong>优化Device Mapper性能</strong>
+分析dm-crypt的性能开销，提出优化方案。</li>
+</ol>
+<details>
+<summary>提示</summary>
+<p>考虑加密算法、并行处理、硬件加速等因素</p>
+</details>
+<details>
+<summary>答案</summary>
+<p>dm-crypt性能优化：</p>
+<ol>
+<li>
+<p><strong>性能瓶颈分析</strong>：
+   - CPU密集的加密运算
+   - 内存拷贝开销
+   - 单线程处理限制
+   - IV生成计算</p>
+</li>
+<li>
+<p><strong>算法优化</strong>：
+   - 使用AES-NI硬件加速
+   - 选择XTS模式提高并行度
+   - 优化IV生成算法</p>
+</li>
+<li>
+<p><strong>并行化改进</strong>：
+   - 多CPU并行加密
+   - 异步加密队列
+   - per-CPU工作队列</p>
+</li>
+<li>
+<p><strong>内存优化</strong>：
+   - 使用内存池减少分配
+   - 零拷贝技术
+   - 对齐优化cache性能</p>
+</li>
+<li>
+<p><strong>配置建议</strong>：</p>
+</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 使用硬件加速</span>
+cryptsetup<span class="w"> </span>--cipher<span class="w"> </span>aes-xts-plain64<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>--key-size<span class="w"> </span><span class="m">512</span><span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>--use-random
+
+<span class="c1"># 调整工作队列</span>
+<span class="nb">echo</span><span class="w"> </span><span class="m">4</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/module/dm_crypt/parameters/num_threads
+
+<span class="c1"># 设置更大的块大小</span>
+cryptsetup<span class="w"> </span>--perf-no_read_workqueue<span class="w"> </span><span class="se">\</span>
+<span class="w">          </span>--perf-no_write_workqueue
+</code></pre></div>
+
+<ol start="6">
+<li><strong>性能监控</strong>：
+   - 测量加密吞吐量
+   - 分析CPU利用率分布
+   - 追踪I/O延迟增加</li>
+</ol>
+</details>
+<hr />
+<h2 id="78-gotchas">7.8 常见陷阱与错误（Gotchas）</h2>
+<h3 id="_9">调试技巧</h3>
+<ol>
+<li><strong>I/O挂起诊断</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 检查挂起的I/O</span>
+cat<span class="w"> </span>/proc/&lt;pid&gt;/stack
+cat<span class="w"> </span>/sys/kernel/debug/block/&lt;dev&gt;/hctx*/busy
+
+<span class="c1"># 使用blktrace追踪</span>
+blktrace<span class="w"> </span>-d<span class="w"> </span>/dev/sda<span class="w"> </span>-o<span class="w"> </span>trace
+blkparse<span class="w"> </span>-i<span class="w"> </span>trace
+</code></pre></div>
+
+<ol start="2">
+<li><strong>性能问题定位</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 监控队列深度</span>
+iostat<span class="w"> </span>-x<span class="w"> </span><span class="m">1</span>
+
+<span class="c1"># 查看调度器统计</span>
+cat<span class="w"> </span>/sys/block/sda/queue/scheduler
+grep<span class="w"> </span>.<span class="w"> </span>/sys/block/sda/queue/iosched/*
+</code></pre></div>
+
+<h3 id="_10">常见错误</h3>
+<ol>
+<li>
+<p><strong>bio使用错误</strong>
+   - ❌ 修改已提交的bio
+   - ❌ 忘记调用bio_put释放引用
+   - ✅ 克隆bio进行修改</p>
+</li>
+<li>
+<p><strong>请求队列配置</strong>
+   - ❌ 超过设备能力的队列深度
+   - ❌ 不匹配的扇区大小
+   - ✅ 根据设备特性设置限制</p>
+</li>
+<li>
+<p><strong>DM目标实现</strong>
+   - ❌ 同步I/O阻塞映射函数
+   - ❌ 不处理设备热插拔
+   - ✅ 异步处理和错误恢复</p>
+</li>
+<li>
+<p><strong>性能调优误区</strong>
+   - ❌ 盲目增加预读大小
+   - ❌ 所有设备用同一调度器
+   - ✅ 基于测试数据调优</p>
+</li>
+</ol>
+<hr />
+<h2 id="79_1">7.9 最佳实践检查清单</h2>
+<h3 id="_11">设计审查要点</h3>
+<h4 id="_12">块设备驱动</h4>
+<ul>
+<li>[ ] 正确设置队列限制（max_sectors、max_segments）</li>
+<li>[ ] 实现超时处理机制</li>
+<li>[ ] 支持blk-mq多队列模式</li>
+<li>[ ] 处理电源管理事件</li>
+<li>[ ] 提供合理的默认队列深度</li>
+</ul>
+<h4 id="io">I/O路径优化</h4>
+<ul>
+<li>[ ] 最小化内存分配</li>
+<li>[ ] 避免不必要的内存拷贝</li>
+<li>[ ] 使用per-CPU数据减少竞争</li>
+<li>[ ] 批量处理提高效率</li>
+<li>[ ] 正确设置内存屏障</li>
+</ul>
+<h4 id="device-mapper">Device Mapper目标</h4>
+<ul>
+<li>[ ] 支持在线扩容</li>
+<li>[ ] 处理底层设备错误</li>
+<li>[ ] 实现状态持久化</li>
+<li>[ ] 提供有意义的状态信息</li>
+<li>[ ] 支持非阻塞I/O路径</li>
+</ul>
+<h4 id="_13">性能监控</h4>
+<ul>
+<li>[ ] 导出关键性能指标</li>
+<li>[ ] 支持tracepoint调试</li>
+<li>[ ] 提供sysfs调优接口</li>
+<li>[ ] 实现I/O统计收集</li>
+<li>[ ] 集成到标准监控工具</li>
+</ul>
+<h4 id="_14">可靠性保证</h4>
+<ul>
+<li>[ ] 处理设备移除场景</li>
+<li>[ ] 实现I/O错误重试</li>
+<li>[ ] 支持I/O超时取消</li>
+<li>[ ] 保证数据一致性</li>
+<li>[ ] 优雅处理资源耗尽</li>
+</ul>
+<h3 id="_15">部署建议</h3>
+<ol>
+<li><strong>生产环境配置</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 设置合理的脏页比例</span>
+<span class="nb">echo</span><span class="w"> </span><span class="m">5</span><span class="w"> </span>&gt;<span class="w"> </span>/proc/sys/vm/dirty_background_ratio
+<span class="nb">echo</span><span class="w"> </span><span class="m">10</span><span class="w"> </span>&gt;<span class="w"> </span>/proc/sys/vm/dirty_ratio
+
+<span class="c1"># 调整预读大小</span>
+blockdev<span class="w"> </span>--setra<span class="w"> </span><span class="m">256</span><span class="w"> </span>/dev/sda
+
+<span class="c1"># 设置I/O调度器</span>
+<span class="nb">echo</span><span class="w"> </span>mq-deadline<span class="w"> </span>&gt;<span class="w"> </span>/sys/block/sda/queue/scheduler
+
+<span class="c1"># 启用多队列</span>
+<span class="nb">echo</span><span class="w"> </span><span class="m">8</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/block/sda/queue/nr_requests
+</code></pre></div>
+
+<ol start="2">
+<li><strong>性能基准测试</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 顺序读写</span>
+fio<span class="w"> </span>--name<span class="o">=</span>seq<span class="w"> </span>--rw<span class="o">=</span>write<span class="w"> </span>--bs<span class="o">=</span>1M<span class="w"> </span>--size<span class="o">=</span>10G
+
+<span class="c1"># 随机IOPS</span>
+fio<span class="w"> </span>--name<span class="o">=</span>rand<span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span>--bs<span class="o">=</span>4K<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">32</span>
+
+<span class="c1"># 混合负载</span>
+fio<span class="w"> </span>--name<span class="o">=</span>mixed<span class="w"> </span>--rw<span class="o">=</span>randrw<span class="w"> </span>--rwmixread<span class="o">=</span><span class="m">70</span><span class="w"> </span>--bs<span class="o">=</span>4K
+</code></pre></div>
+
+<ol start="3">
+<li><strong>故障注入测试</strong></li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="c1"># 模拟I/O错误</span>
+<span class="nb">echo</span><span class="w"> </span><span class="m">1</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/block/sda/make-it-fail
+
+<span class="c1"># 模拟I/O延迟</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;100&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/kernel/debug/fail_io_timeout/probability
+</code></pre></div>
+
+<hr />
+<p><em>第7章完成。本章详细剖析了Linux块设备层的架构演进，从传统的单队列到现代的blk-mq，从简单的调度算法到智能化的I/O优化。通过学习本章，您应该能够理解存储栈的关键组件，分析I/O性能问题，并针对不同场景选择合适的配置策略。</em></p>
+            </article>
+            
+            <nav class="page-nav"><a href="chapter6.html" class="nav-link prev">← 第6章：具体文件系统实现</a><a href="chapter8.html" class="nav-link next">第8章：设备驱动模型 →</a></nav>
+        </main>
+    </div>
+</body>
+</html>

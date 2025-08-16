@@ -622,21 +622,965 @@ static int perform_atomic_semop(struct sem_array *sma,
 ```
 
 ### 4.1.3 POSIX IPC
-- POSIX 消息队列
-- POSIX 共享内存
-- POSIX 信号量
-- 与 System V IPC 对比
 
-### 4.3 信号机制实现
-#### 4.3.1 信号基础架构
-- 信号的产生与投递
-- 信号处理器注册
-- 信号掩码与pending信号
+POSIX IPC 是 IEEE 1003.1b-1993 标准定义的进程间通信机制，旨在提供比 System V IPC 更清洁、更一致的接口。POSIX IPC 的设计充分吸取了 System V IPC 的经验教训，提供了基于文件描述符的操作模型，更好地集成到 Unix 的 "一切皆文件" 哲学中。
 
-#### 4.3.2 实时信号扩展
-- 标准信号 vs 实时信号
-- 信号队列机制
-- siginfo_t 结构详解
+#### POSIX 消息队列
+
+POSIX 消息队列克服了 System V 消息队列的诸多限制，提供了消息优先级、异步通知等高级特性。
+
+**核心数据结构**
+
+```c
+// ipc/mqueue.c
+struct mqueue_inode_info {
+    spinlock_t lock;
+    struct inode vfs_inode;     // VFS inode
+    wait_queue_head_t wait_q;   // 等待队列
+    
+    struct rb_root msg_tree;    // 消息红黑树（按优先级排序）
+    struct rb_node *msg_tree_rightmost;  // 最右节点缓存
+    struct posix_msg_tree_node *node_cache;  // 节点缓存
+    
+    struct mq_attr attr;        // 队列属性
+    
+    struct sigevent notify;     // 异步通知配置
+    struct pid *notify_owner;   // 通知接收进程
+    struct user_namespace *notify_user_ns;
+    struct ucounts *ucounts;    // 用户计数
+    
+    unsigned long qsize;        // 队列当前大小（字节）
+};
+
+struct mq_attr {
+    long mq_flags;      // 队列标志（O_NONBLOCK）
+    long mq_maxmsg;     // 最大消息数
+    long mq_msgsize;    // 最大消息大小
+    long mq_curmsgs;    // 当前消息数
+};
+
+// 消息节点结构
+struct msg_msg {
+    struct rb_node m_rb_node;   // 红黑树节点
+    struct list_head m_list;    // 同优先级消息链表
+    long m_type;                // 消息优先级
+    size_t m_ts;                // 消息大小
+    struct msg_msgseg *next;    // 大消息的下一段
+    void *security;             // 安全标签
+};
+```
+
+**优先级队列实现**
+
+POSIX 消息队列使用红黑树实现 $O(\log n)$ 的优先级队列：
+
+```c
+// 消息插入（按优先级）
+static int msg_insert(struct msg_msg *msg,
+                     struct mqueue_inode_info *info)
+{
+    struct rb_node **p, *parent = NULL;
+    struct posix_msg_tree_node *leaf;
+    long k = msg->m_type;  // 优先级作为键
+    
+    // 查找插入位置
+    p = &info->msg_tree.rb_node;
+    while (*p) {
+        parent = *p;
+        leaf = rb_entry(parent, struct posix_msg_tree_node, rb_node);
+        
+        if (k < leaf->priority) {
+            p = &(*p)->rb_left;
+        } else if (k > leaf->priority) {
+            p = &(*p)->rb_right;
+        } else {
+            // 相同优先级，加入链表尾部（FIFO）
+            list_add_tail(&msg->m_list, &leaf->msg_list);
+            return 0;
+        }
+    }
+    
+    // 创建新的优先级节点
+    if (info->node_cache) {
+        leaf = info->node_cache;
+        info->node_cache = NULL;
+    } else {
+        leaf = kmalloc(sizeof(*leaf), GFP_ATOMIC);
+        if (!leaf)
+            return -ENOMEM;
+    }
+    
+    INIT_LIST_HEAD(&leaf->msg_list);
+    leaf->priority = k;
+    rb_link_node(&leaf->rb_node, parent, p);
+    rb_insert_color(&leaf->rb_node, &info->msg_tree);
+    
+    // 更新最右节点缓存（最低优先级）
+    if (parent == info->msg_tree_rightmost)
+        info->msg_tree_rightmost = &leaf->rb_node;
+        
+    list_add_tail(&msg->m_list, &leaf->msg_list);
+    return 0;
+}
+```
+
+**异步通知机制**
+
+POSIX 消息队列支持三种通知方式：
+
+1. **信号通知**：向指定进程发送信号
+2. **线程通知**：创建新线程执行通知函数
+3. **信号值通知**：发送带值的实时信号
+
+```c
+// mq_notify 实现
+SYSCALL_DEFINE2(mq_notify, mqd_t, mqdes,
+               const struct sigevent __user *, u_notification)
+{
+    struct fd f;
+    struct mqueue_inode_info *info;
+    struct sigevent notification;
+    
+    f = fdget(mqdes);
+    if (!f.file)
+        return -EBADF;
+        
+    info = MQUEUE_I(file_inode(f.file));
+    
+    if (u_notification) {
+        if (copy_from_user(&notification, u_notification,
+                          sizeof(struct sigevent)))
+            return -EFAULT;
+            
+        switch (notification.sigev_notify) {
+        case SIGEV_NONE:
+            break;
+        case SIGEV_SIGNAL:
+            // 设置信号通知
+            info->notify.sigev_signo = notification.sigev_signo;
+            info->notify.sigev_value = notification.sigev_value;
+            info->notify_owner = get_pid(task_pid(current));
+            break;
+        case SIGEV_THREAD:
+            // 线程通知需要用户空间库支持
+            break;
+        }
+    } else {
+        // 取消通知
+        put_pid(info->notify_owner);
+        info->notify_owner = NULL;
+    }
+    
+    fdput(f);
+    return 0;
+}
+```
+
+#### POSIX 共享内存
+
+POSIX 共享内存通过 tmpfs 文件系统实现，提供了更灵活的内存映射机制。
+
+**实现架构**
+
+```c
+// POSIX 共享内存基于 tmpfs
+static struct file_system_type shmem_fs_type = {
+    .owner      = THIS_MODULE,
+    .name       = "tmpfs",
+    .init_fs_context = shmem_init_fs_context,
+    .kill_sb    = kill_litter_super,
+};
+
+// shm_open 实际上是在 /dev/shm 下创建文件
+int shm_open(const char *name, int oflag, mode_t mode)
+{
+    char pathname[PATH_MAX];
+    int fd;
+    
+    // 构造路径 /dev/shm/name
+    snprintf(pathname, PATH_MAX, "/dev/shm/%s", name);
+    
+    // 使用 open 系统调用
+    fd = open(pathname, oflag, mode);
+    
+    return fd;
+}
+```
+
+**与 System V 共享内存的对比**
+
+| 特性 | System V | POSIX |
+|------|----------|-------|
+| 命名空间 | IPC 键值 | 文件系统路径 |
+| 持久性 | 直到显式删除 | 可选持久化 |
+| 大小调整 | 创建时固定 | ftruncate 动态调整 |
+| 权限管理 | IPC 权限位 | 文件系统权限 |
+| 同步机制 | 需要信号量 | 可用文件锁 |
+
+**内存映射优化**
+
+POSIX 共享内存支持大页（Huge Pages）映射：
+
+```c
+// 使用大页的共享内存
+int shm_fd = shm_open("/hugepage_shm", O_CREAT | O_RDWR, 0666);
+
+// 设置大页标志
+struct statfs fs_stats;
+fstatfs(shm_fd, &fs_stats);
+if (fs_stats.f_type == HUGETLBFS_MAGIC) {
+    // 自动使用大页
+}
+
+// 映射时指定 MAP_HUGETLB
+void *addr = mmap(NULL, size, PROT_READ | PROT_WRITE,
+                 MAP_SHARED | MAP_HUGETLB, shm_fd, 0);
+```
+
+#### POSIX 信号量
+
+POSIX 信号量提供了两种类型：命名信号量和未命名信号量，相比 System V 信号量更加简洁。
+
+**信号量实现**
+
+```c
+// kernel/locking/semaphore.c
+struct semaphore {
+    raw_spinlock_t      lock;
+    unsigned int        count;
+    struct list_head    wait_list;
+};
+
+// POSIX 信号量的用户空间表示
+typedef union {
+    char __size[__SIZEOF_SEM_T];
+    long int __align;
+} sem_t;
+
+// 内核中的 POSIX 信号量操作
+struct posix_sem_ops {
+    int (*wait)(struct semaphore *sem);
+    int (*timedwait)(struct semaphore *sem, 
+                    const struct timespec *abs_timeout);
+    int (*trywait)(struct semaphore *sem);
+    int (*post)(struct semaphore *sem);
+    int (*getvalue)(struct semaphore *sem, int *sval);
+};
+```
+
+**未命名信号量的共享内存实现**
+
+```c
+// 进程间共享的未命名信号量
+struct shared_sem {
+    struct semaphore sem;
+    int pshared;            // PTHREAD_PROCESS_SHARED
+    atomic_t refcount;      // 引用计数
+};
+
+// sem_init 实现
+int sem_init(sem_t *sem, int pshared, unsigned int value)
+{
+    struct shared_sem *s;
+    
+    if (pshared == PTHREAD_PROCESS_SHARED) {
+        // 分配共享内存段
+        s = mmap(NULL, sizeof(*s), PROT_READ | PROT_WRITE,
+                MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+        if (s == MAP_FAILED)
+            return -1;
+    } else {
+        // 进程私有信号量
+        s = malloc(sizeof(*s));
+        if (!s)
+            return -1;
+    }
+    
+    sema_init(&s->sem, value);
+    s->pshared = pshared;
+    atomic_set(&s->refcount, 1);
+    
+    *(struct shared_sem **)sem = s;
+    return 0;
+}
+```
+
+**自适应等待优化**
+
+POSIX 信号量实现了自适应等待策略，在轻度竞争时自旋，重度竞争时睡眠：
+
+```c
+// 自适应等待实现
+static int adaptive_sem_wait(struct semaphore *sem)
+{
+    int spin_count = 0;
+    const int MAX_SPINS = 1000;
+    
+    // 快速路径：尝试获取
+    if (likely(raw_spin_trylock(&sem->lock))) {
+        if (sem->count > 0) {
+            sem->count--;
+            raw_spin_unlock(&sem->lock);
+            return 0;
+        }
+        raw_spin_unlock(&sem->lock);
+    }
+    
+    // 自适应自旋
+    while (spin_count++ < MAX_SPINS) {
+        if (sem->count > 0) {
+            if (raw_spin_trylock(&sem->lock)) {
+                if (sem->count > 0) {
+                    sem->count--;
+                    raw_spin_unlock(&sem->lock);
+                    return 0;
+                }
+                raw_spin_unlock(&sem->lock);
+            }
+        }
+        cpu_relax();  // 处理器特定的自旋等待
+    }
+    
+    // 慢速路径：睡眠等待
+    return __sem_wait_slowpath(sem);
+}
+```
+
+#### 与 System V IPC 对比
+
+**架构差异**
+
+```
+System V IPC 架构：
+    用户空间
+        |
+    系统调用接口 (msgget, shmat, semget)
+        |
+    IPC 命名空间
+        |
+    IPC 对象管理器
+        |
+    内核数据结构
+
+POSIX IPC 架构：
+    用户空间
+        |
+    文件系统接口 (open, mmap, unlink)
+        |
+    VFS 层
+        |
+    特殊文件系统 (mqueue, tmpfs)
+        |
+    内核数据结构
+```
+
+**性能对比**
+
+| 操作 | System V | POSIX | 性能差异原因 |
+|------|----------|-------|------------|
+| 创建开销 | 中等 | 较低 | POSIX 利用文件系统缓存 |
+| 查找速度 | O(1) | O(log n) | System V 使用哈希表 |
+| 内存占用 | 较高 | 较低 | POSIX 共享 VFS 结构 |
+| 并发性能 | 一般 | 较好 | POSIX 细粒度锁 |
+| 持久化 | 自动 | 可选 | System V 默认持久 |
+
+**选择建议**
+
+1. **使用 POSIX IPC 的场景**：
+   - 新开发的应用程序
+   - 需要与文件系统集成
+   - 需要精确的超时控制
+   - 跨平台可移植性要求高
+
+2. **使用 System V IPC 的场景**：
+   - 维护遗留系统
+   - 需要信号量集合的原子操作
+   - 需要消息类型过滤
+   - 已有大量 System V IPC 代码
+
+## 4.3 信号机制实现
+
+信号是 Unix 系统最古老的进程间通信机制之一，也是异步事件通知的核心机制。Linux 内核不仅完整实现了 POSIX.1 标准信号，还扩展了实时信号支持，提供了更丰富的信号信息传递能力。理解信号机制的内核实现对于编写健壮的系统程序至关重要。
+
+### 4.3.1 信号基础架构
+
+Linux 信号机制建立在精巧的数据结构和算法之上，实现了高效的信号产生、投递和处理流程。
+
+#### 信号的产生与投递
+
+**核心数据结构**
+
+```c
+// include/linux/sched/signal.h
+struct signal_struct {
+    refcount_t      sigcnt;
+    atomic_t        live;
+    int             nr_threads;
+    struct list_head thread_head;
+    
+    wait_queue_head_t wait_chldexit;
+    
+    // 当前进程组信号处理器
+    struct k_sigaction action[_NSIG];
+    
+    // 共享的挂起信号
+    struct sigpending shared_pending;
+    
+    // POSIX 定时器列表
+    struct list_head posix_timers;
+    
+    // 实时定时器
+    struct hrtimer real_timer;
+    ktime_t real_timer_offset;
+    
+    // CPU 时间限制
+    struct task_cputime cputime_expires;
+    struct list_head cpu_timers[3];
+    
+    // 进程组信息
+    struct pid *pgrp;
+    struct pid *tty_old_pgrp;
+    
+    // 会话领导者
+    int leader;
+    
+    struct tty_struct *tty;
+    
+    // 累积的资源使用统计
+    seqlock_t stats_lock;
+    u64 utime, stime, cutime, cstime;
+    u64 gtime, cgtime;
+    struct prev_cputime prev_cputime;
+    unsigned long nvcsw, nivcsw, cnvcsw, cnivcsw;
+    unsigned long min_flt, maj_flt, cmin_flt, cmaj_flt;
+    unsigned long inblock, oublock, cinblock, coublock;
+    unsigned long maxrss, cmaxrss;
+    struct task_io_accounting ioac;
+    
+    // 审计上下文
+    unsigned long long sum_sched_runtime;
+    
+    struct rlimit rlim[RLIM_NLIMITS];
+    
+    // 进程组是否为孤儿
+    unsigned int is_child_subreaper:1;
+    unsigned int has_child_subreaper:1;
+};
+
+// 每个线程的信号信息
+struct sighand_struct {
+    spinlock_t      siglock;
+    refcount_t      count;
+    wait_queue_head_t signalfd_wqh;
+    struct k_sigaction action[_NSIG];  // 信号处理器数组
+};
+
+// 挂起信号队列
+struct sigpending {
+    struct list_head list;     // 信号队列链表
+    sigset_t signal;           // 挂起信号位图
+};
+
+// 信号队列项
+struct sigqueue {
+    struct list_head list;
+    int flags;
+    kernel_siginfo_t info;     // 信号信息
+    struct ucounts *ucounts;
+};
+```
+
+**信号产生流程**
+
+信号可以通过多种方式产生：
+
+1. **硬件异常**：如除零错误、段错误
+2. **软件条件**：如 alarm 定时器到期
+3. **终端输入**：如 Ctrl+C 产生 SIGINT
+4. **系统调用**：如 kill()、raise()
+
+```c
+// kernel/signal.c - kill 系统调用实现
+SYSCALL_DEFINE2(kill, pid_t, pid, int, sig)
+{
+    struct kernel_siginfo info;
+    
+    prepare_kill_siginfo(sig, &info);
+    
+    return kill_something_info(sig, &info, pid);
+}
+
+static int kill_something_info(int sig, struct kernel_siginfo *info, pid_t pid)
+{
+    int ret;
+    
+    if (pid > 0) {
+        // 发送给指定进程
+        ret = kill_pid_info(sig, info, find_vpid(pid));
+    } else if (pid == 0) {
+        // 发送给进程组
+        ret = kill_pgrp_info(sig, info, task_pgrp(current));
+    } else if (pid == -1) {
+        // 发送给所有进程（除了 init）
+        ret = kill_all_info(sig, info);
+    } else {
+        // 发送给指定进程组
+        ret = kill_pgrp_info(sig, info, find_vpid(-pid));
+    }
+    
+    return ret;
+}
+```
+
+**信号投递算法**
+
+```c
+// 信号投递的核心函数
+static int __send_signal(int sig, struct kernel_siginfo *info,
+                        struct task_struct *t, enum pid_type type, bool force)
+{
+    struct sigpending *pending;
+    struct sigqueue *q;
+    int override_rlimit;
+    int ret = 0, result;
+    
+    // 检查信号是否被忽略
+    result = TRACE_SIGNAL_IGNORED;
+    if (!prepare_signal(sig, t, force))
+        goto ret;
+    
+    // 选择挂起信号队列（线程私有或进程共享）
+    pending = (type != PIDTYPE_PID) ? &t->signal->shared_pending : &t->pending;
+    
+    // 检查是否为传统信号且已在队列中
+    if (legacy_queue(pending, sig))
+        goto ret;
+    
+    // 分配信号队列项
+    q = __sigqueue_alloc(sig, t, GFP_ATOMIC, override_rlimit);
+    if (q) {
+        list_add_tail(&q->list, &pending->list);
+        switch ((unsigned long) info) {
+        case (unsigned long) SEND_SIG_NOINFO:
+            clear_siginfo(&q->info);
+            q->info.si_signo = sig;
+            q->info.si_errno = 0;
+            q->info.si_code = SI_USER;
+            q->info.si_pid = task_tgid_nr_ns(current,
+                                            task_active_pid_ns(t));
+            q->info.si_uid = from_kuid_munged(current_user_ns(),
+                                             current_uid());
+            break;
+        case (unsigned long) SEND_SIG_PRIV:
+            clear_siginfo(&q->info);
+            q->info.si_signo = sig;
+            q->info.si_errno = 0;
+            q->info.si_code = SI_KERNEL;
+            q->info.si_pid = 0;
+            q->info.si_uid = 0;
+            break;
+        default:
+            copy_siginfo(&q->info, info);
+            break;
+        }
+    } else if (!is_si_special(info) &&
+               sig >= SIGRTMIN && info->si_code != SI_USER) {
+        // 实时信号必须排队，如果内存不足则失败
+        ret = -EAGAIN;
+        goto ret;
+    }
+    
+    // 设置信号位图
+    sigaddset(&pending->signal, sig);
+    
+    // 唤醒目标进程
+    complete_signal(sig, t, type);
+    
+ret:
+    trace_signal_generate(sig, info, t, type != PIDTYPE_PID, result);
+    return ret;
+}
+```
+
+#### 信号处理器注册
+
+**sigaction 系统调用**
+
+```c
+// kernel/signal.c
+SYSCALL_DEFINE4(rt_sigaction, int, sig,
+               const struct sigaction __user *, act,
+               struct sigaction __user *, oact,
+               size_t, sigsetsize)
+{
+    struct k_sigaction new_sa, old_sa;
+    int ret;
+    
+    // 检查信号号码有效性
+    if (!valid_signal(sig) || sig < 1 || (act && sig_kernel_only(sig)))
+        return -EINVAL;
+    
+    if (act) {
+        if (copy_from_user(&new_sa.sa, act, sizeof(new_sa.sa)))
+            return -EFAULT;
+    }
+    
+    ret = do_sigaction(sig, act ? &new_sa : NULL, oact ? &old_sa : NULL);
+    if (ret)
+        return ret;
+    
+    if (oact) {
+        if (copy_to_user(oact, &old_sa.sa, sizeof(old_sa.sa)))
+            return -EFAULT;
+    }
+    
+    return 0;
+}
+
+int do_sigaction(int sig, struct k_sigaction *act, struct k_sigaction *oact)
+{
+    struct task_struct *p = current, *t;
+    struct k_sigaction *k;
+    sigset_t mask;
+    
+    if (!valid_signal(sig) || sig < 1 || (act && sig_kernel_only(sig)))
+        return -EINVAL;
+    
+    k = &p->sighand->action[sig-1];
+    
+    spin_lock_irq(&p->sighand->siglock);
+    if (oact)
+        *oact = *k;
+    
+    if (act) {
+        sigdelsetmask(&act->sa.sa_mask,
+                     sigmask(SIGKILL) | sigmask(SIGSTOP));
+        *k = *act;
+        
+        // 如果设置为 SIG_IGN，清除挂起的信号
+        if (sig_handler(p, sig) == SIG_IGN) {
+            sigemptyset(&mask);
+            sigaddset(&mask, sig);
+            flush_sigqueue_mask(&mask, &p->signal->shared_pending);
+            for_each_thread(p, t)
+                flush_sigqueue_mask(&mask, &t->pending);
+        }
+    }
+    
+    spin_unlock_irq(&p->sighand->siglock);
+    return 0;
+}
+```
+
+#### 信号掩码与 Pending 信号
+
+**信号掩码操作**
+
+```c
+// 信号掩码的原子操作
+static inline void sigaddset(sigset_t *set, int _sig)
+{
+    unsigned long sig = _sig - 1;
+    if (_NSIG_WORDS == 1)
+        set->sig[0] |= 1UL << sig;
+    else
+        set->sig[sig / _NSIG_BPW] |= 1UL << (sig % _NSIG_BPW);
+}
+
+static inline void sigdelset(sigset_t *set, int _sig)
+{
+    unsigned long sig = _sig - 1;
+    if (_NSIG_WORDS == 1)
+        set->sig[0] &= ~(1UL << sig);
+    else
+        set->sig[sig / _NSIG_BPW] &= ~(1UL << (sig % _NSIG_BPW));
+}
+
+static inline int sigismember(sigset_t *set, int _sig)
+{
+    unsigned long sig = _sig - 1;
+    if (_NSIG_WORDS == 1)
+        return set->sig[0] & (1UL << sig);
+    else
+        return set->sig[sig / _NSIG_BPW] & (1UL << (sig % _NSIG_BPW));
+}
+```
+
+**信号的阻塞与解除**
+
+```c
+// sigprocmask 系统调用
+SYSCALL_DEFINE4(rt_sigprocmask, int, how, sigset_t __user *, nset,
+               sigset_t __user *, oset, size_t, sigsetsize)
+{
+    sigset_t old_set, new_set;
+    int error;
+    
+    // 保存旧的信号掩码
+    old_set = current->blocked;
+    
+    if (nset) {
+        if (copy_from_user(&new_set, nset, sizeof(sigset_t)))
+            return -EFAULT;
+        sigdelsetmask(&new_set, sigmask(SIGKILL) | sigmask(SIGSTOP));
+        
+        error = sigprocmask(how, &new_set, NULL);
+        if (error)
+            return error;
+    }
+    
+    if (oset) {
+        if (copy_to_user(oset, &old_set, sizeof(sigset_t)))
+            return -EFAULT;
+    }
+    
+    return 0;
+}
+
+// 设置信号掩码
+int sigprocmask(int how, sigset_t *set, sigset_t *oldset)
+{
+    struct task_struct *tsk = current;
+    sigset_t newset;
+    
+    // 根据操作类型计算新掩码
+    switch (how) {
+    case SIG_BLOCK:
+        sigorsets(&newset, &tsk->blocked, set);
+        break;
+    case SIG_UNBLOCK:
+        sigandnsets(&newset, &tsk->blocked, set);
+        break;
+    case SIG_SETMASK:
+        newset = *set;
+        break;
+    default:
+        return -EINVAL;
+    }
+    
+    __set_current_blocked(&newset);
+    return 0;
+}
+```
+
+### 4.3.2 实时信号扩展
+
+Linux 支持 POSIX.1b 实时信号扩展，提供了更可靠的信号机制。
+
+#### 标准信号 vs 实时信号
+
+**信号分类**
+
+```c
+// include/uapi/asm-generic/signal.h
+#define SIGHUP       1  // 终端挂起
+#define SIGINT       2  // 终端中断（Ctrl+C）
+#define SIGQUIT      3  // 终端退出（Ctrl+\）
+#define SIGILL       4  // 非法指令
+#define SIGTRAP      5  // 跟踪/断点陷阱
+#define SIGABRT      6  // abort() 调用
+#define SIGBUS       7  // 总线错误
+#define SIGFPE       8  // 浮点异常
+#define SIGKILL      9  // 强制终止（不可捕获）
+#define SIGUSR1     10  // 用户定义信号 1
+#define SIGSEGV     11  // 段错误
+#define SIGUSR2     12  // 用户定义信号 2
+#define SIGPIPE     13  // 管道破裂
+#define SIGALRM     14  // alarm() 定时器
+#define SIGTERM     15  // 终止请求
+#define SIGSTKFLT   16  // 协处理器栈错误
+#define SIGCHLD     17  // 子进程状态改变
+#define SIGCONT     18  // 继续执行
+#define SIGSTOP     19  // 停止执行（不可捕获）
+#define SIGTSTP     20  // 终端停止（Ctrl+Z）
+#define SIGTTIN     21  // 后台进程读终端
+#define SIGTTOU     22  // 后台进程写终端
+#define SIGURG      23  // 紧急数据到达
+#define SIGXCPU     24  // CPU 时间限制超出
+#define SIGXFSZ     25  // 文件大小限制超出
+#define SIGVTALRM   26  // 虚拟定时器
+#define SIGPROF     27  // 性能分析定时器
+#define SIGWINCH    28  // 终端窗口大小改变
+#define SIGIO       29  // I/O 就绪
+#define SIGPWR      30  // 电源故障
+#define SIGSYS      31  // 系统调用参数错误
+
+// 实时信号范围
+#define SIGRTMIN    32
+#define SIGRTMAX    64
+```
+
+**关键差异**
+
+| 特性 | 标准信号（1-31） | 实时信号（32-64） |
+|------|-----------------|------------------|
+| 排队 | 不排队，多个相同信号合并 | 可靠排队，不丢失 |
+| 优先级 | 信号编号越小优先级越高 | 可自定义优先级 |
+| 信息传递 | 仅信号编号 | 可携带额外数据 |
+| 顺序保证 | 无保证 | FIFO 顺序保证 |
+| 用途 | 系统定义的特定事件 | 应用程序自定义 |
+
+#### 信号队列机制
+
+**实时信号的可靠排队**
+
+```c
+// 实时信号队列管理
+struct sigqueue_cache {
+    struct sigqueue *first;
+    int count;
+};
+
+static struct sigqueue *__sigqueue_alloc(int sig, struct task_struct *t,
+                                        gfp_t gfp_flags, int override_rlimit)
+{
+    struct sigqueue *q = NULL;
+    struct ucounts *ucounts = NULL;
+    long sigpending;
+    
+    // 实时信号必须排队
+    if ((sig >= SIGRTMIN) && 
+        (sigpending = inc_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_SIGPENDING, 1)) == 0) {
+        dec_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_SIGPENDING, 1);
+        return NULL;
+    }
+    
+    // 从缓存或 slab 分配
+    if (current->sigqueue_cache.count > 0) {
+        q = current->sigqueue_cache.first;
+        current->sigqueue_cache.first = q->next;
+        current->sigqueue_cache.count--;
+    } else {
+        q = kmem_cache_alloc(sigqueue_cachep, gfp_flags);
+    }
+    
+    if (unlikely(q == NULL)) {
+        if (ucounts)
+            dec_rlimit_ucounts(ucounts, UCOUNT_RLIMIT_SIGPENDING, 1);
+    } else {
+        INIT_LIST_HEAD(&q->list);
+        q->flags = 0;
+        q->ucounts = ucounts;
+    }
+    
+    return q;
+}
+```
+
+#### siginfo_t 结构详解
+
+**信号信息结构**
+
+```c
+// include/uapi/asm-generic/siginfo.h
+typedef struct kernel_siginfo {
+    struct {
+        int si_signo;    // 信号编号
+        int si_errno;    // errno 值
+        int si_code;     // 信号来源代码
+        
+        union {
+            int _pad[SI_PAD_SIZE];
+            
+            // SIGKILL
+            struct {
+                __kernel_pid_t _pid;    // 发送进程 PID
+                __kernel_uid32_t _uid;  // 发送进程 UID
+            } _kill;
+            
+            // POSIX.1b 定时器
+            struct {
+                __kernel_timer_t _tid;  // 定时器 ID
+                int _overrun;           // 溢出计数
+                sigval_t _sigval;       // 信号值
+                int _sys_private;       // 系统私有数据
+            } _timer;
+            
+            // POSIX.1b 信号
+            struct {
+                __kernel_pid_t _pid;    // 发送进程 PID
+                __kernel_uid32_t _uid;  // 发送进程 UID
+                sigval_t _sigval;       // 信号值
+            } _rt;
+            
+            // SIGCHLD
+            struct {
+                __kernel_pid_t _pid;    // 子进程 PID
+                __kernel_uid32_t _uid;  // 子进程 UID
+                int _status;            // 退出状态
+                __kernel_clock_t _utime;
+                __kernel_clock_t _stime;
+            } _sigchld;
+            
+            // SIGILL, SIGFPE, SIGSEGV, SIGBUS, SIGTRAP
+            struct {
+                void __user *_addr;     // 故障地址
+                
+                union {
+                    // BUS_MCEERR_AR, BUS_MCEERR_AO
+                    int _trapno;        // TRAP 编号
+                    
+                    // BUS_MCEERR_AR, BUS_MCEERR_AO
+                    short _addr_lsb;    // 地址 LSB
+                    
+                    // SEGV_BNDERR
+                    struct {
+                        void __user *_lower;
+                        void __user *_upper;
+                    } _addr_bnd;
+                    
+                    // SEGV_PKUERR
+                    __u32 _pkey;
+                };
+            } _sigfault;
+            
+            // SIGPOLL
+            struct {
+                long _band;     // POLL_IN, POLL_OUT, POLL_MSG
+                int _fd;        // 文件描述符
+            } _sigpoll;
+            
+            // SIGSYS
+            struct {
+                void __user *_call_addr;    // 调用地址
+                int _syscall;                // 系统调用号
+                unsigned int _arch;          // 架构
+            } _sigsys;
+        } _sifields;
+    };
+} kernel_siginfo_t;
+```
+
+**信号代码定义**
+
+```c
+// 信号来源代码（si_code）
+#define SI_USER      0      // kill(), raise()
+#define SI_KERNEL    0x80   // 内核产生
+#define SI_QUEUE    -1      // sigqueue()
+#define SI_TIMER    -2      // POSIX.1b 定时器
+#define SI_MESGQ    -3      // POSIX.1b 消息队列
+#define SI_ASYNCIO  -4      // AIO 完成
+#define SI_SIGIO    -5      // SIGIO 排队
+#define SI_TKILL    -6      // tkill(), tgkill()
+#define SI_DETHREAD -7      // SIGCHLD from execve
+
+// SIGILL 的 si_code
+#define ILL_ILLOPC  1       // 非法操作码
+#define ILL_ILLOPN  2       // 非法操作数
+#define ILL_ILLADR  3       // 非法寻址模式
+#define ILL_ILLTRP  4       // 非法陷阱
+#define ILL_PRVOPC  5       // 特权操作码
+#define ILL_PRVREG  6       // 特权寄存器
+#define ILL_COPROC  7       // 协处理器错误
+#define ILL_BADSTK  8       // 内部栈错误
+
+// SIGSEGV 的 si_code
+#define SEGV_MAPERR 1       // 地址未映射
+#define SEGV_ACCERR 2       // 权限错误
+#define SEGV_BNDERR 3       // 边界检查失败
+#define SEGV_PKUERR 4       // 保护键错误
+```
 
 ### 4.4 futex 与用户态同步
 #### 4.4.1 futex 设计原理

@@ -235,6 +235,15 @@ Linux 2.6 是内核发展的分水岭，引入了大量现代化特性：
 **O(1) 调度器**：
 ```c
 // Ingo Molnar 的 O(1) 调度器核心思想
+struct runqueue {
+    spinlock_t lock;
+    unsigned long nr_running;
+    
+    struct prio_array *active;   // 活动优先级数组
+    struct prio_array *expired;  // 过期优先级数组
+    struct prio_array arrays[2]; // 实际数组存储
+};
+
 struct prio_array {
     unsigned int nr_active;
     unsigned long bitmap[BITMAP_SIZE];

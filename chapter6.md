@@ -754,3 +754,430 @@ int ext4_fc_commit(journal_t *journal, tid_t tid)
     return 0;
 }
 ```
+
+### 6.2.7 日志调优参数
+
+#### 关键参数配置
+
+```bash
+# 调整日志大小（ext4）
+tune2fs -J size=256 /dev/sda1
+
+# 调整提交间隔
+mount -o commit=5 /dev/sda1 /mnt  # 5秒提交一次
+
+# 禁用屏障（谨慎使用）
+mount -o nobarrier /dev/sda1 /mnt
+
+# 设置日志模式
+mount -o data=writeback /dev/sda1 /mnt
+```
+
+#### 性能监控
+
+```c
+/* 通过 /proc/fs/jbd2/ 监控日志性能 */
+struct jbd2_stats_proc_session {
+    journal_t *journal;
+    struct transaction_stats_s *stats;
+    int start;          /* 统计开始时间 */
+    int max;            /* 最大事务数 */
+};
+
+/* 关键指标：
+   - 平均事务大小
+   - 提交延迟
+   - 检查点频率
+   - 日志利用率 */
+```
+
+## 6.3 现代文件系统：XFS、Btrfs
+
+现代文件系统为了应对大规模存储、高并发访问、数据完整性等挑战，引入了许多创新设计。XFS 代表了高性能和可扩展性的极致追求，而 Btrfs 则展示了功能丰富性和灵活性的方向。理解它们的设计哲学和实现机制，对于架构大规模存储系统至关重要。
+
+### 6.3.1 XFS：高性能与可扩展性
+
+XFS 由 SGI 在 1993 年为 IRIX 开发，2001 年移植到 Linux。它的设计目标是处理超大文件和高并发访问。
+
+#### 架构特点
+
+**分配组（Allocation Groups）**：
+
+```
+XFS 文件系统布局：
++----------------+----------------+----------------+
+|       AG0      |       AG1      |       AG2      | ...
++----------------+----------------+----------------+
+每个 AG 包含：
+- 超级块副本
+- 空闲空间 B+ 树
+- inode B+ 树  
+- 自由 inode 列表
+- AG 内部日志（可选）
+
+优势：
+1. 并行操作：不同 AG 可以独立操作
+2. 可扩展性：AG 数量可达数千个
+3. 局部性：相关数据在同一 AG
+```
+
+**B+ 树无处不在**：
+
+```c
+/* XFS 使用 B+ 树管理几乎所有元数据 */
+typedef struct xfs_btree_block {
+    __be32  bb_magic;       /* 魔数标识 */
+    __be16  bb_level;       /* 树的层级 */
+    __be16  bb_numrecs;     /* 记录数 */
+    union {
+        struct {
+            __be32  bb_leftsib;   /* 左兄弟 */
+            __be32  bb_rightsib;  /* 右兄弟 */
+        } s;
+        struct {
+            __be64  bb_leftsib;
+            __be64  bb_rightsib;
+        } l;
+    } bb_u;
+} xfs_btree_block_t;
+
+/* B+ 树类型：
+   1. 空间管理：BNO（按块号）、CNT（按大小）
+   2. inode 管理：INO（inode 分配）、FINO（空闲 inode）
+   3. 目录：DIR2（大目录）
+   4. 扩展属性：ATTR
+   5. 反向映射：RMAP（块到文件映射）
+   6. 引用计数：REFC（共享块）*/
+```
+
+#### 延迟分配（Delayed Allocation）
+
+XFS 的延迟分配比 ext4 更激进：
+
+```c
+/* 延迟分配实现 */
+STATIC int
+xfs_vm_writepage(
+    struct page *page,
+    struct writeback_control *wbc)
+{
+    struct inode *inode = page->mapping->host;
+    struct xfs_inode *ip = XFS_I(inode);
+    struct buffer_head *bh, *head;
+    xfs_iomap_t iomap;
+    
+    /* 1. 检查是否有延迟分配的块 */
+    if (buffer_delay(bh)) {
+        /* 2. 转换延迟分配为真实分配 */
+        error = xfs_iomap_write_allocate(ip, offset, &iomap);
+        
+        /* 3. 优化：尝试预分配更多空间 */
+        if (!(iomap.iomap_flags & IOMAP_F_SHARED))
+            xfs_iomap_prealloc(ip, offset, count);
+    }
+    
+    /* 4. 提交 I/O */
+    return xfs_submit_ioend(wbc, ioend, ret);
+}
+```
+
+#### 扩展属性与访问控制列表
+
+XFS 对扩展属性的支持非常完善：
+
+```c
+/* 扩展属性存储格式 */
+typedef struct xfs_attr_leaf_entry {
+    __be32  hashval;        /* 名称哈希值 */
+    __be16  nameidx;       /* 名称偏移 */
+    __u8    flags;          /* 标志 */
+    __u8    pad2;           /* 填充 */
+} xfs_attr_leaf_entry_t;
+
+/* 属性类型 */
+#define XFS_ATTR_LOCAL  0x01    /* 属性值存储在 inode */
+#define XFS_ATTR_ROOT   0x02    /* 可信属性 */
+#define XFS_ATTR_SECURE 0x08    /* 安全属性 */
+#define XFS_ATTR_PARENT 0x10    /* 父目录指针 */
+```
+
+#### 实时子卷（Realtime Subvolume）
+
+XFS 独特的实时子卷设计，用于流媒体等场景：
+
+```c
+/* 实时分配 */
+int xfs_rtallocate_extent(
+    xfs_trans_t *tp,
+    xfs_rtblock_t bno,      /* 起始块号 */
+    xfs_extlen_t minlen,    /* 最小长度 */
+    xfs_extlen_t maxlen,    /* 最大长度 */
+    xfs_extlen_t *len,      /* 实际分配长度 */
+    xfs_rtblock_t *rtblock) /* 分配的块号 */
+{
+    /* 实时子卷特点：
+       1. 固定大小 extent（通常 64KB-1MB）
+       2. 无元数据开销
+       3. 适合大文件顺序 I/O
+       4. 可以使用不同的块设备 */
+}
+```
+
+### 6.3.2 Btrfs：写时复制与高级特性
+
+Btrfs（B-tree FS）由 Oracle 的 Chris Mason 在 2007 年开始开发，目标是提供企业级功能同时保持性能。
+
+#### 核心设计理念
+
+**Copy-on-Write (CoW) Everything**：
+
+```
+传统文件系统更新：
+[Block A] → 原地修改 → [Block A']
+
+Btrfs CoW 更新：
+[Block A] → 复制 → [Block A']
+    ↓                   ↓
+保留旧版本          新版本
+
+优势：
+1. 原子更新
+2. 快照零成本
+3. 数据完整性
+4. 简化崩溃恢复
+```
+
+#### B-tree 森林架构
+
+```c
+/* Btrfs 使用多个 B-tree 管理不同类型数据 */
+enum btrfs_tree_objectid {
+    BTRFS_ROOT_TREE_OBJECTID = 1,      /* 根树 */
+    BTRFS_EXTENT_TREE_OBJECTID = 2,    /* extent 树 */
+    BTRFS_CHUNK_TREE_OBJECTID = 3,     /* chunk 树 */
+    BTRFS_DEV_TREE_OBJECTID = 4,       /* 设备树 */
+    BTRFS_FS_TREE_OBJECTID = 5,        /* 文件系统树 */
+    BTRFS_CSUM_TREE_OBJECTID = 7,      /* 校验和树 */
+    BTRFS_QUOTA_TREE_OBJECTID = 8,     /* 配额树 */
+    BTRFS_UUID_TREE_OBJECTID = 9,      /* UUID 树 */
+    BTRFS_FREE_SPACE_TREE_OBJECTID = 10, /* 空闲空间树 */
+};
+
+/* B-tree 节点结构 */
+struct btrfs_node {
+    struct btrfs_header header;
+    struct btrfs_key_ptr ptrs[];  /* 子节点指针数组 */
+} __attribute__ ((__packed__));
+
+/* 键结构（所有 B-tree 共用） */
+struct btrfs_key {
+    __le64 objectid;    /* 对象 ID */
+    __u8 type;          /* 类型 */
+    __le64 offset;      /* 偏移/其他信息 */
+} __attribute__ ((__packed__));
+```
+
+#### 子卷与快照
+
+Btrfs 的子卷是独立的文件系统树：
+
+```c
+/* 创建快照 */
+static int btrfs_ioctl_snap_create(
+    struct file *file,
+    void __user *arg, 
+    int subvol)
+{
+    struct btrfs_root *root = BTRFS_I(dir)->root;
+    struct btrfs_trans_handle *trans;
+    struct btrfs_root_item *root_item;
+    
+    /* 1. 开始事务 */
+    trans = btrfs_start_transaction(root, 0);
+    
+    /* 2. 复制根节点（CoW） */
+    ret = btrfs_copy_root(trans, root, root->node, &tmp, 
+                         objectid);
+    
+    /* 3. 创建新的根项 */
+    root_item = &root->root_item;
+    btrfs_set_root_bytenr(root_item, tmp->start);
+    btrfs_set_root_level(root_item, btrfs_header_level(tmp));
+    btrfs_set_root_generation(root_item, trans->transid);
+    
+    /* 4. 插入根树 */
+    ret = btrfs_insert_root(trans, tree_root, &key, root_item);
+    
+    /* 快照创建完成，几乎零成本！ */
+}
+```
+
+#### 数据校验和
+
+每个数据块都有校验和：
+
+```c
+/* 校验和计算 */
+static int btrfs_csum_one_bio(struct btrfs_io_bio *io_bio)
+{
+    struct bio *bio = &io_bio->bio;
+    struct btrfs_ordered_extent *ordered;
+    char *data;
+    u32 csum;
+    
+    bio_for_each_segment(bvec, bio, iter) {
+        data = kmap_atomic(bvec.bv_page);
+        
+        /* CRC32C 校验和 */
+        csum = btrfs_crc32c(~0, data + bvec.bv_offset, 
+                           bvec.bv_len);
+        
+        /* 存储到校验和树 */
+        ret = btrfs_csum_file_blocks(trans, csum_root,
+                                     ordered->file_offset,
+                                     csum);
+        kunmap_atomic(data);
+    }
+}
+```
+
+#### RAID 与数据冗余
+
+Btrfs 内置 RAID 支持：
+
+```c
+/* RAID 级别 */
+enum btrfs_raid_types {
+    BTRFS_RAID_SINGLE = 0,
+    BTRFS_RAID_RAID0,
+    BTRFS_RAID_RAID1,
+    BTRFS_RAID_DUP,      /* 单设备双副本 */
+    BTRFS_RAID_RAID10,
+    BTRFS_RAID_RAID5,
+    BTRFS_RAID_RAID6,
+    BTRFS_RAID_RAID1C3,  /* 3 副本 */
+    BTRFS_RAID_RAID1C4,  /* 4 副本 */
+};
+
+/* 条带化写入 */
+static int btrfs_map_bio_raid56(
+    struct btrfs_fs_info *fs_info,
+    struct bio *bio,
+    struct btrfs_io_context *bioc)
+{
+    if (bioc->raid_map) {
+        /* RAID5/6 需要计算校验 */
+        ret = raid56_parity_write(fs_info, bio, bioc);
+    } else {
+        /* RAID0/1/10 直接映射 */
+        for (i = 0; i < bioc->num_stripes; i++) {
+            if (bioc->stripes[i].dev->bdev)
+                submit_stripe_bio(bioc->stripes[i]);
+        }
+    }
+}
+```
+
+#### 透明压缩
+
+Btrfs 支持多种压缩算法：
+
+```c
+/* 压缩类型 */
+enum btrfs_compression_type {
+    BTRFS_COMPRESS_NONE  = 0,
+    BTRFS_COMPRESS_ZLIB  = 1,
+    BTRFS_COMPRESS_LZO   = 2,
+    BTRFS_COMPRESS_ZSTD  = 3,
+};
+
+/* 压缩实现 */
+int btrfs_compress_pages(
+    unsigned int type_level,
+    struct address_space *mapping,
+    u64 start,
+    struct page **pages,
+    unsigned long *out_pages,
+    unsigned long *total_in,
+    unsigned long *total_out)
+{
+    struct list_head *workspace;
+    int ret;
+    
+    /* 获取压缩工作空间 */
+    workspace = get_workspace(type, level);
+    
+    /* 执行压缩 */
+    ret = compression_funcs[type]->compress_pages(
+        workspace, mapping, start, pages,
+        out_pages, total_in, total_out);
+    
+    /* 压缩比检查 */
+    if (*total_out >= *total_in * 90 / 100) {
+        /* 压缩效果不好，放弃压缩 */
+        ret = -E2BIG;
+    }
+    
+    put_workspace(type, workspace);
+    return ret;
+}
+```
+
+### 6.3.3 性能特征对比
+
+| 特性 | ext4 | XFS | Btrfs |
+|------|------|-----|-------|
+| **最大文件** | 16 TB | 8 EB | 16 EB |
+| **最大卷** | 1 EB | 8 EB | 16 EB |
+| **并发性** | 中等 | 极高 | 高 |
+| **小文件性能** | 优秀 | 一般 | 良好 |
+| **大文件性能** | 良好 | 极佳 | 优秀 |
+| **碎片整理** | 在线 | 在线 | 在线+自动 |
+| **快照** | 无 | 无 | 原生支持 |
+| **压缩** | 无 | 无 | 透明压缩 |
+| **校验和** | 仅元数据 | 仅元数据 | 全部数据 |
+| **RAID** | 需要 MD/LVM | 需要 MD/LVM | 内置 |
+
+### 6.3.4 ZFS 影响与设计理念
+
+虽然 ZFS 因许可证问题不在 Linux 主线，但它的设计深刻影响了 Btrfs：
+
+**端到端数据完整性**：
+- 每个块都有校验和
+- 校验和存储在父块
+- 形成 Merkle 树
+
+**存储池概念**：
+- 不再有固定分区
+- 动态空间分配
+- 多设备管理
+
+**事务性语义**：
+- 所有操作都是事务
+- 永不覆写（除了超级块）
+- 崩溃一致性保证
+
+**ARC 缓存**：
+- 自适应替换缓存
+- 比 LRU 更智能
+- 支持压缩缓存
+
+### 6.3.5 文件系统选择决策
+
+#### 选择 ext4 的场景
+- 稳定性要求极高
+- 简单可靠的通用存储
+- 小到中等规模部署
+- 与旧系统兼容
+
+#### 选择 XFS 的场景
+- 超大文件（视频、科学计算）
+- 高并发访问
+- 大规模存储（PB 级）
+- 流媒体应用
+
+#### 选择 Btrfs 的场景
+- 需要快照功能
+- 数据完整性关键
+- 需要在线压缩
+- 容器存储后端
